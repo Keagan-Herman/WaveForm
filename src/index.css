@@ -1,0 +1,53 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: #050e05;
+  color: #e8f5e8;
+  overflow: hidden; /* App manages its own scroll regions */
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0%   { opacity: 0.04; }
+  50%  { opacity: 0.08; }
+  100% { opacity: 0.04; }
+}
+
+/* Beat pulse — used on album art glow and loading pip */
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.15); }
+}
+
+/* Custom scrollbar — search results panel */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Focus ring — visible for keyboard navigation */
+:focus-visible {
+  outline: 1px solid rgba(29, 185, 84, 0.6);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
