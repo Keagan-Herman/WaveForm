@@ -10,9 +10,20 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@react-three/fiber', '@react-three/drei'],
+    include: [
+      'react-reconciler',
+      'react-reconciler/constants',
+      '@react-three/fiber',
+      '@react-three/drei',
+    ],
+    esbuildOptions: {
+      // Force CJS modules to be treated correctly
+      define: {
+        'process.env.NODE_ENV': '"development"',
+      },
+    },
   },
   server: {
-    port: 5173,
+    port: 3000,
   },
 })

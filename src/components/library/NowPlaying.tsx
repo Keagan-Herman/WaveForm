@@ -31,7 +31,7 @@ import { ArtistRipple } from '@/components/search/ArtistRipple'
 
 export function NowPlaying() {
   const { currentTrack, isPlaying, progress } = usePlayerStore()
-  const beat = useVisualiserStore(state => state.beat)
+  const beat = useVisualiserStore((state: { beat: any }) => state.beat)
 
   if (!currentTrack) {
     return (

@@ -1,13 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/deezer-api/:path*",
+      "destination": "https://api.deezer.com/:path*"
     }
-  ],
-  "functions": {
-    "api/*.ts": {
-      "runtime": "@vercel/node@3.x"
-    }
-  }
+  ]
 }

@@ -25,7 +25,6 @@ interface FrequencyBarsProps {
 export function FrequencyBars({
   width = 800,
   height = 200,
-  barColor = '#1db954',
   mirrorMode = true,
   className,
 }: FrequencyBarsProps) {

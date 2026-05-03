@@ -27,8 +27,8 @@ export function BackgroundPulse({
   baseHue = 120,
   hueShift = 15,
 }: BackgroundPulseProps) {
-  const bassPower = useVisualiserStore(state => state.bassPower)
-  const beat = useVisualiserStore(state => state.beat)
+  const bassPower = useVisualiserStore((state: { bassPower: any }) => state.bassPower)
+  const beat = useVisualiserStore((state: { beat: any }) => state.beat)
 
   // Bass power drives brightness — quiet = very dark, loud = slightly less dark
   const brightness = 3 + bassPower * 8   // 3% → 11% lightness

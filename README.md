@@ -152,9 +152,6 @@ waveform/
 │   ├── stores/
 │   │   ├── playerStore.ts        # Track, playback state, queue
 │   │   └── visualiserStore.ts    # beat, bassPower (derived audio state)
-│   └── types/
-│       ├── track.ts
-│       └── audio.ts
 └── vercel.json                   # Deezer CORS proxy rewrite
 ```
 
@@ -193,6 +190,14 @@ Spotify introduced significant restrictions to their developer platform in Febru
 ### Why not `pnpm dev`?
 
 Vite's dev server does not process `vercel.json` rewrites. The Deezer proxy rewrite (`/deezer-api/*`) only activates under `vercel dev`, which runs both the Vite dev server and Vercel's edge network locally. Without it, all Deezer API calls will be blocked by CORS.
+
+### Why React 18 instead of React 19?
+
+`@react-three/fiber` and `@react-three/drei` have incompatible peer dependencies
+with React 19 at the time of writing — specifically around `react-reconciler`
+and `use-sync-external-store`. React 18.3.1 is the latest stable version with
+full R3F ecosystem support. No React 19-specific features are used in this
+project, so the downgrade has zero functional impact.
 
 ---
 
