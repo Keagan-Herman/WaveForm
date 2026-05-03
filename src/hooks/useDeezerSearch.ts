@@ -1,22 +1,21 @@
 /**
- * useSpotifySearch.ts
+ * useDeezerSearch.ts
  *
- * Debounced Spotify track search hook.
+ * Debounced Deezer track search hook.
+ * Drop-in replacement for useSpotifySearch — same interface, same behaviour.
  *
- * Features:
- * - 400ms debounce — avoids firing on every keystroke
- * - Request caching — repeated identical queries hit the cache
- * - Cancels stale requests — if the query changes mid-flight,
- *   the previous result is discarded
- * - Handles empty queries gracefully
+ * Differences from the Spotify version:
+ * - No preview filtering needed — Deezer always returns a preview URL
+ * - Cache key prefix changed to deezer:
+ * - Returns DeezerTrack instead of SpotifyTrack
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { searchTracks, type SpotifyTrack } from '@/lib/spotifyApi'
+import { searchTracks, type DeezerTrack } from '@/lib/deezerApi'
 import { fetchWithCache } from '@/lib/cache'
 
 interface SearchState {
-  tracks: SpotifyTrack[]
+  tracks: DeezerTrack[]
   isLoading: boolean
   error: string | null
   total: number
@@ -31,10 +30,10 @@ const INITIAL_STATE: SearchState = {
   hasMore: false,
 }
 
-export function useSpotifySearch(query: string, debounceMs = 400) {
+export function useDeezerSearch(query: string, debounceMs = 400) {
   const [state, setState] = useState<SearchState>(INITIAL_STATE)
   const latestQueryRef = useRef<string>('')
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -46,12 +45,11 @@ export function useSpotifySearch(query: string, debounceMs = 400) {
 
     try {
       const result = await fetchWithCache(
-        `search:tracks:${q}`,
+        `deezer:search:tracks:${q}`,
         () => searchTracks(q),
-        3 * 60 * 1000 // 3 minute cache
+        3 * 60 * 1000
       )
 
-      // Discard result if query has changed since this request fired
       if (latestQueryRef.current !== q) return
 
       setState({
@@ -74,7 +72,6 @@ export function useSpotifySearch(query: string, debounceMs = 400) {
 
   useEffect(() => {
     latestQueryRef.current = query
-
     clearTimeout(debounceTimer.current)
 
     if (!query.trim()) {
@@ -83,7 +80,6 @@ export function useSpotifySearch(query: string, debounceMs = 400) {
     }
 
     debounceTimer.current = setTimeout(() => search(query), debounceMs)
-
     return () => clearTimeout(debounceTimer.current)
   }, [query, debounceMs, search])
 

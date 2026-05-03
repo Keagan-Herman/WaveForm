@@ -23,6 +23,16 @@
  * the browser blocks the AudioContext from reading the stream.
  */
 
+/**
+ * PreviewPlayer.tsx — Deezer version
+ *
+ * One change from Spotify version:
+ * - track.preview_url → track.preview (Deezer's field name)
+ *
+ * Everything else is identical — the audio engine wiring,
+ * the rAF loop management, the event handlers.
+ */
+
 import { useRef, useEffect, useCallback } from 'react'
 import { audioEngine } from '@/audio/AudioEngine'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -43,27 +53,23 @@ export function PreviewPlayer() {
     nextTrack,
   } = usePlayerStore()
 
-  // Initialise the AudioEngine on the first play interaction.
-  // Must happen inside a user gesture — this is triggered by the play
-  // button click which sets isPlaying = true in the store.
   const ensureEngineInitialised = useCallback(async () => {
     if (engineInitialised.current) return
     if (!audioRef.current) return
-
     audioEngine.init(audioRef.current)
     await audioEngine.resume()
     engineInitialised.current = true
   }, [])
 
-  // React to track changes — load the new preview URL
+  // React to track changes
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio || !currentTrack?.preview_url) return
+    // Deezer uses `preview` not `preview_url`
+    if (!audio || !currentTrack?.preview) return
 
-    audio.src = currentTrack.preview_url
+    audio.src = currentTrack.preview
     audio.load()
 
-    // If we were already playing, auto-play the new track
     if (isPlaying) {
       ensureEngineInitialised().then(() => {
         audio.play().catch(err => {
@@ -73,12 +79,12 @@ export function PreviewPlayer() {
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack?.id]) // Only re-run when the track ID changes
+  }, [currentTrack?.id])
 
-  // React to isPlaying changes — play or pause
+  // React to play/pause
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio || !currentTrack?.preview_url) return
+    if (!audio || !currentTrack?.preview) return
 
     if (isPlaying) {
       ensureEngineInitialised().then(async () => {
@@ -94,9 +100,10 @@ export function PreviewPlayer() {
       audio.pause()
       stopAnalyser()
     }
-  }, [isPlaying]) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying])
 
-  // Wire up audio element events
+  // Audio element events
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -104,7 +111,7 @@ export function PreviewPlayer() {
     const onLoadStart = () => setIsLoading(true)
     const onCanPlay = () => {
       setIsLoading(false)
-      setDuration(audio.duration || 30) // Spotify previews are always ~30s
+      setDuration(audio.duration || 30)
     }
     const onTimeUpdate = () => {
       const dur = audio.duration || 30
@@ -117,10 +124,8 @@ export function PreviewPlayer() {
         setIsPlaying(false)
         setProgress(0)
       }
-      // If next exists, the track change useEffect above handles playback
     }
-    const onError = (e: Event) => {
-      console.error('Audio error:', e)
+    const onError = () => {
       setIsLoading(false)
       setIsPlaying(false)
     }

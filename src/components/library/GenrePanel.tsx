@@ -13,22 +13,26 @@
  * (a graph with 1-2 nodes is not worth rendering).
  */
 
+/**
+ * GenrePanel.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - DeezerTrack instead of SpotifyTrack
+ * - trackIds are strings of numeric Deezer IDs
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { GenreForceGraph } from './GenreForceGraph'
 import { useGenreGraph } from '@/hooks/useGenreGraph'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 interface GenrePanelProps {
-  tracks: SpotifyTrack[]
+  tracks: DeezerTrack[]
   width: number
   onFilteredTracksChange?: (trackIds: string[] | null) => void
 }
 
-export function GenrePanel({
-  tracks,
-  width,
-  onFilteredTracksChange,
-}: GenrePanelProps) {
+export function GenrePanel({ tracks, width, onFilteredTracksChange }: GenrePanelProps) {
   const { graphData, isLoading } = useGenreGraph(tracks)
   const [activeGenre, setActiveGenre] = useState<string | null>(null)
 
@@ -37,26 +41,21 @@ export function GenrePanel({
   const handleSelectGenre = useCallback(
     (genre: string | null) => {
       setActiveGenre(genre)
-
       if (!genre) {
         onFilteredTracksChange?.(null)
         return
       }
-
-      // Find tracks that belong to the selected genre
       const node = graphData.nodes.find(n => n.id === genre)
       onFilteredTracksChange?.(node?.trackIds ?? null)
     },
     [graphData.nodes, onFilteredTracksChange]
   )
 
-  // Clear active genre when tracks change (new search)
   useEffect(() => {
     setActiveGenre(null)
     onFilteredTracksChange?.(null)
   }, [tracks, onFilteredTracksChange])
 
-  // Don't render if not enough data
   if (!isLoading && graphData.nodes.length < 3) return null
 
   return (
@@ -95,11 +94,7 @@ export function GenrePanel({
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  wrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-  },
+  wrap: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -153,3 +148,6 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
   },
 }
+
+// React import needed for React.CSSProperties
+import React from 'react'

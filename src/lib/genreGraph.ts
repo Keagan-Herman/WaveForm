@@ -1,30 +1,25 @@
 /**
- * genreGraph.ts
+ * genreGraph.ts — Deezer version
  *
- * Builds the D3 force graph data structure from Spotify track + artist data.
+ * Builds the D3 force graph data structure from Deezer track data.
  *
- * NODES: unique genres extracted from all artists in the track list
- * LINKS: two genres are linked if they share at least one artist
- * LINK WEIGHT: number of shared artists (drives link distance in simulation)
+ * KEY DIFFERENCE FROM SPOTIFY VERSION:
+ * Deezer does not return genres on the basic track search result.
+ * Genres are available on the full album endpoint (/album/{id}).
+ * The useGenreGraph hook fetches album genres separately and passes
+ * them in as a map. This file just handles the data transformation.
  *
- * WHY NOT USE TRACK GENRES:
- * Spotify does not expose genres on track objects — only on artist objects.
- * We have artist IDs from tracks, so we need a separate artist fetch to get
- * genres. This module handles the data shape once that fetch is complete.
- *
- * NODE SIZE:
- * Proportional to how many tracks in the current results belong to that genre.
- * More represented genres appear larger.
+ * NODES: unique genres across all albums in the track list
+ * LINKS: two genres are linked if they appear on the same album
  */
 
-import type { SpotifyArtist, SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 export interface GenreNode {
-  id: string          // genre string e.g. "indie rock"
+  id: string
   label: string
-  count: number       // how many tracks belong to this genre
-  trackIds: string[]  // which track IDs belong to this genre
-  // D3 simulation adds these at runtime:
+  count: number
+  trackIds: string[]
   x?: number
   y?: number
   vx?: number
@@ -36,7 +31,7 @@ export interface GenreNode {
 export interface GenreLink {
   source: string | GenreNode
   target: string | GenreNode
-  weight: number      // shared artist count
+  weight: number
 }
 
 export interface GenreGraphData {
@@ -44,35 +39,30 @@ export interface GenreGraphData {
   links: GenreLink[]
 }
 
+/**
+ * @param tracks - current search results
+ * @param albumGenreMap - map of albumId → genre names, fetched separately
+ */
 export function buildGenreGraph(
-  tracks: SpotifyTrack[],
-  artists: SpotifyArtist[]
+  tracks: DeezerTrack[],
+  albumGenreMap: Map<number, string[]>
 ): GenreGraphData {
-  // Map artist ID → genres
-  const artistGenreMap = new Map<string, string[]>()
-  artists.forEach(artist => {
-    artistGenreMap.set(artist.id, artist.genres)
-  })
-
-  // Map genre → track IDs that belong to it
+  // Map genre → track IDs
   const genreTrackMap = new Map<string, Set<string>>()
 
   tracks.forEach(track => {
-    track.artists.forEach(trackArtist => {
-      const genres = artistGenreMap.get(trackArtist.id) ?? []
-      genres.forEach(genre => {
-        if (!genreTrackMap.has(genre)) {
-          genreTrackMap.set(genre, new Set())
-        }
-        genreTrackMap.get(genre)!.add(track.id)
-      })
+    const genres = albumGenreMap.get(track.album.id) ?? []
+    genres.forEach(genre => {
+      if (!genreTrackMap.has(genre)) {
+        genreTrackMap.set(genre, new Set())
+      }
+      genreTrackMap.get(genre)!.add(String(track.id))
     })
   })
 
-  // Build nodes — filter out genres with only 1 track (too sparse to be useful)
+  // Build nodes
   const nodes: GenreNode[] = []
   genreTrackMap.forEach((trackIds, genre) => {
-    if (trackIds.size < 1) return
     nodes.push({
       id: genre,
       label: genre,
@@ -81,22 +71,18 @@ export function buildGenreGraph(
     })
   })
 
-  // Cap at 30 nodes — more than this makes the graph unreadable
-  // Sort by count descending so we keep the most relevant genres
   nodes.sort((a, b) => b.count - a.count)
   const cappedNodes = nodes.slice(0, 30)
   const nodeIds = new Set(cappedNodes.map(n => n.id))
 
-  // Build links — genres that share artists
-  // Use artist → genres mapping to find co-occurrences
+  // Build links — genres that co-occur on the same album
   const linkMap = new Map<string, number>()
 
-  artists.forEach(artist => {
-    const genres = artist.genres.filter(g => nodeIds.has(g))
-    // Every pair of genres from this artist gets a link
-    for (let i = 0; i < genres.length; i++) {
-      for (let j = i + 1; j < genres.length; j++) {
-        const key = [genres[i], genres[j]].sort().join('||')
+  albumGenreMap.forEach(genres => {
+    const validGenres = genres.filter(g => nodeIds.has(g))
+    for (let i = 0; i < validGenres.length; i++) {
+      for (let j = i + 1; j < validGenres.length; j++) {
+        const key = [validGenres[i], validGenres[j]].sort().join('||')
         linkMap.set(key, (linkMap.get(key) ?? 0) + 1)
       }
     }

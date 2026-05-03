@@ -25,17 +25,24 @@
  * is available. If zero, the Canvas is not mounted at all (see parent).
  */
 
+/**
+ * AlbumGravityField.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - DeezerTrack instead of SpotifyTrack
+ * - track.album.id (number) instead of track.album.id (string)
+ * - track.album.cover_medium instead of getAlbumArt()
+ * - track.album.title instead of track.album.name
+ */
+
 import { Suspense, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { AlbumMesh } from './AlbumMesh'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
-import { getAlbumArt } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 interface AlbumGravityFieldProps {
-  tracks: SpotifyTrack[]
-  /** Canvas width in px */
+  tracks: DeezerTrack[]
   width?: number
-  /** Canvas height in px */
   height?: number
 }
 
@@ -50,37 +57,25 @@ interface AlbumLayout {
   size: number
 }
 
-// Seeded pseudo-random — deterministic layout, no flicker on re-render
 function seededRandom(seed: number) {
   const x = Math.sin(seed + 1) * 10000
   return x - Math.floor(x)
 }
 
-function buildLayout(tracks: SpotifyTrack[]): AlbumLayout[] {
-  // Deduplicate by album ID
-  const seen = new Set<string>()
+function buildLayout(tracks: DeezerTrack[]): AlbumLayout[] {
+  const seen = new Set<number>()
   const unique = tracks.filter(t => {
     if (seen.has(t.album.id)) return false
     seen.add(t.album.id)
     return true
   })
 
-  // Cap at 12 — more than this gets visually crowded
-  const capped = unique.slice(0, 12)
-
-  return capped.map((track, i) => {
+  return unique.slice(0, 12).map((track, i) => {
     const r = (n: number) => seededRandom(i * 17 + n)
-
-    // Spread albums across a wide, shallow 3D volume
-    // X: -4 to +4, Y: -1.5 to +1.5, Z: -2 to 0
-    const x = (r(0) - 0.5) * 8
-    const y = (r(1) - 0.5) * 3
-    const z = r(2) * -2
-
     return {
-      imageUrl: getAlbumArt(track, 'medium'),
-      albumId: track.album.id,
-      position: [x, y, z] as [number, number, number],
+      imageUrl: track.album.cover_medium,
+      albumId: String(track.album.id),
+      position: [(r(0) - 0.5) * 8, (r(1) - 0.5) * 3, r(2) * -2] as [number, number, number],
       phaseOffset: r(3) * Math.PI * 2,
       rotationSpeed: 0.02 + r(4) * 0.06,
       floatSpeed: 0.2 + r(5) * 0.3,
@@ -90,13 +85,11 @@ function buildLayout(tracks: SpotifyTrack[]): AlbumLayout[] {
   })
 }
 
-// Fog + ambient scene setup — rendered as R3F children
 function Scene({ layout }: { layout: AlbumLayout[] }) {
   return (
     <>
       <ambientLight intensity={0.8} />
       <fog attach="fog" args={['#050e05', 4, 10]} />
-
       <Suspense fallback={null}>
         {layout.map(album => (
           <AlbumMesh key={album.albumId} {...album} />
@@ -106,34 +99,19 @@ function Scene({ layout }: { layout: AlbumLayout[] }) {
   )
 }
 
-export function AlbumGravityField({
-  tracks,
-  width = 560,
-  height = 340,
-}: AlbumGravityFieldProps) {
+export function AlbumGravityField({ tracks, width = 560, height = 340 }: AlbumGravityFieldProps) {
   const layout = useMemo(() => buildLayout(tracks), [tracks])
 
-  // Don't mount the Canvas at all if there's nothing to show
   if (layout.length === 0) return null
 
   return (
     <div
-      style={{
-        width,
-        height,
-        borderRadius: 6,
-        overflow: 'hidden',
-        background: 'transparent',
-      }}
-      aria-hidden="true"  // decorative — screen readers don't need this
+      style={{ width, height, borderRadius: 6, overflow: 'hidden', background: 'transparent' }}
+      aria-hidden="true"
     >
       <Canvas
         camera={{ position: [0, 0, 5], fov: 55 }}
-        gl={{
-          alpha: true,           // transparent background
-          antialias: true,
-          powerPreference: 'high-performance',
-        }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         style={{ background: 'transparent' }}
         frameloop="always"
       >

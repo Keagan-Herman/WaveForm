@@ -8,24 +8,30 @@
  * - onResultsChange: unchanged from Phase 6
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { useSpotifySearch } from '@/hooks/useSpotifySearch'
+/**
+ * SearchOverlay.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - useSpotifySearch → useDeezerSearch
+ * - SpotifyTrack → DeezerTrack
+ * - track.id is number not string (Deezer uses numeric IDs)
+ */
+
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
 import { TrackRow } from '@/components/library/TrackRow'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 interface SearchOverlayProps {
-  onResultsChange?: (tracks: SpotifyTrack[]) => void
+  onResultsChange?: (tracks: DeezerTrack[]) => void
   filteredTrackIds?: string[] | null
 }
 
-export function SearchOverlay({
-  onResultsChange,
-  filteredTrackIds,
-}: SearchOverlayProps) {
+export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverlayProps) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const { tracks, isLoading, error } = useSpotifySearch(query)
+  const { tracks, isLoading, error } = useDeezerSearch(query)
   const { currentTrack, setTrack, setIsPlaying, setQueue } = usePlayerStore()
 
   useEffect(() => {
@@ -33,7 +39,7 @@ export function SearchOverlay({
   }, [tracks, onResultsChange])
 
   const handleSelectTrack = useCallback(
-    (track: SpotifyTrack, index: number) => {
+    (track: DeezerTrack, index: number) => {
       setQueue(tracks, index)
       setTrack(track)
       setIsPlaying(true)
@@ -53,10 +59,9 @@ export function SearchOverlay({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Determine if a track is dimmed due to genre filter
   const isFiltered = filteredTrackIds !== null && filteredTrackIds !== undefined
-  const isTrackVisible = (track: SpotifyTrack) =>
-    !isFiltered || filteredTrackIds!.includes(track.id)
+  const isTrackVisible = (track: DeezerTrack) =>
+    !isFiltered || filteredTrackIds!.includes(String(track.id))
 
   return (
     <div style={styles.panel}>
@@ -74,17 +79,12 @@ export function SearchOverlay({
         />
         {isLoading && <span style={styles.loadingPip} aria-label="Loading" />}
         {query && !isLoading && (
-          <button
-            style={styles.clearBtn}
-            onClick={() => setQuery('')}
-            aria-label="Clear search"
-          >
+          <button style={styles.clearBtn} onClick={() => setQuery('')} aria-label="Clear search">
             ✕
           </button>
         )}
       </div>
 
-      {/* Genre filter indicator */}
       {isFiltered && (
         <div style={styles.filterBanner}>
           <span style={styles.filterDot} />
@@ -106,9 +106,7 @@ export function SearchOverlay({
           <div style={styles.stateWrap}>
             <p style={styles.stateIcon}>♫</p>
             <p style={styles.stateTitle}>Find something to play</p>
-            <p style={styles.stateDesc}>
-              Search for any track. Only results with 30-second previews are shown.
-            </p>
+            <p style={styles.stateDesc}>Search for any track. All results include a 30-second preview.</p>
           </div>
         )}
 
@@ -131,10 +129,8 @@ export function SearchOverlay({
         {!isLoading && !error && tracks.length === 0 && query.trim() && (
           <div style={styles.stateWrap}>
             <p style={styles.stateIcon}>∅</p>
-            <p style={styles.stateTitle}>No previews available</p>
-            <p style={styles.stateDesc}>
-              "{query}" returned results but none have 30-second previews.
-            </p>
+            <p style={styles.stateTitle}>No results found</p>
+            <p style={styles.stateDesc}>Try a different search term.</p>
           </div>
         )}
 
@@ -181,12 +177,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     gap: '0.5rem',
   },
-  searchIcon: {
-    fontSize: '1.1rem',
-    opacity: 0.3,
-    flexShrink: 0,
-    lineHeight: 1,
-  },
+  searchIcon: { fontSize: '1.1rem', opacity: 0.3, flexShrink: 0, lineHeight: 1 },
   input: {
     flex: 1,
     background: 'none',
@@ -248,11 +239,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid rgba(255,255,255,0.04)',
     flexShrink: 0,
   },
-  results: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '0.5rem',
-  },
+  results: { flex: 1, overflowY: 'auto', padding: '0.5rem' },
   stateWrap: {
     display: 'flex',
     flexDirection: 'column',
@@ -262,36 +249,15 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     gap: '0.5rem',
   },
-  stateIcon: {
-    fontSize: '2rem',
-    opacity: 0.15,
-    marginBottom: '0.5rem',
-  },
-  stateTitle: {
-    fontSize: '0.85rem',
-    opacity: 0.5,
-  },
-  stateDesc: {
-    fontSize: '0.75rem',
-    opacity: 0.25,
-    lineHeight: 1.6,
-    maxWidth: 260,
-  },
-  skeletonWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    padding: '0.25rem 0',
-  },
+  stateIcon: { fontSize: '2rem', opacity: 0.15, marginBottom: '0.5rem' },
+  stateTitle: { fontSize: '0.85rem', opacity: 0.5 },
+  stateDesc: { fontSize: '0.75rem', opacity: 0.25, lineHeight: 1.6, maxWidth: 260 },
+  skeletonWrap: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '0.25rem 0' },
   skeleton: {
     height: 52,
     borderRadius: '4px',
     background: 'rgba(255,255,255,0.04)',
     animation: 'shimmer 1.5s ease-in-out infinite',
   },
-  trackList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  },
+  trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },
 }

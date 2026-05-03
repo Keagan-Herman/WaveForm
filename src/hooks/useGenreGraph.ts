@@ -1,29 +1,30 @@
 /**
- * useGenreGraph.ts
+ * useGenreGraph.ts — Deezer version
  *
- * Fetches artist data for all tracks in the search results and builds
- * the genre graph data structure.
+ * Fetches album genre data for all tracks and builds the genre graph.
  *
- * FETCH STRATEGY:
- * Spotify's GET /artists endpoint accepts up to 50 IDs in one request.
- * We collect all unique artist IDs from the track list, batch them into
- * groups of 50, and fetch in parallel. Results are cached so repeated
- * searches don't re-fetch the same artists.
+ * DIFFERENCE FROM SPOTIFY VERSION:
+ * Spotify required a separate /artists batch fetch to get genres.
+ * Deezer puts genres on the /album/{id} endpoint instead.
  *
- * IMPORTANT:
- * This hook fires when tracks change. It does NOT fire on every render.
- * Artist data is stable once fetched — genres don't change.
+ * We deduplicate by album ID (many tracks share an album), then fetch
+ * each unique album's genres. Results are cached for 30 minutes.
+ *
+ * NOTE: Deezer's genre data is less granular than Spotify's artist genres.
+ * You'll see broader categories like "Pop", "Rock", "Electronic" rather
+ * than micro-genres like "indie dream pop". The graph still works — it
+ * just clusters at a higher level.
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { getArtists } from '@/lib/spotifyApi'
+import { getAlbumGenres } from '@/lib/deezerApi'
 import { buildGenreGraph, type GenreGraphData } from '@/lib/genreGraph'
 import { fetchWithCache } from '@/lib/cache'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 const EMPTY_GRAPH: GenreGraphData = { nodes: [], links: [] }
 
-export function useGenreGraph(tracks: SpotifyTrack[]) {
+export function useGenreGraph(tracks: DeezerTrack[]) {
   const [graphData, setGraphData] = useState<GenreGraphData>(EMPTY_GRAPH)
   const [isLoading, setIsLoading] = useState(false)
   const abortRef = useRef(false)
@@ -36,41 +37,35 @@ export function useGenreGraph(tracks: SpotifyTrack[]) {
 
     abortRef.current = false
 
-    // Collect unique artist IDs across all tracks
-    const artistIds = Array.from(
-      new Set(tracks.flatMap(t => t.artists.map(a => a.id)))
-    )
-
-    if (artistIds.length === 0) {
-      setGraphData(EMPTY_GRAPH)
-      return
-    }
+    // Deduplicate album IDs — many tracks share an album
+    const uniqueAlbumIds = Array.from(new Set(tracks.map(t => t.album.id)))
 
     setIsLoading(true)
 
     async function fetchAndBuild() {
       try {
-        // Batch into groups of 50 (Spotify API limit)
-        const batches: string[][] = []
-        for (let i = 0; i < artistIds.length; i += 50) {
-          batches.push(artistIds.slice(i, i + 50))
-        }
-
-        // Fetch all batches — use cache to avoid re-fetching
-        const batchResults = await Promise.all(
-          batches.map(batch =>
+        // Fetch genres for each unique album in parallel
+        const genreResults = await Promise.all(
+          uniqueAlbumIds.map(albumId =>
             fetchWithCache(
-              `artists:${batch.sort().join(',')}`,
-              () => getArtists(batch),
-              30 * 60 * 1000 // 30 min cache — genres are stable
-            )
+              `deezer:album:genres:${albumId}`,
+              () => getAlbumGenres(albumId),
+              30 * 60 * 1000
+            ).then(genres => ({ albumId, genres }))
           )
         )
 
         if (abortRef.current) return
 
-        const allArtists = batchResults.flat()
-        const graph = buildGenreGraph(tracks, allArtists)
+        // Build album → genres map
+        const albumGenreMap = new Map<number, string[]>()
+        genreResults.forEach(({ albumId, genres }) => {
+          if (genres.length > 0) {
+            albumGenreMap.set(albumId, genres.map(g => g.name))
+          }
+        })
+
+        const graph = buildGenreGraph(tracks, albumGenreMap)
         setGraphData(graph)
       } catch (err) {
         console.warn('Genre graph fetch failed:', err)

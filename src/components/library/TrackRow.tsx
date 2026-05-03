@@ -8,14 +8,26 @@
  * The parent (SearchPanel) owns selection logic and passes isActive down.
  */
 
+/**
+ * TrackRow.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - DeezerTrack instead of SpotifyTrack
+ * - track.artist.name instead of track.artists.map(...)
+ * - track.album.cover_medium instead of getAlbumArt()
+ * - track.album.title instead of track.album.name
+ * - formatDuration receives seconds not milliseconds
+ */
+
+import React from 'react'
 import { useState, useCallback } from 'react'
-import { getAlbumArt, formatDuration, type SpotifyTrack } from '@/lib/spotifyApi'
+import { formatDuration, type DeezerTrack } from '@/lib/deezerApi'
 
 interface TrackRowProps {
-  track: SpotifyTrack
+  track: DeezerTrack
   isActive: boolean
   index: number
-  onSelect: (track: SpotifyTrack, index: number) => void
+  onSelect: (track: DeezerTrack, index: number) => void
 }
 
 export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
@@ -24,9 +36,6 @@ export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
   const handleSelect = useCallback(() => {
     onSelect(track, index)
   }, [track, index, onSelect])
-
-  const albumArt = getAlbumArt(track, 'small')
-  const artists = track.artists.map(a => a.name).join(', ')
 
   return (
     <button
@@ -44,44 +53,33 @@ export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
       onClick={handleSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      aria-label={`Play ${track.name} by ${artists}`}
+      aria-label={`Play ${track.title} by ${track.artist.name}`}
       aria-pressed={isActive}
     >
-      {/* Index / play indicator */}
       <div style={styles.indexWrap}>
-        {isActive ? (
-          <span style={styles.playingIndicator}>▶</span>
-        ) : (
-          <span style={styles.index}>{index + 1}</span>
-        )}
+        {isActive
+          ? <span style={styles.playingIndicator}>▶</span>
+          : <span style={styles.index}>{index + 1}</span>
+        }
       </div>
 
-      {/* Album art */}
       <img
-        src={albumArt}
-        alt={track.album.name}
+        src={track.album.cover_medium}
+        alt={track.album.title}
         style={styles.albumArt}
         loading="lazy"
       />
 
-      {/* Track info */}
       <div style={styles.info}>
-        <p
-          style={{
-            ...styles.name,
-            color: isActive ? '#1db954' : '#e8f5e8',
-          }}
-        >
-          {track.name}
+        <p style={{ ...styles.name, color: isActive ? '#1db954' : '#e8f5e8' }}>
+          {track.title}
         </p>
-        <p style={styles.artist}>{artists}</p>
+        <p style={styles.artist}>{track.artist.name}</p>
       </div>
 
-      {/* Album name — hidden on small widths via opacity trick */}
-      <p style={styles.album}>{track.album.name}</p>
+      <p style={styles.album}>{track.album.title}</p>
 
-      {/* Duration */}
-      <span style={styles.duration}>{formatDuration(track.duration_ms)}</span>
+      <span style={styles.duration}>{formatDuration(track.duration)}</span>
     </button>
   )
 }
@@ -108,14 +106,8 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: {
-    fontSize: '0.7rem',
-    opacity: 0.25,
-  },
-  playingIndicator: {
-    fontSize: '0.65rem',
-    color: '#1db954',
-  },
+  index: { fontSize: '0.7rem', opacity: 0.25 },
+  playingIndicator: { fontSize: '0.65rem', color: '#1db954' },
   albumArt: {
     width: 36,
     height: 36,
@@ -123,9 +115,7 @@ const styles: Record<string, React.CSSProperties> = {
     objectFit: 'cover',
     flexShrink: 0,
   },
-  info: {
-    minWidth: 0,
-  },
+  info: { minWidth: 0 },
   name: {
     fontSize: '0.82rem',
     whiteSpace: 'nowrap',

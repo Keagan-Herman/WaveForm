@@ -31,7 +31,6 @@
 import {
   useRef,
   useEffect,
-  useCallback,
   type FC,
 } from 'react'
 import * as d3 from 'd3'

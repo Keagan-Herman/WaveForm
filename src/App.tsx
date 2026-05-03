@@ -18,8 +18,17 @@
  * 3. D3 simulation tick — GenreForceGraph (not rAF-based, D3 manages its own timer)
  * All three are independent. No shared mutable state between them.
  */
+/**
+ * 
+ * App.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - SpotifyTrack → DeezerTrack throughout
+ * - No Spotify credentials, no token proxy
+ * - Everything else identical
+ */
 
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
@@ -32,24 +41,23 @@ import { AlbumGravityField } from '@/components/library/AlbumGravityField'
 import { GenrePanel } from '@/components/library/GenrePanel'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 // ─── Visualiser centre panel ───────────────────────────────────────────────
 
 interface VisualiserPanelProps {
-  tracks: SpotifyTrack[]
+  tracks: DeezerTrack[]
   onFilteredTracksChange: (ids: string[] | null) => void
 }
 
 function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProps) {
-  const isPlaying = usePlayerStore(state => state.isPlaying)
-  const bassPower = useVisualiserStore(state => state.bassPower)
+  const isPlaying = usePlayerStore((state: { isPlaying: boolean }) => state.isPlaying)
+  const bassPower = useVisualiserStore((state: { bassPower: number }) => state.bassPower)
 
   return (
     <div style={styles.visualiserPanel}>
       <div style={styles.visualiserInner}>
 
-        {/* R3F album field */}
         {tracks.length > 0 && (
           <div style={styles.canvasBlock}>
             <p style={styles.canvasLabel}>Album Field</p>
@@ -57,19 +65,16 @@ function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProp
           </div>
         )}
 
-        {/* Frequency bars */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Frequency Spectrum</p>
           <FrequencyBars width={560} height={140} mirrorMode />
         </div>
 
-        {/* Waveform */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Waveform</p>
           <WaveformLine width={560} height={52} />
         </div>
 
-        {/* Bass energy */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Bass Energy</p>
           <div style={styles.bassTrack}>
@@ -77,7 +82,6 @@ function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProp
           </div>
         </div>
 
-        {/* D3 genre graph */}
         {tracks.length > 0 && (
           <>
             <div style={styles.divider} />
@@ -102,14 +106,12 @@ function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProp
 // ─── Keyboard shortcuts ────────────────────────────────────────────────────
 
 function KeyboardShortcuts() {
-  const { isPlaying, setIsPlaying, currentTrack, nextTrack, prevTrack } =
-    usePlayerStore()
+  const { isPlaying, setIsPlaying, currentTrack, nextTrack, prevTrack } = usePlayerStore()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-
       switch (e.key) {
         case ' ':
           e.preventDefault()
@@ -125,7 +127,6 @@ function KeyboardShortcuts() {
           break
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPlaying, currentTrack, setIsPlaying, nextTrack, prevTrack])
@@ -136,7 +137,7 @@ function KeyboardShortcuts() {
 // ─── Root ──────────────────────────────────────────────────────────────────
 
 function Waveform() {
-  const [searchTracks, setSearchTracks] = useState<SpotifyTrack[]>([])
+  const [searchTracks, setSearchTracks] = useState<DeezerTrack[]>([])
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
 
   const handleFilteredTracksChange = useCallback((ids: string[] | null) => {
@@ -220,11 +221,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     flexShrink: 0,
   },
-  headerSub: {
-    fontSize: '0.65rem',
-    opacity: 0.2,
-    letterSpacing: '0.05em',
-  },
+  headerSub: { fontSize: '0.65rem', opacity: 0.2, letterSpacing: '0.05em' },
   kbd: {
     background: 'rgba(255,255,255,0.08)',
     border: '1px solid rgba(255,255,255,0.12)',
@@ -240,15 +237,8 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     height: 'calc(100vh - 52px - 80px)',
   },
-  leftPanel: {
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  rightPanel: {
-    borderLeft: '1px solid rgba(255,255,255,0.06)',
-    overflow: 'hidden',
-  },
+  leftPanel: { overflow: 'hidden', display: 'flex', flexDirection: 'column' },
+  rightPanel: { borderLeft: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' },
   visualiserPanel: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -264,11 +254,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     position: 'relative',
   },
-  canvasBlock: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-  },
+  canvasBlock: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
   canvasLabel: {
     fontSize: '0.58rem',
     letterSpacing: '0.2em',
@@ -276,23 +262,9 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.2,
     fontFamily: 'monospace',
   },
-  divider: {
-    height: 1,
-    background: 'rgba(255,255,255,0.05)',
-    margin: '0.25rem 0',
-  },
-  bassTrack: {
-    height: 3,
-    background: 'rgba(255,255,255,0.06)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  bassFill: {
-    height: '100%',
-    background: '#1db954',
-    borderRadius: 2,
-    transition: 'width 0.05s linear',
-  },
+  divider: { height: 1, background: 'rgba(255,255,255,0.05)', margin: '0.25rem 0' },
+  bassTrack: { height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' },
+  bassFill: { height: '100%', background: '#1db954', borderRadius: 2, transition: 'width 0.05s linear' },
   idleOverlay: {
     position: 'absolute',
     inset: 0,
@@ -303,9 +275,5 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
     zIndex: 5,
   },
-  idleText: {
-    opacity: 0.15,
-    fontSize: '0.8rem',
-    letterSpacing: '0.1em',
-  },
+  idleText: { opacity: 0.15, fontSize: '0.8rem', letterSpacing: '0.1em' },
 }

@@ -15,27 +15,33 @@
  * - The AudioEngine instance — that's a singleton imported directly
  */
 
+/**
+ * playerStore.ts — Deezer version
+ *
+ * Identical structure to the Spotify version.
+ * Only change: SpotifyTrack → DeezerTrack
+ */
+
 import { create } from 'zustand'
-import type { SpotifyTrack } from '@/lib/spotifyApi'
+import type { DeezerTrack } from '@/lib/deezerApi'
 
 interface PlayerStore {
-  currentTrack: SpotifyTrack | null
+  currentTrack: DeezerTrack | null
   isPlaying: boolean
   isLoading: boolean
-  progress: number        // 0–1, updated by PreviewPlayer on timeupdate
-  duration: number        // seconds
-  queue: SpotifyTrack[]
+  progress: number
+  duration: number
+  queue: DeezerTrack[]
   queueIndex: number
 
-  // Actions
-  setTrack: (track: SpotifyTrack) => void
+  setTrack: (track: DeezerTrack) => void
   setIsPlaying: (playing: boolean) => void
   setIsLoading: (loading: boolean) => void
   setProgress: (progress: number) => void
   setDuration: (duration: number) => void
-  setQueue: (tracks: SpotifyTrack[], startIndex?: number) => void
-  nextTrack: () => SpotifyTrack | null
-  prevTrack: () => SpotifyTrack | null
+  setQueue: (tracks: DeezerTrack[], startIndex?: number) => void
+  nextTrack: () => DeezerTrack | null
+  prevTrack: () => DeezerTrack | null
   clearQueue: () => void
 }
 

@@ -12,9 +12,21 @@
  *   don't expose seek on the preview URL)
  */
 
+/**
+ * NowPlaying.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - DeezerTrack field names throughout
+ * - track.artist.name instead of map over artists array
+ * - track.album.cover_big for large art
+ * - track.album.title instead of track.album.name
+ * - popularity replaced with rank (Deezer's equivalent, 0–1,000,000)
+ *   normalised to 0–100 for display
+ */
+
+import React from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
-import { getAlbumArt } from '@/lib/spotifyApi'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 
 export function NowPlaying() {
@@ -30,17 +42,15 @@ export function NowPlaying() {
     )
   }
 
-  const albumArt = getAlbumArt(currentTrack, 'large')
-  const artists = currentTrack.artists.map(a => a.name).join(' · ')
-  const popularity = currentTrack.popularity
+  // Normalise Deezer rank (0–1,000,000) to a 0–100 display value
+  const popularity = Math.min(100, Math.round(currentTrack.rank / 10000))
 
   return (
     <div style={styles.wrap}>
-      {/* Album art */}
       <div style={styles.artWrap}>
         <img
-          src={albumArt}
-          alt={currentTrack.album.name}
+          src={currentTrack.album.cover_big}
+          alt={currentTrack.album.title}
           style={{
             ...styles.art,
             transform:
@@ -55,30 +65,22 @@ export function NowPlaying() {
         {isPlaying && <div style={styles.artGlow} />}
       </div>
 
-      {/* Track info */}
       <div style={styles.info}>
-        <p style={styles.albumName}>{currentTrack.album.name}</p>
-        <p style={styles.trackName}>{currentTrack.name}</p>
+        <p style={styles.albumName}>{currentTrack.album.title}</p>
+        <p style={styles.trackName}>{currentTrack.title}</p>
 
         <ArtistRipple active={isPlaying}>
-          <p style={styles.artistName}>{artists}</p>
+          <p style={styles.artistName}>{currentTrack.artist.name}</p>
         </ArtistRipple>
 
-        {/* Popularity bar */}
         <div style={styles.popularityWrap}>
           <span style={styles.popularityLabel}>Popularity</span>
           <div style={styles.popularityTrack}>
-            <div
-              style={{
-                ...styles.popularityFill,
-                width: `${popularity}%`,
-              }}
-            />
+            <div style={{ ...styles.popularityFill, width: `${popularity}%` }} />
           </div>
           <span style={styles.popularityValue}>{popularity}</span>
         </div>
 
-        {/* Progress scrubber — visual only */}
         <div style={styles.scrubberWrap}>
           <div style={styles.scrubberTrack}>
             <div
@@ -89,7 +91,6 @@ export function NowPlaying() {
                 transition: beat ? 'background 0.05s' : 'background 0.3s, width 0.1s linear',
               }}
             />
-            {/* Playhead */}
             <div
               style={{
                 ...styles.playhead,
@@ -115,9 +116,7 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.15,
     fontFamily: 'monospace',
   },
-  emptyIcon: {
-    fontSize: '2.5rem',
-  },
+  emptyIcon: { fontSize: '2.5rem' },
   emptyText: {
     fontSize: '0.75rem',
     letterSpacing: '0.15em',

@@ -6,10 +6,20 @@
  * All interactions go through the store; PreviewPlayer reacts to store changes.
  */
 
+/**
+ * PlayerBar.tsx — Deezer version
+ *
+ * Changes from Spotify version:
+ * - formatDuration now receives seconds (Deezer) not milliseconds (Spotify)
+ * - artist name: track.artist.name instead of track.artists.map(...)
+ * - album art: track.album.cover_medium instead of getAlbumArt helper
+ */
+
+import React from 'react'
 import { useCallback } from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
-import { getAlbumArt, formatDuration } from '@/lib/spotifyApi'
+import { formatDuration } from '@/lib/deezerApi'
 
 export function PlayerBar() {
   const {
@@ -32,26 +42,17 @@ export function PlayerBar() {
     setIsPlaying(!isPlaying)
   }, [currentTrack, isPlaying, setIsPlaying])
 
-  const handleNext = useCallback(() => {
-    nextTrack()
-    // PreviewPlayer's useEffect reacts to track change and auto-plays
-  }, [nextTrack])
-
-  const handlePrev = useCallback(() => {
-    prevTrack()
-  }, [prevTrack])
+  const handleNext = useCallback(() => { nextTrack() }, [nextTrack])
+  const handlePrev = useCallback(() => { prevTrack() }, [prevTrack])
 
   const canPrev = queueIndex > 0
   const canNext = queueIndex < queue.length - 1
-
   const currentTime = duration * progress
-  const albumArt = currentTrack ? getAlbumArt(currentTrack, 'small') : null
 
   if (!currentTrack) return null
 
   return (
     <div style={styles.bar}>
-      {/* Progress bar — full width at the very top of the bar */}
       <div style={styles.progressTrack}>
         <div
           style={{
@@ -64,28 +65,22 @@ export function PlayerBar() {
       </div>
 
       <div style={styles.inner}>
-        {/* Track info */}
         <div style={styles.trackInfo}>
-          {albumArt && (
-            <img
-              src={albumArt}
-              alt={currentTrack.album.name}
-              style={{
-                ...styles.albumArt,
-                transform: beat && isPlaying ? 'scale(1.05)' : 'scale(1)',
-                transition: 'transform 0.1s',
-              }}
-            />
-          )}
+          <img
+            src={currentTrack.album.cover_medium}
+            alt={currentTrack.album.title}
+            style={{
+              ...styles.albumArt,
+              transform: beat && isPlaying ? 'scale(1.05)' : 'scale(1)',
+              transition: 'transform 0.1s',
+            }}
+          />
           <div style={styles.trackText}>
-            <p style={styles.trackName}>{currentTrack.name}</p>
-            <p style={styles.trackArtist}>
-              {currentTrack.artists.map(a => a.name).join(', ')}
-            </p>
+            <p style={styles.trackName}>{currentTrack.title}</p>
+            <p style={styles.trackArtist}>{currentTrack.artist.name}</p>
           </div>
         </div>
 
-        {/* Controls */}
         <div style={styles.controls}>
           <button
             style={{ ...styles.controlBtn, opacity: canPrev ? 0.7 : 0.2 }}
@@ -95,7 +90,6 @@ export function PlayerBar() {
           >
             ⏮
           </button>
-
           <button
             style={styles.playBtn}
             onClick={handlePlayPause}
@@ -103,7 +97,6 @@ export function PlayerBar() {
           >
             {isLoading ? '…' : isPlaying ? '⏸' : '▶'}
           </button>
-
           <button
             style={{ ...styles.controlBtn, opacity: canNext ? 0.7 : 0.2 }}
             onClick={handleNext}
@@ -114,10 +107,9 @@ export function PlayerBar() {
           </button>
         </div>
 
-        {/* Time */}
         <div style={styles.time}>
           <span style={styles.timeText}>
-            {formatDuration(currentTime * 1000)} / {formatDuration(duration * 1000)}
+            {formatDuration(Math.floor(currentTime))} / {formatDuration(duration)}
           </span>
           <span style={styles.previewLabel}>30s preview</span>
         </div>
@@ -170,9 +162,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     objectFit: 'cover',
   },
-  trackText: {
-    minWidth: 0,
-  },
+  trackText: { minWidth: 0 },
   trackName: {
     fontSize: '0.9rem',
     fontFamily: 'monospace',
