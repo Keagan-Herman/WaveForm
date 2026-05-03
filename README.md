@@ -84,8 +84,6 @@ No serverless function needed — the rewrite handles it at the edge. No API key
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/waveform.git
-cd waveform
 pnpm install
 ```
 
