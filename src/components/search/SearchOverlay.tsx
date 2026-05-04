@@ -17,6 +17,14 @@
  * - track.id is number not string (Deezer uses numeric IDs)
  */
 
+/**
+ * SearchOverlay.tsx — enhanced
+ *
+ * Added accentColour prop for dynamic theming.
+ * Contrast improved — opacity values throughout bumped up.
+ * Active track highlight uses dynamic accent colour.
+ */
+
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -26,9 +34,14 @@ import type { DeezerTrack } from '@/lib/deezerApi'
 interface SearchOverlayProps {
   onResultsChange?: (tracks: DeezerTrack[]) => void
   filteredTrackIds?: string[] | null
+  accentColour?: string
 }
 
-export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverlayProps) {
+export function SearchOverlay({
+  onResultsChange,
+  filteredTrackIds,
+  accentColour = '#1db954',
+}: SearchOverlayProps) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { tracks, isLoading, error } = useDeezerSearch(query)
@@ -65,19 +78,22 @@ export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverl
 
   return (
     <div style={styles.panel}>
+      {/* Search input */}
       <div style={styles.inputWrap}>
         <span style={styles.searchIcon}>⌕</span>
         <input
           ref={inputRef}
           style={styles.input}
           type="text"
-          placeholder="Search tracks... (press /)"
+          placeholder="Search tracks..."
           value={query}
           onChange={e => setQuery(e.target.value)}
           aria-label="Search for tracks"
           spellCheck={false}
         />
-        {isLoading && <span style={styles.loadingPip} aria-label="Loading" />}
+        {isLoading && (
+          <span style={{ ...styles.loadingPip, background: accentColour }} />
+        )}
         {query && !isLoading && (
           <button style={styles.clearBtn} onClick={() => setQuery('')} aria-label="Clear search">
             ✕
@@ -85,28 +101,32 @@ export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverl
         )}
       </div>
 
+      {/* Genre filter indicator */}
       {isFiltered && (
-        <div style={styles.filterBanner}>
-          <span style={styles.filterDot} />
-          Showing {filteredTrackIds!.length} tracks matching selected genre
+        <div style={{ ...styles.filterBanner, borderBottomColor: `${accentColour}22`, color: accentColour }}>
+          <span style={{ ...styles.filterDot, background: accentColour }} />
+          {filteredTrackIds!.length} tracks match selected genre
         </div>
       )}
 
+      {/* Column headers */}
       {tracks.length > 0 && (
         <div style={styles.columnHeaders}>
           <span style={{ gridColumn: '1 / 3' }}>#</span>
           <span>Title</span>
           <span>Album</span>
-          <span>Duration</span>
+          <span>Dur</span>
         </div>
       )}
 
-      <div style={styles.results} role="list" aria-label="Search results">
+      {/* Results */}
+      <div style={styles.results} role="list">
+
         {!query.trim() && (
           <div style={styles.stateWrap}>
             <p style={styles.stateIcon}>♫</p>
             <p style={styles.stateTitle}>Find something to play</p>
-            <p style={styles.stateDesc}>Search for any track. All results include a 30-second preview.</p>
+            <p style={styles.stateDesc}>All results include a 30-second preview.</p>
           </div>
         )}
 
@@ -141,7 +161,7 @@ export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverl
                 key={track.id}
                 role="listitem"
                 style={{
-                  opacity: isTrackVisible(track) ? 1 : 0.2,
+                  opacity: isTrackVisible(track) ? 1 : 0.18,
                   transition: 'opacity 0.2s',
                 }}
               >
@@ -150,6 +170,7 @@ export function SearchOverlay({ onResultsChange, filteredTrackIds }: SearchOverl
                   index={i}
                   isActive={currentTrack?.id === track.id}
                   onSelect={handleSelectTrack}
+                  accentColour={accentColour}
                 />
               </div>
             ))}
@@ -165,24 +186,22 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    borderRight: '1px solid rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
   inputWrap: {
-    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     padding: '0.85rem 1rem',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
     flexShrink: 0,
     gap: '0.5rem',
   },
-  searchIcon: { fontSize: '1.1rem', opacity: 0.3, flexShrink: 0, lineHeight: 1 },
+  searchIcon: { fontSize: '1.1rem', opacity: 0.45, flexShrink: 0, lineHeight: 1 },
   input: {
     flex: 1,
     background: 'none',
     border: 'none',
-    color: '#e8f5e8',
+    color: '#f0f0f0',
     fontFamily: 'monospace',
     fontSize: '0.85rem',
     outline: 'none',
@@ -192,14 +211,14 @@ const styles: Record<string, React.CSSProperties> = {
     width: 6,
     height: 6,
     borderRadius: '50%',
-    background: '#1db954',
     flexShrink: 0,
     animation: 'pulse 1s ease-in-out infinite',
+    transition: 'background 1s ease',
   },
   clearBtn: {
     background: 'none',
     border: 'none',
-    color: 'rgba(232,245,232,0.3)',
+    color: 'rgba(240,240,240,0.4)',
     cursor: 'pointer',
     fontSize: '0.7rem',
     padding: '0.2rem',
@@ -211,35 +230,35 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '0.5rem',
     padding: '0.4rem 1rem',
-    background: 'rgba(29,185,84,0.06)',
-    borderBottom: '1px solid rgba(29,185,84,0.12)',
+    background: 'rgba(255,255,255,0.04)',
+    borderBottom: '1px solid',
     fontSize: '0.65rem',
-    color: 'rgba(29,185,84,0.7)',
     fontFamily: 'monospace',
     letterSpacing: '0.04em',
     flexShrink: 0,
+    transition: 'color 1s ease, border-color 1s ease',
   },
   filterDot: {
     width: 5,
     height: 5,
     borderRadius: '50%',
-    background: '#1db954',
     flexShrink: 0,
+    transition: 'background 1s ease',
   },
   columnHeaders: {
     display: 'grid',
-    gridTemplateColumns: '32px 36px 1fr 1fr auto',
+    gridTemplateColumns: '28px 36px 1fr 1fr auto',
     gap: '0.75rem',
-    padding: '0.4rem 0.75rem',
-    fontSize: '0.6rem',
-    letterSpacing: '0.12em',
+    padding: '0.35rem 0.75rem',
+    fontSize: '0.56rem',
+    letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    opacity: 0.2,
+    opacity: 0.35,
     fontFamily: 'monospace',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
     flexShrink: 0,
   },
-  results: { flex: 1, overflowY: 'auto', padding: '0.5rem' },
+  results: { flex: 1, overflowY: 'auto', padding: '0.4rem' },
   stateWrap: {
     display: 'flex',
     flexDirection: 'column',
@@ -249,14 +268,14 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     gap: '0.5rem',
   },
-  stateIcon: { fontSize: '2rem', opacity: 0.15, marginBottom: '0.5rem' },
-  stateTitle: { fontSize: '0.85rem', opacity: 0.5 },
-  stateDesc: { fontSize: '0.75rem', opacity: 0.25, lineHeight: 1.6, maxWidth: 260 },
-  skeletonWrap: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '0.25rem 0' },
+  stateIcon: { fontSize: '2rem', opacity: 0.2, marginBottom: '0.5rem' },
+  stateTitle: { fontSize: '0.85rem', opacity: 0.6 },
+  stateDesc: { fontSize: '0.75rem', opacity: 0.35, lineHeight: 1.6, maxWidth: 240 },
+  skeletonWrap: { display: 'flex', flexDirection: 'column', gap: '3px', padding: '0.2rem 0' },
   skeleton: {
-    height: 52,
+    height: 50,
     borderRadius: '4px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(255,255,255,0.05)',
     animation: 'shimmer 1.5s ease-in-out infinite',
   },
   trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },

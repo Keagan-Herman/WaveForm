@@ -19,8 +19,15 @@
  * - formatDuration receives seconds not milliseconds
  */
 
-import React from 'react'
-import { useState, useCallback } from 'react'
+/**
+ * TrackRow.tsx — enhanced
+ *
+ * Added accentColour prop for dynamic theming.
+ * Active state uses dynamic accent instead of hardcoded green.
+ * Contrast improved throughout.
+ */
+
+import React, { useState, useCallback } from 'react'
 import { formatDuration, type DeezerTrack } from '@/lib/deezerApi'
 
 interface TrackRowProps {
@@ -28,27 +35,37 @@ interface TrackRowProps {
   isActive: boolean
   index: number
   onSelect: (track: DeezerTrack, index: number) => void
+  accentColour?: string
 }
 
-export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
+export function TrackRow({
+  track,
+  isActive,
+  index,
+  onSelect,
+  accentColour = '#1db954',
+}: TrackRowProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const handleSelect = useCallback(() => {
     onSelect(track, index)
   }, [track, index, onSelect])
 
+  const accentBg = `${accentColour}18`
+  const accentBorder = `${accentColour}40`
+
   return (
     <button
       style={{
         ...styles.row,
         background: isActive
-          ? 'rgba(29,185,84,0.12)'
+          ? accentBg
           : isHovered
-          ? 'rgba(255,255,255,0.04)'
-          : 'transparent',
+            ? 'rgba(255,255,255,0.05)'
+            : 'transparent',
         borderColor: isActive
-          ? 'rgba(29,185,84,0.35)'
-          : 'rgba(255,255,255,0.05)',
+          ? accentBorder
+          : 'rgba(255,255,255,0.06)',
       }}
       onClick={handleSelect}
       onMouseEnter={() => setIsHovered(true)}
@@ -58,7 +75,7 @@ export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
     >
       <div style={styles.indexWrap}>
         {isActive
-          ? <span style={styles.playingIndicator}>▶</span>
+          ? <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
           : <span style={styles.index}>{index + 1}</span>
         }
       </div>
@@ -71,7 +88,11 @@ export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
       />
 
       <div style={styles.info}>
-        <p style={{ ...styles.name, color: isActive ? '#1db954' : '#e8f5e8' }}>
+        <p style={{
+          ...styles.name,
+          color: isActive ? accentColour : '#f0f0f0',
+          transition: 'color 0.5s ease',
+        }}>
           {track.title}
         </p>
         <p style={styles.artist}>{track.artist.name}</p>
@@ -87,16 +108,16 @@ export function TrackRow({ track, isActive, index, onSelect }: TrackRowProps) {
 const styles: Record<string, React.CSSProperties> = {
   row: {
     display: 'grid',
-    gridTemplateColumns: '32px 36px 1fr 1fr auto',
+    gridTemplateColumns: '28px 36px 1fr 1fr auto',
     alignItems: 'center',
     gap: '0.75rem',
-    padding: '0.5rem 0.75rem',
+    padding: '0.45rem 0.7rem',
     borderRadius: '4px',
     border: '1px solid',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
-    color: '#e8f5e8',
+    color: '#f0f0f0',
     transition: 'background 0.12s, border-color 0.12s',
     fontFamily: 'monospace',
   },
@@ -106,42 +127,41 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: { fontSize: '0.7rem', opacity: 0.25 },
-  playingIndicator: { fontSize: '0.65rem', color: '#1db954' },
+  index: { fontSize: '0.65rem', opacity: 0.35 },
+  playingIndicator: { fontSize: '0.6rem' },
   albumArt: {
     width: 36,
     height: 36,
-    borderRadius: '2px',
+    borderRadius: '3px',
     objectFit: 'cover',
     flexShrink: 0,
   },
   info: { minWidth: 0 },
   name: {
-    fontSize: '0.82rem',
+    fontSize: '0.8rem',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    marginBottom: '0.15rem',
-    transition: 'color 0.15s',
+    marginBottom: '0.12rem',
   },
   artist: {
-    fontSize: '0.7rem',
-    opacity: 0.4,
+    fontSize: '0.68rem',
+    opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   album: {
-    fontSize: '0.7rem',
-    opacity: 0.25,
+    fontSize: '0.65rem',
+    opacity: 0.3,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: 'monospace',
   },
   duration: {
-    fontSize: '0.7rem',
-    opacity: 0.3,
+    fontSize: '0.65rem',
+    opacity: 0.4,
     flexShrink: 0,
     fontVariantNumeric: 'tabular-nums',
   },

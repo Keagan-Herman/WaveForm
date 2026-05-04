@@ -28,6 +28,20 @@
  * - Everything else identical
  */
 
+/**
+ * App.tsx — enhanced "wow" version
+ *
+ * WHAT CHANGED:
+ * - AlbumGravityField removed — R3F dependency conflicts + it wasn't earning its space
+ * - RadialVisualiser added as the visual hero — full-width polar frequency plot
+ * - Spectrogram added — scrolling frequency-over-time heatmap
+ * - Dynamic colour theming from album art via useAlbumColour
+ * - All colours, visualisers, and background pulse themed to current album
+ * - Contrast fixed throughout — text opacity bumped up significantly
+ * - Genre panel now in a scrollable area so it's always reachable
+ * - Layout remains three-panel but visualiser centre is now dominant
+ */
+
 import React, { useEffect, useState, useCallback } from 'react'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
@@ -35,53 +49,108 @@ import { PlayerBar } from '@/components/player/PlayerBar'
 import { FrequencyBars } from '@/components/visualiser/FrequencyBars'
 import { WaveformLine } from '@/components/visualiser/WaveformLine'
 import { BackgroundPulse } from '@/components/visualiser/BackgroundPulse'
+import { RadialVisualiser } from '@/components/visualiser/RadialVisualiser'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { NowPlaying } from '@/components/library/NowPlaying'
-import { AlbumGravityField } from '@/components/library/AlbumGravityField'
 import { GenrePanel } from '@/components/library/GenrePanel'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
+import { useAlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
+import { Spectrogram } from './components/visualiser/Spectogram'
+
+// ─── Colour context ────────────────────────────────────────────────────────
+// Lifted to app root so all panels share the same derived accent colour
+
+function useAppAccent() {
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const imageUrl = currentTrack?.album.cover_medium ?? null
+  return useAlbumColour(imageUrl)
+}
 
 // ─── Visualiser centre panel ───────────────────────────────────────────────
 
 interface VisualiserPanelProps {
   tracks: DeezerTrack[]
   onFilteredTracksChange: (ids: string[] | null) => void
+  accentHue: number
+  accentColour: string
 }
 
-function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProps) {
-  const isPlaying = usePlayerStore((state: { isPlaying: boolean }) => state.isPlaying)
-  const bassPower = useVisualiserStore((state: { bassPower: number }) => state.bassPower)
+function VisualiserPanel({
+  tracks,
+  onFilteredTracksChange,
+  accentHue,
+  accentColour,
+}: VisualiserPanelProps) {
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const bassPower = useVisualiserStore(state => state.bassPower)
+  const beat = useVisualiserStore(state => state.beat)
 
   return (
     <div style={styles.visualiserPanel}>
       <div style={styles.visualiserInner}>
 
-        {tracks.length > 0 && (
-          <div style={styles.canvasBlock}>
-            <p style={styles.canvasLabel}>Album Field</p>
-            <AlbumGravityField tracks={tracks} width={560} height={200} />
-          </div>
-        )}
+        {/* Radial — the hero. Centre stage. */}
+        <div style={styles.radialWrap}>
+          <RadialVisualiser
+            size={280}
+            accentColour={accentColour}
+            accentHue={accentHue}
+          />
+          {!isPlaying && (
+            <div style={styles.radialIdle}>
+              <p style={styles.idleText}>Select a track to visualise</p>
+            </div>
+          )}
+        </div>
 
+        {/* Frequency bars */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Frequency Spectrum</p>
-          <FrequencyBars width={560} height={140} mirrorMode />
+          <FrequencyBars
+            width={560}
+            height={100}
+            mirrorMode
+            accentHue={accentHue}
+          />
         </div>
 
+        {/* Spectrogram */}
+        <div style={styles.canvasBlock}>
+          <p style={styles.canvasLabel}>Spectrogram</p>
+          <Spectrogram
+            width={560}
+            height={90}
+            accentHue={accentHue}
+          />
+        </div>
+
+        {/* Waveform */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Waveform</p>
-          <WaveformLine width={560} height={52} />
+          <WaveformLine width={560} height={44} />
         </div>
 
+        {/* Bass energy */}
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Bass Energy</p>
           <div style={styles.bassTrack}>
-            <div style={{ ...styles.bassFill, width: `${bassPower * 100}%` }} />
+            <div style={{
+              ...styles.bassFill,
+              width: `${bassPower * 100}%`,
+              background: beat
+                ? `hsl(${accentHue}, 100%, 70%)`
+                : accentColour,
+              boxShadow: beat ? `0 0 12px ${accentColour}` : 'none',
+              transition: beat
+                ? 'width 0.05s, background 0.05s, box-shadow 0.05s'
+                : 'width 0.1s linear, background 0.5s',
+            }} />
           </div>
         </div>
 
+        {/* Genre map */}
         {tracks.length > 0 && (
           <>
             <div style={styles.divider} />
@@ -91,12 +160,6 @@ function VisualiserPanel({ tracks, onFilteredTracksChange }: VisualiserPanelProp
               onFilteredTracksChange={onFilteredTracksChange}
             />
           </>
-        )}
-
-        {!isPlaying && (
-          <div style={styles.idleOverlay}>
-            <p style={styles.idleText}>Select a track to visualise</p>
-          </div>
         )}
       </div>
     </div>
@@ -139,6 +202,7 @@ function KeyboardShortcuts() {
 function Waveform() {
   const [searchTracks, setSearchTracks] = useState<DeezerTrack[]>([])
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
+  const accent = useAppAccent()
 
   const handleFilteredTracksChange = useCallback((ids: string[] | null) => {
     setFilteredTrackIds(ids)
@@ -146,16 +210,20 @@ function Waveform() {
 
   return (
     <div style={styles.root}>
-      <BackgroundPulse />
+      <BackgroundPulse accentHue={accent.h} accentSaturation={accent.s} />
       <PreviewPlayer />
       <KeyboardShortcuts />
 
-      <header style={styles.header}>
+      <header style={{
+        ...styles.header,
+        borderBottomColor: `${accent.hex}22`,
+      }}>
         <h1 style={styles.logo}>Waveform</h1>
         <p style={styles.headerSub}>
-          Press <kbd style={styles.kbd}>/</kbd> to search ·{' '}
-          <kbd style={styles.kbd}>Space</kbd> to play ·{' '}
-          <kbd style={styles.kbd}>←</kbd> <kbd style={styles.kbd}>→</kbd> to navigate
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}33` }}>/</kbd> search ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}33` }}>Space</kbd> play ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}33` }}>←</kbd>{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}33` }}>→</kbd> navigate
         </p>
       </header>
 
@@ -164,20 +232,26 @@ function Waveform() {
           <SearchOverlay
             onResultsChange={setSearchTracks}
             filteredTrackIds={filteredTrackIds}
+            accentColour={accent.hex}
           />
         </div>
 
         <VisualiserPanel
           tracks={searchTracks}
           onFilteredTracksChange={handleFilteredTracksChange}
+          accentHue={accent.h}
+          accentColour={accent.hex}
         />
 
-        <div style={styles.rightPanel}>
-          <NowPlaying />
+        <div style={{
+          ...styles.rightPanel,
+          borderLeftColor: `${accent.hex}22`,
+        }}>
+          <NowPlaying accentColour={accent} />
         </div>
       </div>
 
-      <PlayerBar />
+      <PlayerBar accentColour={accent.hex} />
     </div>
   )
 }
@@ -195,16 +269,16 @@ export default function App() {
 const styles: Record<string, React.CSSProperties> = {
   root: {
     minHeight: '100vh',
-    color: '#e8f5e8',
+    color: '#f0f0f0',
     fontFamily: 'monospace',
     display: 'flex',
     flexDirection: 'column',
-    paddingBottom: 80,
+    paddingBottom: 72,
   },
   header: {
-    padding: '1rem 2rem',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
-    backdropFilter: 'blur(12px)',
+    padding: '0.85rem 2rem',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(16px)',
     position: 'sticky',
     top: 0,
     zIndex: 20,
@@ -212,60 +286,76 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '1rem',
+    transition: 'border-color 1s ease',
   },
   logo: {
-    fontSize: '0.95rem',
-    letterSpacing: '0.3em',
+    fontSize: '0.9rem',
+    letterSpacing: '0.35em',
     textTransform: 'uppercase',
-    opacity: 0.6,
-    fontWeight: 400,
+    opacity: 0.8,
+    fontWeight: 500,
     flexShrink: 0,
   },
-  headerSub: { fontSize: '0.65rem', opacity: 0.2, letterSpacing: '0.05em' },
+  headerSub: {
+    fontSize: '0.62rem',
+    opacity: 0.4,
+    letterSpacing: '0.06em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+  },
   kbd: {
     background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: '3px',
     padding: '0.1rem 0.35rem',
     fontSize: '0.6rem',
     fontFamily: 'monospace',
+    transition: 'border-color 1s ease',
   },
   layout: {
     flex: 1,
     display: 'grid',
-    gridTemplateColumns: '340px 1fr 260px',
+    gridTemplateColumns: '320px 1fr 260px',
     overflow: 'hidden',
-    height: 'calc(100vh - 52px - 80px)',
+    height: 'calc(100vh - 48px - 72px)',
   },
-  leftPanel: { overflow: 'hidden', display: 'flex', flexDirection: 'column' },
-  rightPanel: { borderLeft: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' },
+  leftPanel: {
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRight: '1px solid rgba(255,255,255,0.06)',
+  },
+  rightPanel: {
+    overflow: 'hidden',
+    borderLeft: '1px solid rgba(255,255,255,0.06)',
+    transition: 'border-color 1s ease',
+  },
+
+  // Visualiser
   visualiserPanel: {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    padding: '1.5rem 2rem',
-    position: 'relative',
+    padding: '1.25rem 1.75rem',
     overflowY: 'auto',
   },
   visualiserInner: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '0.85rem',
     width: '100%',
+  },
+
+  // Radial hero
+  radialWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
+    padding: '0.5rem 0',
   },
-  canvasBlock: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
-  canvasLabel: {
-    fontSize: '0.58rem',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    opacity: 0.2,
-    fontFamily: 'monospace',
-  },
-  divider: { height: 1, background: 'rgba(255,255,255,0.05)', margin: '0.25rem 0' },
-  bassTrack: { height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' },
-  bassFill: { height: '100%', background: '#1db954', borderRadius: 2, transition: 'width 0.05s linear' },
-  idleOverlay: {
+  radialIdle: {
     position: 'absolute',
     inset: 0,
     display: 'flex',
@@ -273,7 +363,38 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     backdropFilter: 'blur(2px)',
     pointerEvents: 'none',
-    zIndex: 5,
   },
-  idleText: { opacity: 0.15, fontSize: '0.8rem', letterSpacing: '0.1em' },
+  idleText: {
+    opacity: 0.25,
+    fontSize: '0.78rem',
+    letterSpacing: '0.12em',
+  },
+
+  canvasBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  },
+  canvasLabel: {
+    fontSize: '0.56rem',
+    letterSpacing: '0.22em',
+    textTransform: 'uppercase',
+    opacity: 0.35,
+    fontFamily: 'monospace',
+  },
+  divider: {
+    height: 1,
+    background: 'rgba(255,255,255,0.06)',
+    margin: '0.15rem 0',
+  },
+  bassTrack: {
+    height: 4,
+    background: 'rgba(255,255,255,0.07)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  bassFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
 }

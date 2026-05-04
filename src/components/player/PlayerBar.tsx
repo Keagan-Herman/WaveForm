@@ -15,13 +15,25 @@
  * - album art: track.album.cover_medium instead of getAlbumArt helper
  */
 
+/**
+ * PlayerBar.tsx — enhanced
+ *
+ * Added accentColour prop for dynamic theming.
+ * Play button, progress bar, and album art pulse all use the accent colour.
+ * Contrast improved throughout.
+ */
+
 import React from 'react'
 import { useCallback } from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { formatDuration } from '@/lib/deezerApi'
 
-export function PlayerBar() {
+interface PlayerBarProps {
+  accentColour?: string
+}
+
+export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
   const {
     currentTrack,
     isPlaying,
@@ -53,34 +65,41 @@ export function PlayerBar() {
 
   return (
     <div style={styles.bar}>
+      {/* Progress bar */}
       <div style={styles.progressTrack}>
-        <div
-          style={{
-            ...styles.progressFill,
-            width: `${progress * 100}%`,
-            background: beat ? '#fff' : '#1db954',
-            transition: beat ? 'background 0.05s' : 'background 0.3s, width 0.1s linear',
-          }}
-        />
+        <div style={{
+          ...styles.progressFill,
+          width: `${progress * 100}%`,
+          background: beat ? '#fff' : accentColour,
+          boxShadow: beat ? `0 0 8px ${accentColour}` : 'none',
+          transition: beat
+            ? 'background 0.05s, box-shadow 0.05s'
+            : 'background 0.5s, width 0.1s linear',
+        }} />
       </div>
 
       <div style={styles.inner}>
+        {/* Track info */}
         <div style={styles.trackInfo}>
           <img
             src={currentTrack.album.cover_medium}
             alt={currentTrack.album.title}
             style={{
               ...styles.albumArt,
-              transform: beat && isPlaying ? 'scale(1.05)' : 'scale(1)',
+              transform: beat && isPlaying ? 'scale(1.06)' : 'scale(1)',
+              boxShadow: `0 4px 16px rgba(0,0,0,0.5)`,
               transition: 'transform 0.1s',
             }}
           />
           <div style={styles.trackText}>
             <p style={styles.trackName}>{currentTrack.title}</p>
-            <p style={styles.trackArtist}>{currentTrack.artist.name}</p>
+            <p style={{ ...styles.trackArtist, color: `${accentColour}cc` }}>
+              {currentTrack.artist.name}
+            </p>
           </div>
         </div>
 
+        {/* Controls */}
         <div style={styles.controls}>
           <button
             style={{ ...styles.controlBtn, opacity: canPrev ? 0.7 : 0.2 }}
@@ -91,7 +110,11 @@ export function PlayerBar() {
             ⏮
           </button>
           <button
-            style={styles.playBtn}
+            style={{
+              ...styles.playBtn,
+              background: accentColour,
+              boxShadow: `0 0 20px ${accentColour}66`,
+            }}
             onClick={handlePlayPause}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
@@ -107,6 +130,7 @@ export function PlayerBar() {
           </button>
         </div>
 
+        {/* Time */}
         <div style={styles.time}>
           <span style={styles.timeText}>
             {formatDuration(Math.floor(currentTime))} / {formatDuration(duration)}
@@ -124,8 +148,8 @@ const styles: Record<string, React.CSSProperties> = {
     bottom: 0,
     left: 0,
     right: 0,
-    background: 'rgba(5, 14, 5, 0.92)',
-    backdropFilter: 'blur(20px)',
+    background: 'rgba(5,8,5,0.95)',
+    backdropFilter: 'blur(24px)',
     borderTop: '1px solid rgba(255,255,255,0.08)',
     zIndex: 50,
   },
@@ -145,7 +169,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0.75rem 2rem',
+    padding: '0.65rem 2rem',
     gap: '1rem',
   },
   trackInfo: {
@@ -156,29 +180,29 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
   },
   albumArt: {
-    width: 44,
-    height: 44,
-    borderRadius: '3px',
+    width: 42,
+    height: 42,
+    borderRadius: '4px',
     flexShrink: 0,
     objectFit: 'cover',
   },
   trackText: { minWidth: 0 },
   trackName: {
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontFamily: 'monospace',
-    color: '#e8f5e8',
+    color: '#f0f0f0',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    marginBottom: '0.2rem',
+    marginBottom: '0.18rem',
   },
   trackArtist: {
-    fontSize: '0.75rem',
+    fontSize: '0.72rem',
     fontFamily: 'monospace',
-    color: 'rgba(232,245,232,0.45)',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    transition: 'color 1s ease',
   },
   controls: {
     display: 'flex',
@@ -189,45 +213,46 @@ const styles: Record<string, React.CSSProperties> = {
   controlBtn: {
     background: 'none',
     border: 'none',
-    color: '#e8f5e8',
+    color: '#f0f0f0',
     fontSize: '1rem',
     cursor: 'pointer',
     padding: '0.25rem',
     lineHeight: 1,
   },
   playBtn: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: '50%',
-    background: '#1db954',
     border: 'none',
     color: '#050e05',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 700,
     flexShrink: 0,
+    transition: 'background 1s ease, box-shadow 1s ease',
   },
   time: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
-    gap: '0.2rem',
+    gap: '0.15rem',
     flex: 1,
     minWidth: 0,
   },
   timeText: {
     fontFamily: 'monospace',
-    fontSize: '0.75rem',
-    color: 'rgba(232,245,232,0.5)',
+    fontSize: '0.72rem',
+    opacity: 0.55,
+    fontVariantNumeric: 'tabular-nums',
   },
   previewLabel: {
     fontFamily: 'monospace',
-    fontSize: '0.6rem',
+    fontSize: '0.55rem',
     letterSpacing: '0.1em',
-    color: 'rgba(232,245,232,0.2)',
+    opacity: 0.25,
     textTransform: 'uppercase',
   },
 }

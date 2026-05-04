@@ -24,14 +24,32 @@
  *   normalised to 0–100 for display
  */
 
+/**
+ * NowPlaying.tsx — enhanced
+ *
+ * Now accepts accentColour prop for dynamic theming from album art.
+ * Improved contrast throughout — opacity values bumped up significantly.
+ * Album art is larger and more prominent.
+ */
+
 import React from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
+import type { AlbumColour } from '@/hooks/useAlbumColour'
 
-export function NowPlaying() {
+interface NowPlayingProps {
+  accentColour?: AlbumColour
+}
+
+export function NowPlaying({ accentColour }: NowPlayingProps) {
   const { currentTrack, isPlaying, progress } = usePlayerStore()
-  const beat = useVisualiserStore((state: { beat: any }) => state.beat)
+  const beat = useVisualiserStore(state => state.beat)
+
+  const accent = accentColour?.hex ?? '#1db954'
+  const accentDim = accentColour
+    ? `hsla(${accentColour.h}, ${accentColour.s}%, ${accentColour.l}%, 0.15)`
+    : 'rgba(29,185,84,0.15)'
 
   if (!currentTrack) {
     return (
@@ -42,67 +60,101 @@ export function NowPlaying() {
     )
   }
 
-  // Normalise Deezer rank (0–1,000,000) to a 0–100 display value
   const popularity = Math.min(100, Math.round(currentTrack.rank / 10000))
 
   return (
     <div style={styles.wrap}>
+      {/* Album art */}
       <div style={styles.artWrap}>
         <img
           src={currentTrack.album.cover_big}
           alt={currentTrack.album.title}
           style={{
             ...styles.art,
-            transform:
-              beat && isPlaying
-                ? 'scale(1.02) rotate(0.3deg)'
-                : 'scale(1) rotate(0deg)',
+            transform: beat && isPlaying
+              ? 'scale(1.03) rotate(0.4deg)'
+              : 'scale(1) rotate(0deg)',
             transition: beat
               ? 'transform 0.08s ease-out'
-              : 'transform 0.4s ease-out',
+              : 'transform 0.5s ease-out',
+            boxShadow: `0 16px 48px rgba(0,0,0,0.7), 0 0 40px ${accentDim}`,
           }}
         />
-        {isPlaying && <div style={styles.artGlow} />}
+        {isPlaying && (
+          <div style={{
+            ...styles.artGlow,
+            background: `radial-gradient(ellipse at center, ${accentDim} 0%, transparent 70%)`,
+          }} />
+        )}
       </div>
 
+      {/* Track info */}
       <div style={styles.info}>
         <p style={styles.albumName}>{currentTrack.album.title}</p>
+
         <p style={styles.trackName}>{currentTrack.title}</p>
 
-        <ArtistRipple active={isPlaying}>
-          <p style={styles.artistName}>{currentTrack.artist.name}</p>
+        <ArtistRipple active={isPlaying} color={accent}>
+          <p style={{ ...styles.artistName, color: accent }}>
+            {currentTrack.artist.name}
+          </p>
         </ArtistRipple>
 
+        {/* Popularity */}
         <div style={styles.popularityWrap}>
-          <span style={styles.popularityLabel}>Popularity</span>
+          <span style={styles.metaLabel}>Popularity</span>
           <div style={styles.popularityTrack}>
-            <div style={{ ...styles.popularityFill, width: `${popularity}%` }} />
+            <div style={{
+              ...styles.popularityFill,
+              width: `${popularity}%`,
+              background: `linear-gradient(90deg, ${accent}88, ${accent})`,
+            }} />
           </div>
-          <span style={styles.popularityValue}>{popularity}</span>
+          <span style={styles.metaValue}>{popularity}</span>
         </div>
 
+        {/* Duration */}
+        <div style={styles.popularityWrap}>
+          <span style={styles.metaLabel}>Duration</span>
+          <span style={{ ...styles.metaValue, opacity: 0.6 }}>
+            {Math.floor(currentTrack.duration / 60)}:{String(currentTrack.duration % 60).padStart(2, '0')}
+          </span>
+        </div>
+
+        {/* Progress scrubber */}
         <div style={styles.scrubberWrap}>
           <div style={styles.scrubberTrack}>
-            <div
-              style={{
-                ...styles.scrubberFill,
-                width: `${progress * 100}%`,
-                background: beat ? '#fff' : '#1db954',
-                transition: beat ? 'background 0.05s' : 'background 0.3s, width 0.1s linear',
-              }}
-            />
-            <div
-              style={{
-                ...styles.playhead,
-                left: `${progress * 100}%`,
-                opacity: isPlaying ? 1 : 0,
-              }}
-            />
+            <div style={{
+              ...styles.scrubberFill,
+              width: `${progress * 100}%`,
+              background: beat ? '#fff' : accent,
+              boxShadow: beat ? `0 0 8px ${accent}` : 'none',
+              transition: beat
+                ? 'background 0.05s, box-shadow 0.05s'
+                : 'background 0.3s, width 0.1s linear',
+            }} />
+            <div style={{
+              ...styles.playhead,
+              left: `${progress * 100}%`,
+              background: accent,
+              boxShadow: `0 0 8px ${accent}`,
+              opacity: isPlaying ? 1 : 0,
+            }} />
+          </div>
+          <div style={styles.scrubberLabels}>
+            <span style={styles.timeLabel}>
+              {formatTime(Math.floor(progress * 30))}
+            </span>
+            <span style={styles.timeLabel}>0:30</span>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+function formatTime(s: number): string {
+  return `0:${String(s).padStart(2, '0')}`
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -113,7 +165,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     height: '100%',
     gap: '0.75rem',
-    opacity: 0.15,
+    opacity: 0.3,
     fontFamily: 'monospace',
   },
   emptyIcon: { fontSize: '2.5rem' },
@@ -125,8 +177,8 @@ const styles: Record<string, React.CSSProperties> = {
   wrap: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem',
-    padding: '2rem',
+    gap: '1.25rem',
+    padding: '1.5rem',
     height: '100%',
     overflow: 'hidden',
   },
@@ -135,95 +187,97 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: 280,
+    maxWidth: 220,
     aspectRatio: '1',
   },
   art: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    borderRadius: '6px',
+    borderRadius: '8px',
     display: 'block',
   },
   artGlow: {
     position: 'absolute',
-    inset: -8,
-    borderRadius: 12,
-    background: 'radial-gradient(ellipse at center, rgba(29,185,84,0.15) 0%, transparent 70%)',
+    inset: -12,
+    borderRadius: 20,
     pointerEvents: 'none',
     animation: 'pulse 2s ease-in-out infinite',
   },
   info: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.6rem',
+    gap: '0.5rem',
     flex: 1,
     minWidth: 0,
     fontFamily: 'monospace',
   },
   albumName: {
-    fontSize: '0.65rem',
-    letterSpacing: '0.12em',
+    fontSize: '0.6rem',
+    letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    opacity: 0.3,
+    opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   trackName: {
-    fontSize: '1.1rem',
-    color: '#e8f5e8',
+    fontSize: '1rem',
+    color: '#fff',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     letterSpacing: '-0.01em',
+    fontWeight: 500,
+    lineHeight: 1.2,
   },
   artistName: {
-    fontSize: '0.8rem',
-    color: '#1db954',
+    fontSize: '0.82rem',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    padding: '0.2rem 0',
+    padding: '0.15rem 0',
+    fontWeight: 400,
   },
   popularityWrap: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.6rem',
-    marginTop: '0.5rem',
+    gap: '0.5rem',
+    marginTop: '0.25rem',
   },
-  popularityLabel: {
-    fontSize: '0.6rem',
-    opacity: 0.25,
+  metaLabel: {
+    fontSize: '0.58rem',
+    opacity: 0.45,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
     flexShrink: 0,
+    width: 64,
   },
   popularityTrack: {
     flex: 1,
-    height: 2,
-    background: 'rgba(255,255,255,0.08)',
-    borderRadius: 1,
+    height: 3,
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
     overflow: 'hidden',
   },
   popularityFill: {
     height: '100%',
-    background: 'rgba(29,185,84,0.5)',
-    borderRadius: 1,
+    borderRadius: 2,
+    transition: 'width 0.5s ease',
   },
-  popularityValue: {
+  metaValue: {
     fontSize: '0.6rem',
-    opacity: 0.25,
+    opacity: 0.5,
     flexShrink: 0,
     fontVariantNumeric: 'tabular-nums',
   },
   scrubberWrap: {
     marginTop: 'auto',
-    paddingTop: '1rem',
+    paddingTop: '0.75rem',
   },
   scrubberTrack: {
     height: 3,
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.1)',
     borderRadius: 2,
     position: 'relative',
     overflow: 'visible',
@@ -241,9 +295,17 @@ const styles: Record<string, React.CSSProperties> = {
     width: 10,
     height: 10,
     borderRadius: '50%',
-    background: '#fff',
     transform: 'translate(-50%, -50%)',
     transition: 'left 0.1s linear, opacity 0.2s',
-    boxShadow: '0 0 6px rgba(255,255,255,0.5)',
+  },
+  scrubberLabels: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '0.4rem',
+  },
+  timeLabel: {
+    fontSize: '0.58rem',
+    opacity: 0.4,
+    fontVariantNumeric: 'tabular-nums',
   },
 }

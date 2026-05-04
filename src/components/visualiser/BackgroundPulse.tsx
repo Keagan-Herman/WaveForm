@@ -14,33 +14,40 @@
  * Place this as a direct child of your root layout.
  */
 
+/**
+ * BackgroundPulse.tsx — enhanced
+ *
+ * Now accepts a dynamic accent hue extracted from album art.
+ * More dramatic brightness range so the effect is actually visible.
+ * Dual gradient — one centred bloom plus a subtle corner vignette.
+ */
+
 import { useVisualiserStore } from '@/stores/visualiserStore'
 
 interface BackgroundPulseProps {
-  /** Base hue in degrees (default: 120 = green, matching Spotify) */
-  baseHue?: number
-  /** How much the hue shifts on a beat (default: 15 degrees) */
-  hueShift?: number
+  accentHue?: number
+  accentSaturation?: number
 }
 
 export function BackgroundPulse({
-  baseHue = 120,
-  hueShift = 15,
+  accentHue = 120,
+  accentSaturation = 70,
 }: BackgroundPulseProps) {
-  const bassPower = useVisualiserStore((state: { bassPower: any }) => state.bassPower)
-  const beat = useVisualiserStore((state: { beat: any }) => state.beat)
+  const bassPower = useVisualiserStore(state => state.bassPower)
+  const beat = useVisualiserStore(state => state.beat)
 
-  // Bass power drives brightness — quiet = very dark, loud = slightly less dark
-  const brightness = 3 + bassPower * 8   // 3% → 11% lightness
-  const saturation = 20 + bassPower * 40  // 20% → 60% saturation
-  const hue = beat ? baseHue + hueShift : baseHue
+  const brightness = 4 + bassPower * 12      // 4% → 16% — more visible range
+  const saturation = 30 + bassPower * 50     // 30% → 80%
+  const hue = beat ? (accentHue + 15) % 360 : accentHue
 
-  // Radial gradient: the "bloom" effect — brightest at centre, fades to black
-  const gradient = `radial-gradient(
-    ellipse 80% 60% at 50% 50%,
-    hsl(${hue}, ${saturation}%, ${brightness}%) 0%,
-    hsl(${hue}, 10%, 2%) 100%
-  )`
+  const gradient = `
+    radial-gradient(
+      ellipse 90% 70% at 50% 50%,
+      hsl(${hue}, ${saturation}%, ${brightness}%) 0%,
+      hsl(${hue}, ${Math.round(saturation * 0.4)}%, ${Math.round(brightness * 0.5)}%) 50%,
+      hsl(${hue}, 8%, 2%) 100%
+    )
+  `
 
   return (
     <div
@@ -51,8 +58,8 @@ export function BackgroundPulse({
         zIndex: -1,
         background: gradient,
         transition: beat
-          ? 'background 0.05s ease-out'   // snap fast on beat
-          : 'background 0.3s ease-out',   // decay slowly
+          ? 'background 0.06s ease-out'
+          : 'background 0.5s ease-out',
         pointerEvents: 'none',
       }}
     />
