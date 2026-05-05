@@ -44,32 +44,32 @@ function useAppAccent() {
 
 // ─── Top-right quadrant: Radial + Lissajous side by side ─────────────────
 
-function VisualisersTop({ accentHue, accentColour }: { accentHue: number; accentColour: string }) {
-  const isPlaying = usePlayerStore(state => state.isPlaying)
+// function VisualisersTop({ accentHue, accentColour }: { accentHue: number; accentColour: string }) {
+//   const isPlaying = usePlayerStore(state => state.isPlaying)
 
-  return (
-    <div style={styles.quadrant}>
-      <div style={styles.quadLabel}>Visualisers</div>
-      <div style={styles.visualiserTopRow}>
-        <div style={styles.visualiserItem}>
-          <p style={styles.canvasLabel}>Frequency Field</p>
-          <div style={{ position: 'relative' }}>
-            <RadialVisualiser size={220} accentColour={accentColour} accentHue={accentHue} />
-          </div>
-        </div>
-        <div style={styles.visualiserItem}>
-          <p style={styles.canvasLabel}>Oscilloscope · click to freeze</p>
-          <LissajousVisualiser size={220} accentHue={accentHue} accentColour={accentColour} />
-        </div>
-      </div>
-      {!isPlaying && (
-        <div style={styles.idleOverlay}>
-          <p style={styles.idleText}>Select a track to visualise</p>
-        </div>
-      )}
-    </div>
-  )
-}
+//   return (
+//     <div style={styles.quadrant}>
+//       <div style={styles.quadLabel}>Visualisers</div>
+//       <div style={styles.visualiserTopRow}>
+//         <div style={styles.visualiserItem}>
+//           <p style={styles.canvasLabel}>Frequency Field</p>
+//           <div style={{ position: 'relative' }}>
+//             <RadialVisualiser size={220} accentColour={accentColour} accentHue={accentHue} />
+//           </div>
+//         </div>
+//         <div style={styles.visualiserItem}>
+//           <p style={styles.canvasLabel}>Oscilloscope · click to freeze</p>
+//           <LissajousVisualiser size={220} accentHue={accentHue} accentColour={accentColour} />
+//         </div>
+//       </div>
+//       {!isPlaying && (
+//         <div style={styles.idleOverlay}>
+//           <p style={styles.idleText}>Select a track to visualise</p>
+//         </div>
+//       )}
+//     </div>
+//   )
+// }
 
 // ─── Bottom-right quadrant: Bars + Spectrogram + Genre ───────────────────
 
@@ -102,12 +102,12 @@ function VisualisersBottom({
           <FrequencyBars width={520} height={90} mirrorMode accentHue={accentHue} />
         </div>
 
-        <div style={styles.canvasBlock}>
+        {/* <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Waveform</p>
           <WaveformLine width={520} height={40} />
-        </div>
+        </div> */}
 
-        <div style={styles.canvasBlock}>
+        {/* <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Bass Energy</p>
           <div style={styles.bassTrack}>
             <div style={{
@@ -120,7 +120,7 @@ function VisualisersBottom({
                 : 'width 0.1s linear, background 0.5s',
             }} />
           </div>
-        </div>
+        </div> */}
 
         {tracks.length > 0 && (
           <>
@@ -202,9 +202,9 @@ function Waveform() {
         </div>
 
         {/* Top-right: Radial + Lissajous */}
-        <div style={{ ...styles.quadrantBorderBottom }}>
+        {/* <div style={{ ...styles.quadrantBorderBottom }}>
           <VisualisersTop accentHue={accent.h} accentColour={accent.hex} />
-        </div>
+        </div> */}
 
         {/* Bottom-left: Now Playing */}
         <div style={{ ...styles.quadrant, ...styles.quadrantBorderRight, overflow: 'hidden' }}>

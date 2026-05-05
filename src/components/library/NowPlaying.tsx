@@ -1,13 +1,9 @@
 /**
- * NowPlaying.tsx — full track info + timer fix
+ * NowPlaying.tsx — art size fixed
  *
- * Added:
- * - Release year from album.release_date
- * - Artist fan count formatted nicely
- * - Explicit track indicator
- * - Track rank formatted as chart position
- * - Correct timer: Math.round(progress * 30) not floor — no more 29.98s
- * - Scrollable info section so nothing gets cut off
+ * Album art reduced to maxWidth 140px so track info is always visible
+ * without scrolling in the bottom-left quadrant.
+ * Info section is now the dominant element, not the art.
  */
 
 import React from 'react'
@@ -27,7 +23,6 @@ function formatFans(n: number): string {
 }
 
 function formatRank(rank: number): string {
-  // Deezer rank is 0–1,000,000 — express as a tier
   if (rank >= 800_000) return 'Viral'
   if (rank >= 500_000) return 'Popular'
   if (rank >= 200_000) return 'Rising'
@@ -39,10 +34,10 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
   const { currentTrack, isPlaying, progress } = usePlayerStore()
   const beat = useVisualiserStore(state => state.beat)
 
-  const accent = accentColour?.hex ?? '#1db954'
+  const accent = accentColour?.hex ?? '#7a8fa6'
   const accentDim = accentColour
     ? `hsla(${accentColour.h}, ${accentColour.s}%, ${accentColour.l}%, 0.18)`
-    : 'rgba(29,185,84,0.18)'
+    : 'rgba(122,143,166,0.18)'
 
   if (!currentTrack) {
     return (
@@ -57,98 +52,81 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
     ? new Date(currentTrack.album.release_date).getFullYear()
     : null
 
-  const duration = currentTrack.duration
-  const durationStr = `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}`
-
-  // FIXED: Math.round so it hits 0:30 cleanly
+  const durationStr = `${Math.floor(currentTrack.duration / 60)}:${String(currentTrack.duration % 60).padStart(2, '0')}`
   const elapsedSecs = Math.min(30, Math.round(progress * 30))
   const elapsedStr = `0:${String(elapsedSecs).padStart(2, '0')}`
 
   return (
     <div style={styles.wrap}>
-      {/* Album art */}
-      <div style={styles.artWrap}>
-        <img
-          src={currentTrack.album.cover_medium}
-          alt={currentTrack.album.title}
-          style={{
-            ...styles.art,
-            transform: beat && isPlaying
-              ? 'scale(1.03) rotate(0.4deg)'
-              : 'scale(1) rotate(0deg)',
-            transition: beat ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
-            boxShadow: `0 12px 40px rgba(0,0,0,0.7), 0 0 32px ${accentDim}`,
-          }}
-        />
-        {isPlaying && (
-          <div style={{
-            ...styles.artGlow,
-            background: `radial-gradient(ellipse at center, ${accentDim} 0%, transparent 70%)`,
-          }} />
-        )}
-        {currentTrack.explicit_lyrics && (
-          <div style={{ ...styles.explicitBadge, background: `${accent}22`, color: accent, borderColor: `${accent}44` }}>
-            E
-          </div>
-        )}
-      </div>
 
-      {/* Track info — scrollable */}
-      <div style={styles.infoScroll}>
-        <div style={styles.info}>
+      {/* Top row: small art + primary text */}
+      <div style={styles.topRow}>
+        <div style={styles.artWrap}>
+          <img
+            src={currentTrack.album.cover_big}
+            alt={currentTrack.album.title}
+            style={{
+              ...styles.art,
+              transform: beat && isPlaying
+                ? 'scale(1.04) rotate(0.3deg)'
+                : 'scale(1) rotate(0deg)',
+              transition: beat ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
+              boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 20px ${accentDim}`,
+            }}
+          />
+          {currentTrack.explicit_lyrics && (
+            <div style={{ ...styles.explicitBadge, color: accent, borderColor: `${accent}55` }}>
+              E
+            </div>
+          )}
+        </div>
 
+        <div style={styles.titleBlock}>
           <p style={styles.albumName}>{currentTrack.album.title}</p>
           <p style={styles.trackName}>{currentTrack.title}</p>
-
           <ArtistRipple active={isPlaying} color={accent}>
             <p style={{ ...styles.artistName, color: accent }}>
               {currentTrack.artist.name}
             </p>
           </ArtistRipple>
-
-          <div style={styles.metaDivider} />
-
-          {/* Meta grid */}
-          <MetaRow label="Duration" value={durationStr} accent={accent} />
-          <MetaRow label="Rank" value={formatRank(currentTrack.rank)} accent={accent} />
-          {releaseYear && <MetaRow label="Released" value={String(releaseYear)} accent={accent} />}
-          {currentTrack.artist.nb_fan !== undefined && (
-            <MetaRow label="Fans" value={formatFans(currentTrack.artist.nb_fan)} accent={accent} />
-          )}
-          <MetaRow
-            label="Explicit"
-            value={currentTrack.explicit_lyrics ? 'Yes' : 'No'}
-            accent={accent}
-          />
-
-          <div style={styles.metaDivider} />
-
-          {/* Progress scrubber */}
-          <div style={styles.scrubberWrap}>
-            <div style={styles.scrubberTrack}>
-              <div style={{
-                ...styles.scrubberFill,
-                width: `${progress * 100}%`,
-                background: beat ? '#fff' : accent,
-                boxShadow: beat ? `0 0 10px ${accent}` : 'none',
-                transition: beat
-                  ? 'background 0.05s, box-shadow 0.05s'
-                  : 'background 0.3s, width 0.1s linear',
-              }} />
-              <div style={{
-                ...styles.playhead,
-                left: `${progress * 100}%`,
-                background: accent,
-                boxShadow: `0 0 8px ${accent}`,
-                opacity: isPlaying ? 1 : 0,
-              }} />
-            </div>
-            <div style={styles.scrubberLabels}>
-              <span style={styles.timeLabel}>{elapsedStr}</span>
-              <span style={{ ...styles.timeLabel, opacity: 0.35 }}>0:30 preview</span>
-            </div>
-          </div>
         </div>
+      </div>
+
+      {/* Scrubber */}
+      <div style={styles.scrubberWrap}>
+        <div style={styles.scrubberTrack}>
+          <div style={{
+            ...styles.scrubberFill,
+            width: `${progress * 100}%`,
+            background: beat ? '#fff' : accent,
+            boxShadow: beat ? `0 0 10px ${accent}` : 'none',
+            transition: beat
+              ? 'background 0.05s, box-shadow 0.05s'
+              : 'background 0.3s, width 0.1s linear',
+          }} />
+          <div style={{
+            ...styles.playhead,
+            left: `${progress * 100}%`,
+            background: accent,
+            boxShadow: `0 0 8px ${accent}`,
+            opacity: isPlaying ? 1 : 0,
+          }} />
+        </div>
+        <div style={styles.scrubberLabels}>
+          <span style={styles.timeLabel}>{elapsedStr}</span>
+          <span style={{ ...styles.timeLabel, opacity: 0.3 }}>0:30</span>
+        </div>
+      </div>
+
+      {/* Meta grid */}
+      <div style={styles.metaGrid}>
+        <MetaRow label="Duration" value={durationStr} accent={accent} />
+        <MetaRow label="Rank" value={formatRank(currentTrack.rank)} accent={accent} />
+        {releaseYear && <MetaRow label="Year" value={String(releaseYear)} accent={accent} />}
+        {currentTrack.artist.nb_fan !== undefined && currentTrack.artist.nb_fan > 0 && (
+          <MetaRow label="Fans" value={formatFans(currentTrack.artist.nb_fan)} accent={accent} />
+        )}
+        <MetaRow label="Explicit" value={currentTrack.explicit_lyrics ? 'Yes' : 'No'} accent={accent} />
       </div>
     </div>
   )
@@ -156,23 +134,24 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
 
 function MetaRow({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div style={metaStyles.row}>
-      <span style={metaStyles.label}>{label}</span>
-      <span style={{ ...metaStyles.value, color: `${accent}dd` }}>{value}</span>
+    <div style={metaRowStyles.row}>
+      <span style={metaRowStyles.label}>{label}</span>
+      <span style={{ ...metaRowStyles.value, color: `${accent}dd` }}>{value}</span>
     </div>
   )
 }
 
-const metaStyles: Record<string, React.CSSProperties> = {
+const metaRowStyles: Record<string, React.CSSProperties> = {
   row: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '0.2rem 0',
+    padding: '0.22rem 0',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
   label: {
-    fontSize: '0.6rem',
-    opacity: 0.45,
+    fontSize: '0.58rem',
+    opacity: 0.42,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
     fontFamily: 'monospace',
@@ -196,102 +175,94 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.3,
     fontFamily: 'monospace',
   },
-  emptyIcon: { fontSize: '2.5rem' },
+  emptyIcon: { fontSize: '2rem' },
   emptyText: {
-    fontSize: '0.75rem',
+    fontSize: '0.72rem',
     letterSpacing: '0.15em',
     textTransform: 'uppercase',
   },
   wrap: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '0.85rem',
+    padding: '0.75rem 1.25rem 1.25rem',
     height: '100%',
     overflow: 'hidden',
+    fontFamily: 'monospace',
+  },
+
+  // Top row
+  topRow: {
+    display: 'flex',
+    gap: '1rem',
+    alignItems: 'flex-start',
+    flexShrink: 0,
   },
   artWrap: {
     position: 'relative',
     flexShrink: 0,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 200,
-    aspectRatio: '1',
-    margin: '1.25rem auto 0.75rem',
+    width: 110,
+    height: 110,
   },
   art: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    borderRadius: '8px',
+    borderRadius: '6px',
     display: 'block',
-  },
-  artGlow: {
-    position: 'absolute',
-    inset: -14,
-    borderRadius: 22,
-    pointerEvents: 'none',
-    animation: 'pulse 2s ease-in-out infinite',
   },
   explicitBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 18,
-    height: 18,
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
     borderRadius: 3,
     border: '1px solid',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '0.55rem',
-    fontFamily: 'monospace',
+    fontSize: '0.5rem',
     fontWeight: 700,
+    background: 'rgba(0,0,0,0.6)',
   },
-  infoScroll: {
+  titleBlock: {
     flex: 1,
-    overflowY: 'auto',
-    minHeight: 0,
-  },
-  info: {
+    minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.3rem',
-    padding: '0 1.25rem 1.25rem',
-    fontFamily: 'monospace',
+    gap: '0.25rem',
+    paddingTop: '0.1rem',
   },
   albumName: {
-    fontSize: '0.58rem',
-    letterSpacing: '0.14em',
+    fontSize: '0.56rem',
+    letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    opacity: 0.5,
+    opacity: 0.45,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   trackName: {
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     color: '#fff',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     letterSpacing: '-0.01em',
     fontWeight: 500,
-    lineHeight: 1.25,
+    lineHeight: 1.2,
   },
   artistName: {
-    fontSize: '0.8rem',
+    fontSize: '0.78rem',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     padding: '0.1rem 0',
   },
-  metaDivider: {
-    height: 1,
-    background: 'rgba(255,255,255,0.07)',
-    margin: '0.4rem 0',
-  },
-  scrubberWrap: {
-    paddingTop: '0.4rem',
-  },
+
+  // Scrubber
+  scrubberWrap: { flexShrink: 0 },
   scrubberTrack: {
     height: 3,
     background: 'rgba(255,255,255,0.1)',
@@ -318,11 +289,19 @@ const styles: Record<string, React.CSSProperties> = {
   scrubberLabels: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginTop: '0.35rem',
+    marginTop: '0.3rem',
   },
   timeLabel: {
-    fontSize: '0.58rem',
+    fontSize: '0.56rem',
     opacity: 0.5,
     fontVariantNumeric: 'tabular-nums',
+  },
+
+  // Meta
+  metaGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    overflow: 'hidden',
   },
 }
