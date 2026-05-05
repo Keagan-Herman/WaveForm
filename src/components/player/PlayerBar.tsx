@@ -133,7 +133,7 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
         {/* Time */}
         <div style={styles.time}>
           <span style={styles.timeText}>
-            {formatDuration(Math.floor(currentTime))} / {formatDuration(duration)}
+            {formatDuration(Math.floor(currentTime))} / 30
           </span>
           <span style={styles.previewLabel}>30s preview</span>
         </div>
