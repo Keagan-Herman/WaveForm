@@ -1,21 +1,29 @@
 /**
- * useAlbumColour.ts — v3
+ * useAlbumColour.ts — v4
  *
- * Core fix: the DEFAULT_COLOUR (green) is no longer the fallback for
- * low-saturation images. White/grey/black albums now return an
- * appropriate light or dark neutral theme instead of green.
+ * Root causes fixed:
+ * 1. Canvas was reused across tracks — stale pixel data could contaminate results
+ *    Fix: create a fresh canvas and fresh Image object on every imageUrl change
  *
- * Strategy:
- * - Sample all pixels, find dominant hue via bucket voting
- * - Measure overall image brightness and saturation
- * - Branch into four character types: colourful, bright/white, dark/black, greyscale
- * - Each branch produces an appropriate accent — never defaults to green
- *   unless the image is actually green
+ * 2. getImageData was called without willReadFrequently
+ *    Fix: pass { willReadFrequently: true } to getContext
  *
- * The only time green appears is when the dominant hue is genuinely green.
+ * 3. The hue bucket approach gave every pixel a minimum vote weight of 0.05,
+ *    meaning even unsaturated pixels shifted the dominant hue toward 0° (red).
+ *    On a white+blue+red image like Panchiko, near-white pixels were voting for
+ *    red/yellow and overwhelming the actual blue.
+ *    Fix: unsaturated pixels (s < 15) contribute zero to hue buckets entirely.
+ *    They still count toward brightness/saturation averages.
+ *
+ * 4. The greyscale threshold (avgSaturation < 8) was too tight — images with
+ *    small colour accents on white were passing through as "colourful" with
+ *    nonsense dominant hues.
+ *    Fix: raised to < 15, and added a "mostly white with small accent" branch.
+ *
+ * DEBUG: set DEBUG_LOG = true to see extraction values in the console.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 export interface AlbumColour {
   h: number
@@ -24,8 +32,10 @@ export interface AlbumColour {
   hex: string
 }
 
-// Neutral fallback — used only on load error, not on greyscale images
-const LOAD_ERROR_COLOUR: AlbumColour = { h: 220, s: 15, l: 55, hex: '#7a8fa6' }
+const DEBUG_LOG = false
+
+// Neutral blue-grey — only used on network/load error
+const ERROR_COLOUR: AlbumColour = { h: 220, s: 15, l: 52, hex: '#7082a0' }
 
 function rgbToHsl(r: number, g: number, b: number) {
   r /= 255; g /= 255; b /= 255
@@ -60,32 +70,39 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 export function useAlbumColour(imageUrl: string | null): AlbumColour {
-  const [colour, setColour] = useState<AlbumColour>(LOAD_ERROR_COLOUR)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [colour, setColour] = useState<AlbumColour>(ERROR_COLOUR)
 
   useEffect(() => {
     if (!imageUrl) {
-      setColour(LOAD_ERROR_COLOUR)
+      setColour(ERROR_COLOUR)
       return
     }
 
-    if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
+    // Fresh canvas and image every time — no stale data from previous track
+    const canvas = document.createElement('canvas')
+    // willReadFrequently tells the browser to optimise this canvas for pixel reads
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) return
 
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    img.src = imageUrl
 
     img.onload = () => {
-      const SIZE = 40
+      const SIZE = 48
       canvas.width = SIZE
       canvas.height = SIZE
       ctx.drawImage(img, 0, 0, SIZE, SIZE)
-      const data = ctx.getImageData(0, 0, SIZE, SIZE).data
 
-      // 36 hue buckets × 10 degrees each
+      let data: Uint8ClampedArray
+      try {
+        data = ctx.getImageData(0, 0, SIZE, SIZE).data
+      } catch {
+        // CORS block — shouldn't happen with crossOrigin='anonymous' but guard anyway
+        setColour(ERROR_COLOUR)
+        return
+      }
+
+      // 36 hue buckets (10° each)
       const hueBuckets = new Float32Array(36)
       let totalBrightness = 0
       let totalSaturation = 0
@@ -93,23 +110,28 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
 
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i], g = data[i + 1], b = data[i + 2]
-        const brightness = (r + g + b) / 3
-        const { h, s } = rgbToHsl(r, g, b)
+        const { h, s, l } = rgbToHsl(r, g, b)
 
-        totalBrightness += brightness
+        totalBrightness += l   // use HSL lightness (0-100), not raw brightness
         totalSaturation += s
         pixelCount++
 
-        // All pixels vote — saturated pixels get a much louder vote
-        const weight = 0.05 + (s / 100) * 3.0
-        const bucket = Math.floor(h / 10) % 36
-        hueBuckets[bucket] += weight
+        // KEY FIX: only saturated pixels vote on hue
+        // Unsaturated pixels (white, grey, black) have no meaningful hue
+        // and were previously polluting the dominant hue with noise
+        if (s >= 15) {
+          // Brighter, more saturated pixels vote harder
+          const weight = (s / 100) * (0.3 + l / 100)
+          const bucket = Math.floor(h / 10) % 36
+          hueBuckets[bucket] += weight
+        }
       }
 
-      const avgBrightness = totalBrightness / pixelCount    // 0–255
-      const avgSaturation = totalSaturation / pixelCount    // 0–100
+      const avgLightness = totalBrightness / pixelCount    // 0–100
+      const avgSaturation = totalSaturation / pixelCount   // 0–100
+      const totalHueVotes = hueBuckets.reduce((a, b) => a + b, 0)
 
-      // Find dominant hue
+      // Find dominant hue bucket
       let maxVotes = 0
       let winningBucket = 0
       for (let i = 0; i < 36; i++) {
@@ -119,55 +141,74 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
         }
       }
       const dominantHue = winningBucket * 10
+      // Confidence: how dominant is the winning hue vs all hue votes?
+      const hueConfidence = totalHueVotes > 0 ? maxVotes / totalHueVotes : 0
+
+      if (DEBUG_LOG) {
+        console.log('[AlbumColour]', {
+          imageUrl: imageUrl.slice(-40),
+          avgLightness: avgLightness.toFixed(1),
+          avgSaturation: avgSaturation.toFixed(1),
+          dominantHue,
+          hueConfidence: hueConfidence.toFixed(2),
+        })
+      }
 
       let finalH: number, finalS: number, finalL: number
 
-      if (avgSaturation < 8) {
-        // Genuinely greyscale image (black, white, or grey album)
-        if (avgBrightness > 160) {
-          // White/light grey album — return a clean near-white
-          finalH = 220  // slight cool tint
-          finalS = 10
-          finalL = 78
-        } else if (avgBrightness > 80) {
-          // Mid grey album
-          finalH = 220
-          finalS = 12
-          finalL = 55
+      // Branch on image character
+      if (avgSaturation < 15 || hueConfidence < 0.12) {
+        // Greyscale or very low colour — no reliable hue, theme on brightness
+        if (avgLightness > 65) {
+          // White / light album
+          finalH = 220; finalS = 12; finalL = 75
+        } else if (avgLightness > 35) {
+          // Grey album
+          finalH = 220; finalS = 14; finalL = 52
         } else {
-          // Black album — return a subtle dark blue-grey
-          finalH = 220
-          finalS = 20
-          finalL = 40
+          // Black album
+          finalH = 220; finalS = 18; finalL = 38
         }
-      } else if (avgBrightness > 185 && avgSaturation < 25) {
-        // Mostly white with some colour (like the Panchiko cover)
-        // Use the dominant hue but keep it light
+
+      } else if (avgLightness > 70 && avgSaturation < 30) {
+        // Mostly white/light with small colour accents (e.g. Panchiko)
+        // Use the dominant hue but render it as a light, visible pastel
         finalH = dominantHue
-        finalS = Math.max(30, avgSaturation * 2)
-        finalL = 72
-      } else if (avgBrightness > 185) {
-        // Bright colourful image
+        finalS = Math.max(35, avgSaturation * 2.5)
+        finalL = 68
+
+      } else if (avgLightness > 70) {
+        // Bright, saturated image
         finalH = dominantHue
-        finalS = Math.min(100, avgSaturation * 1.2)
-        finalL = 60
-      } else if (avgBrightness < 45) {
-        // Very dark / black album
+        finalS = Math.min(100, avgSaturation * 1.1)
+        finalL = 58
+
+      } else if (avgLightness < 25) {
+        // Very dark / black album with colour
         finalH = dominantHue
-        finalS = Math.max(50, avgSaturation * 1.5)
-        finalL = 48
+        finalS = Math.max(55, avgSaturation * 1.6)
+        finalL = 50
+
       } else {
-        // Normal colourful album — standard path
+        // Normal colourful album
         finalH = dominantHue
-        finalS = Math.min(100, avgSaturation * 1.3)
-        finalL = Math.max(42, Math.min(58, avgBrightness / 255 * 80))
+        finalS = Math.min(100, avgSaturation * 1.25)
+        finalL = Math.max(42, Math.min(60, avgLightness * 0.8))
       }
 
       const hex = hslToHex(finalH, finalS, finalL)
+
+      if (DEBUG_LOG) {
+        console.log('[AlbumColour] result →', { finalH, finalS, finalL, hex })
+      }
+
       setColour({ h: finalH, s: finalS, l: finalL, hex })
     }
 
-    img.onerror = () => setColour(LOAD_ERROR_COLOUR)
+    img.onerror = () => setColour(ERROR_COLOUR)
+
+    // Set src after handlers are attached
+    img.src = imageUrl
   }, [imageUrl])
 
   return colour
