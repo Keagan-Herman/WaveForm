@@ -1,21 +1,10 @@
 /**
- * App.tsx — quadrant layout
+ * App.tsx — full AlbumColour propagation
  *
- * LAYOUT:
- * ┌─────────────────┬─────────────────┐
- * │  Track List     │  Radial +       │
- * │  (scrollable)   │  Lissajous      │
- * ├─────────────────┼─────────────────┤
- * │  Now Playing    │  Spectrogram +  │
- * │  + Track Info   │  Freq Bars +    │
- * │                 │  Genre Map      │
- * └─────────────────┴─────────────────┘
- *                   ↑ scrollable
- * Fixed player bar at bottom.
- *
- * Each quadrant fills exactly 50% of the available area.
- * Top-left track list scrolls independently.
- * Bottom-right visualiser section scrolls independently.
+ * All visualiser components now receive the full AlbumColour object
+ * instead of just accentHue or accentColour string.
+ * This gives each component the lightness and saturation context
+ * it needs to render correctly for any album type.
  */
 
 import React, { useEffect, useState, useCallback } from 'react'
@@ -23,114 +12,77 @@ import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
 import { FrequencyBars } from '@/components/visualiser/FrequencyBars'
-import { WaveformLine } from '@/components/visualiser/WaveformLine'
 import { BackgroundPulse } from '@/components/visualiser/BackgroundPulse'
-import { RadialVisualiser } from '@/components/visualiser/RadialVisualiser'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { NowPlaying } from '@/components/library/NowPlaying'
 import { GenrePanel } from '@/components/library/GenrePanel'
 import { usePlayerStore } from '@/stores/playerStore'
-import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useAlbumColour } from '@/hooks/useAlbumColour'
+import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
-import { LissajousVisualiser } from './components/visualiser/LissaJousVisualiser'
 import { Spectrogram } from './components/visualiser/Spectogram'
 
-function useAppAccent() {
+function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const imageUrl = currentTrack?.album.cover_medium ?? null
   return useAlbumColour(imageUrl)
 }
 
-// ─── Top-right quadrant: Radial + Lissajous side by side ─────────────────
+// ─── Top-right: visualisers ────────────────────────────────────────────────
 
-// function VisualisersTop({ accentHue, accentColour }: { accentHue: number; accentColour: string }) {
-//   const isPlaying = usePlayerStore(state => state.isPlaying)
-
-//   return (
-//     <div style={styles.quadrant}>
-//       <div style={styles.quadLabel}>Visualisers</div>
-//       <div style={styles.visualiserTopRow}>
-//         <div style={styles.visualiserItem}>
-//           <p style={styles.canvasLabel}>Frequency Field</p>
-//           <div style={{ position: 'relative' }}>
-//             <RadialVisualiser size={220} accentColour={accentColour} accentHue={accentHue} />
-//           </div>
-//         </div>
-//         <div style={styles.visualiserItem}>
-//           <p style={styles.canvasLabel}>Oscilloscope · click to freeze</p>
-//           <LissajousVisualiser size={220} accentHue={accentHue} accentColour={accentColour} />
-//         </div>
-//       </div>
-//       {!isPlaying && (
-//         <div style={styles.idleOverlay}>
-//           <p style={styles.idleText}>Select a track to visualise</p>
-//         </div>
-//       )}
-//     </div>
-//   )
-// }
-
-// ─── Bottom-right quadrant: Bars + Spectrogram + Genre ───────────────────
-
-function VisualisersBottom({
-  tracks,
-  accentHue,
-  accentColour,
-  onFilteredTracksChange,
-}: {
-  tracks: DeezerTrack[]
-  accentHue: number
-  accentColour: string
-  onFilteredTracksChange: (ids: string[] | null) => void
-}) {
-  const bassPower = useVisualiserStore(state => state.bassPower)
-  const beat = useVisualiserStore(state => state.beat)
+function VisualisersPanel({ accent }: { accent: AlbumColour }) {
+  const isPlaying = usePlayerStore(state => state.isPlaying)
 
   return (
-    <div style={{ ...styles.quadrant, overflowY: 'auto' }}>
-      <div style={styles.quadLabel}>Analysis</div>
-      <div style={styles.analysisInner}>
-
+    <div style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}>
+      <div style={styles.quadLabel}>Visualisers</div>
+      <div style={styles.visInner}>
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Spectrogram · hover for frequency</p>
-          <Spectrogram width={520} height={100} accentHue={accentHue} accentColour={accentColour} />
+          <Spectrogram width={680} height={160} accent={accent} />
         </div>
 
         <div style={styles.canvasBlock}>
           <p style={styles.canvasLabel}>Frequency Spectrum</p>
-          <FrequencyBars width={520} height={90} mirrorMode accentHue={accentHue} />
+          <FrequencyBars width={680} height={160} mirrorMode accent={accent} />
         </div>
 
-        {/* <div style={styles.canvasBlock}>
-          <p style={styles.canvasLabel}>Waveform</p>
-          <WaveformLine width={520} height={40} />
-        </div> */}
-
-        {/* <div style={styles.canvasBlock}>
-          <p style={styles.canvasLabel}>Bass Energy</p>
-          <div style={styles.bassTrack}>
-            <div style={{
-              ...styles.bassFill,
-              width: `${bassPower * 100}%`,
-              background: beat ? `hsl(${accentHue}, 100%, 70%)` : accentColour,
-              boxShadow: beat ? `0 0 10px ${accentColour}` : 'none',
-              transition: beat
-                ? 'width 0.05s, background 0.05s, box-shadow 0.05s'
-                : 'width 0.1s linear, background 0.5s',
-            }} />
+        {!isPlaying && (
+          <div style={styles.idleOverlay}>
+            <p style={styles.idleText}>Select a track to visualise</p>
           </div>
-        </div> */}
+        )}
+      </div>
+    </div>
+  )
+}
 
-        {tracks.length > 0 && (
-          <>
-            <div style={styles.divider} />
-            <GenrePanel
-              tracks={tracks}
-              width={520}
-              onFilteredTracksChange={onFilteredTracksChange}
-            />
-          </>
+// ─── Bottom-right: genre map ───────────────────────────────────────────────
+
+function GenrePanelQuadrant({
+  tracks,
+  accent,
+  onFilteredTracksChange,
+}: {
+  tracks: DeezerTrack[]
+  accent: AlbumColour
+  onFilteredTracksChange: (ids: string[] | null) => void
+}) {
+  return (
+    <div style={{ ...styles.quadrant, overflowY: 'auto' }}>
+      <div style={styles.quadLabel}>Genre Map</div>
+      <div style={styles.genreInner}>
+        {tracks.length > 0 ? (
+          <GenrePanel
+            tracks={tracks}
+            width={680}
+            onFilteredTracksChange={onFilteredTracksChange}
+          />
+        ) : (
+          <div style={styles.stateWrap}>
+            <p style={styles.stateIcon}>◈</p>
+            <p style={styles.stateDesc}>Search for tracks to see genre relationships</p>
+          </div>
         )}
       </div>
     </div>
@@ -170,29 +122,30 @@ function Waveform() {
 
   return (
     <div style={styles.root}>
-      <BackgroundPulse accentHue={accent.h} accentSaturation={accent.s} />
+      <BackgroundPulse accent={accent} />
       <PreviewPlayer />
       <KeyboardShortcuts />
 
-      <header style={{ ...styles.header, borderBottomColor: `${accent.hex}25` }}>
+      <header style={{ ...styles.header, borderBottomColor: `${accent.hex}28` }}>
         <h1 style={styles.logo}>Waveform</h1>
+        <div style={styles.headerMid}>
+          <div
+            style={{ ...styles.accentSwatch, background: accent.hex }}
+            title={`Album colour: ${accent.hex}`}
+          />
+        </div>
         <p style={styles.headerSub}>
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}40`, color: accent.hex }}>/</kbd>{' '}
-          search ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}40` }}>Space</kbd>{' '}
-          play ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}40` }}>←</kbd>{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}40` }}>→</kbd>{' '}
-          navigate
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate
         </p>
-        <div style={{ ...styles.accentDot, background: accent.hex }} title="Current album colour" />
       </header>
 
-      {/* 2×2 grid */}
       <div style={styles.grid}>
 
-        {/* Top-left: Track list */}
-        <div style={{ ...styles.quadrant, ...styles.quadrantBorderRight, ...styles.quadrantBorderBottom }}>
+        {/* Top-left: library */}
+        <div style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}>
           <div style={styles.quadLabel}>Library</div>
           <SearchOverlay
             onResultsChange={setSearchTracks}
@@ -201,24 +154,21 @@ function Waveform() {
           />
         </div>
 
-        {/* Top-right: Radial + Lissajous */}
-        {/* <div style={{ ...styles.quadrantBorderBottom }}>
-          <VisualisersTop accentHue={accent.h} accentColour={accent.hex} />
-        </div> */}
+        {/* Top-right: visualisers */}
+        <VisualisersPanel accent={accent} />
 
-        {/* Bottom-left: Now Playing */}
-        <div style={{ ...styles.quadrant, ...styles.quadrantBorderRight, overflow: 'hidden' }}>
+        {/* Bottom-left: now playing */}
+        <div style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}>
           <div style={styles.quadLabel}>Now Playing</div>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <NowPlaying accentColour={accent} />
           </div>
         </div>
 
-        {/* Bottom-right: Analysis + Genre */}
-        <VisualisersBottom
+        {/* Bottom-right: genre map */}
+        <GenrePanelQuadrant
           tracks={searchTracks}
-          accentHue={accent.h}
-          accentColour={accent.hex}
+          accent={accent}
           onFilteredTracksChange={handleFilteredTracksChange}
         />
 
@@ -241,7 +191,6 @@ export default function App() {
 
 const HEADER_H = 46
 const PLAYER_H = 70
-const GRID_H = `calc(100vh - ${HEADER_H}px - ${PLAYER_H}px)`
 
 const styles: Record<string, React.CSSProperties> = {
   root: {
@@ -273,14 +222,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     flexShrink: 0,
   },
+  headerMid: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  accentSwatch: {
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    transition: 'background 1s ease',
+    flexShrink: 0,
+  },
   headerSub: {
     fontSize: '0.6rem',
-    opacity: 0.4,
+    opacity: 0.38,
     letterSpacing: '0.05em',
     display: 'flex',
     alignItems: 'center',
     gap: '0.35rem',
-    flexWrap: 'wrap',
+    flexShrink: 0,
   },
   kbd: {
     background: 'rgba(255,255,255,0.06)',
@@ -289,75 +250,47 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.08rem 0.3rem',
     fontSize: '0.58rem',
     fontFamily: 'monospace',
-    transition: 'border-color 1s ease, color 1s ease',
+    transition: 'border-color 1s ease',
   },
-  accentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    flexShrink: 0,
-    transition: 'background 1s ease',
-    boxShadow: '0 0 6px currentColor',
-  },
-
-  // 2x2 grid
   grid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gridTemplateRows: '1fr 1fr',
-    height: GRID_H,
+    height: `calc(100vh - ${HEADER_H}px - ${PLAYER_H}px)`,
     overflow: 'hidden',
   },
-
-  // Quadrant base
   quadrant: {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
     position: 'relative',
   },
-  quadrantBorderRight: {
-    borderRight: '1px solid rgba(255,255,255,0.07)',
-  },
-  quadrantBorderBottom: {
-    borderBottom: '1px solid rgba(255,255,255,0.07)',
-  },
+  borderRight: { borderRight: '1px solid rgba(255,255,255,0.07)' },
+  borderBottom: { borderBottom: '1px solid rgba(255,255,255,0.07)' },
   quadLabel: {
     fontSize: '0.5rem',
     letterSpacing: '0.22em',
     textTransform: 'uppercase',
-    opacity: 0.22,
-    padding: '0.55rem 1rem 0.3rem',
+    opacity: 0.2,
+    padding: '0.5rem 1rem 0.25rem',
     flexShrink: 0,
     fontFamily: 'monospace',
   },
-
-  // Top-right visualisers
-  visualiserTopRow: {
+  visInner: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    flex: 1,
-    padding: '0.5rem 1rem 1rem',
+    flexDirection: 'column',
     gap: '1rem',
-  },
-  visualiserItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0.35rem',
-  },
-
-  // Bottom-right analysis
-  analysisInner: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-    padding: '0 1rem 1rem',
+    padding: '0.5rem 1.25rem 1.25rem',
     flex: 1,
+    position: 'relative',
   },
-
-  // Idle overlay (top-right)
+  genreInner: {
+    flex: 1,
+    padding: '0 1.25rem 1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
   idleOverlay: {
     position: 'absolute',
     inset: 0,
@@ -373,32 +306,33 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.75rem',
     letterSpacing: '0.12em',
   },
-
   canvasBlock: {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.3rem',
   },
   canvasLabel: {
-    fontSize: '0.54rem',
+    fontSize: '0.52rem',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',
-    opacity: 0.32,
+    opacity: 0.3,
     fontFamily: 'monospace',
   },
-  divider: {
-    height: 1,
-    background: 'rgba(255,255,255,0.06)',
-    margin: '0.1rem 0',
+  stateWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    gap: '0.5rem',
+    opacity: 0.3,
+    textAlign: 'center',
   },
-  bassTrack: {
-    height: 4,
-    background: 'rgba(255,255,255,0.07)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  bassFill: {
-    height: '100%',
-    borderRadius: 2,
+  stateIcon: { fontSize: '1.5rem' },
+  stateDesc: {
+    fontSize: '0.68rem',
+    lineHeight: 1.6,
+    maxWidth: 220,
+    fontFamily: 'monospace',
   },
 }

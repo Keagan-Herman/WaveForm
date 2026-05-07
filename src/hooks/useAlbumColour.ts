@@ -32,7 +32,7 @@ export interface AlbumColour {
   hex: string
 }
 
-const DEBUG_LOG = false
+const DEBUG_LOG = true
 
 // Neutral blue-grey — only used on network/load error
 const ERROR_COLOUR: AlbumColour = { h: 220, s: 15, l: 52, hex: '#7082a0' }
