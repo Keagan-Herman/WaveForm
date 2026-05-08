@@ -9,6 +9,7 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
+import { useResize } from '@/hooks/useResize'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface FrequencyBarsProps {
@@ -20,13 +21,19 @@ interface FrequencyBarsProps {
 }
 
 export function FrequencyBars({
-  width = 800,
-  height = 200,
+  width: initialWidth = 800,
+  height: initialHeight = 200,
   mirrorMode = true,
   accent,
   className,
 }: FrequencyBarsProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { width, height } = useResize(containerRef)
+
+  const effectiveWidth = width || initialWidth
+  const effectiveHeight = height || initialHeight
+
   const accentRef = useRef(accent)
 
   useEffect(() => {
@@ -108,12 +115,14 @@ export function FrequencyBars({
   }, [start, stop])
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className={className}
-      style={{ display: 'block' }}
-    />
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <canvas
+        ref={canvasRef}
+        width={effectiveWidth}
+        height={effectiveHeight}
+        className={className}
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+    </div>
   )
 }

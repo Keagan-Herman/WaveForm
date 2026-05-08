@@ -14,6 +14,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
+import { useResize } from '@/hooks/useResize'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface SpectrogramProps {
@@ -23,12 +24,17 @@ interface SpectrogramProps {
 }
 
 export function Spectrogram({
-  width = 560,
-  height = 110,
+  width: initialWidth = 560,
+  height: initialHeight = 110,
   accent,
 }: SpectrogramProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
+  const { width, height } = useResize(containerRef)
+
+  const effectiveWidth = width || initialWidth
+  const effectiveHeight = height || initialHeight
   const accentRef = useRef(accent)
   const [hoverInfo, setHoverInfo] = useState<{ x: number; freqLabel: string } | null>(null)
 
@@ -38,9 +44,9 @@ export function Spectrogram({
     const canvas = canvasRef.current
     if (!canvas) return
     offscreenRef.current = document.createElement('canvas')
-    offscreenRef.current.width = canvas.width
-    offscreenRef.current.height = canvas.height
-  }, [width, height])
+    offscreenRef.current.width = effectiveWidth
+    offscreenRef.current.height = effectiveHeight
+  }, [effectiveWidth, effectiveHeight])
 
   const draw = useCallback((data: Uint8Array) => {
     const canvas = canvasRef.current
@@ -51,7 +57,8 @@ export function Spectrogram({
     const offCtx = offscreen.getContext('2d')
     if (!ctx || !offCtx) return
 
-    const { width: w, height: h } = canvas
+    const w = effectiveWidth
+    const h = effectiveHeight
     const { h: hue, s: sat, l: lit } = accentRef.current
     const isLight = lit > 62
     const isDesaturated = sat < 20
@@ -128,15 +135,16 @@ export function Spectrogram({
 
   return (
     <div
-      style={{ position: 'relative', display: 'block', cursor: 'crosshair' }}
+      ref={containerRef}
+      style={{ position: 'relative', display: 'block', cursor: 'crosshair', width: '100%', height: '100%' }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
-        style={{ display: 'block', borderRadius: 4, imageRendering: 'pixelated' }}
+        width={effectiveWidth}
+        height={effectiveHeight}
+        style={{ display: 'block', borderRadius: 4, imageRendering: 'pixelated', width: '100%', height: '100%' }}
       />
 
       {/* Frequency axis labels */}

@@ -32,12 +32,13 @@ function tick() {
 
   // getState() is safe to call outside React — this is Zustand's
   // escape hatch for imperative / non-React contexts
-  const { setBeat, setBassPower } = useVisualiserStore.getState()
+  const { setBeat, setBassPower, setBeatConfidence } = useVisualiserStore.getState()
 
-  const isBeat = beatDetector.detect(freqData)
+  const { beat, confidence } = beatDetector.detect(freqData)
   const bassAvg = freqData.slice(0, 10).reduce((s, v) => s + v, 0) / 10
 
-  setBeat(isBeat)
+  setBeat(beat)
+  setBeatConfidence(confidence)
   setBassPower(bassAvg / 255)
 
   subscribers.forEach(cb => cb(freqData, waveData))

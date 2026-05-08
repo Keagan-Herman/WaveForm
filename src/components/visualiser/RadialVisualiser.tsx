@@ -1,258 +1,85 @@
-/**
- * RadialVisualiser.tsx — interactive
- *
- * Added: click a frequency segment to highlight/isolate that band.
- * Highlighted band glows brightly, others dim.
- * Click same band again to deselect.
- * Hover shows the frequency range of that segment.
- */
-
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef } from 'react'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
+import { useVisualiserStore } from '@/stores/visualiserStore'
+import { useResize } from '@/hooks/useResize'
+import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface RadialVisualiserProps {
-    size?: number
-    accentColour?: string
-    accentHue?: number
+  width?: number
+  height?: number
+  accent: AlbumColour
 }
 
-export function RadialVisualiser({
-    size = 320,
-    accentColour = '#1db954',
-    accentHue = 120,
-}: RadialVisualiserProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const accentRef = useRef({ colour: accentColour, hue: accentHue })
-    const selectedBandRef = useRef<number | null>(null)
-    const hoveredBandRef = useRef<number | null>(null)
-    const [selectedBand, setSelectedBand] = useState<number | null>(null)
-    const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string } | null>(null)
+export function RadialVisualiser({ width: initialWidth = 400, height: initialHeight = 400, accent }: RadialVisualiserProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { width, height } = useResize(containerRef)
 
-    useEffect(() => {
-        accentRef.current = { colour: accentColour, hue: accentHue }
-    }, [accentColour, accentHue])
+  const effectiveWidth = width || initialWidth
+  const effectiveHeight = height || initialHeight
 
-    // Band labels for the tooltip
-    const getBandLabel = (binIndex: number, totalBins: number): string => {
-        const sampleRate = 44100
-        const fftSize = 256
-        const binWidth = sampleRate / fftSize
-        const freq = Math.round(binIndex * binWidth)
-        if (freq < 1000) return `${freq} Hz`
-        return `${(freq / 1000).toFixed(1)} kHz`
-    }
+  useAudioAnalyser({
+    onFrequencyData: freqData => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
-    const draw = useCallback((data: Uint8Array) => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
+      const { isLowQuality } = useVisualiserStore.getState()
 
-        const { width: w, height: h } = canvas
-        const cx = w / 2
-        const cy = h / 2
-        const { hue } = accentRef.current
-        const selected = selectedBandRef.current
-        const hovered = hoveredBandRef.current
+      ctx.clearRect(0, 0, effectiveWidth, effectiveHeight)
 
-        ctx.clearRect(0, 0, w, h)
+      const centerX = effectiveWidth / 2
+      const centerY = effectiveHeight / 2
+      const radius = Math.min(effectiveWidth, effectiveHeight) * 0.25
+      const barCount = isLowQuality ? 40 : 80
+      const barWidth = (2 * Math.PI * radius) / barCount * 0.8
 
-        const bins = Math.floor(data.length / 2)
-        const angleStep = (Math.PI * 2) / bins
-        const innerRadius = w * 0.18
-        const maxBarLen = w * 0.30
+      ctx.strokeStyle = accent.hex
+      ctx.lineWidth = barWidth
+      ctx.lineCap = 'round'
 
-        // Inner ring
+      for (let i = 0; i < barCount; i++) {
+        // Map bar to frequency data, skipping the very low/high end
+        const idx = Math.floor((i / barCount) * (freqData.length * 0.8))
+        const val = freqData[idx]
+        const barHeight = (val / 255) * radius * 0.8
+
+        const angle = (i / barCount) * Math.PI * 2
+        const x1 = centerX + Math.cos(angle) * radius
+        const y1 = centerY + Math.sin(angle) * radius
+        const x2 = centerX + Math.cos(angle) * (radius + barHeight)
+        const y2 = centerY + Math.sin(angle) * (radius + barHeight)
+
+        const opacity = 0.3 + (val / 255) * 0.7
+        ctx.strokeStyle = `rgba(${accent.h}, ${accent.s}%, ${accent.l}%, ${opacity})`
+
+        // Use HSL for stroke if easier or keep hex with alpha
+        ctx.strokeStyle = `hsla(${accent.h}, ${accent.s}%, ${accent.l}%, ${opacity})`
+
         ctx.beginPath()
-        ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2)
-        ctx.strokeStyle = `hsla(${hue}, 60%, 50%, 0.12)`
-        ctx.lineWidth = 1
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x2, y2)
         ctx.stroke()
+      }
 
-        for (let i = 0; i < bins; i++) {
-            const value = data[i]
-            const ratio = value / 255
-            const barLen = ratio * maxBarLen
-            const angle = i * angleStep - Math.PI / 2
+      // Inner circle glow
+      const { bassPower } = useVisualiserStore.getState()
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius - 5, 0, Math.PI * 2)
+      ctx.fillStyle = `hsla(${accent.h}, ${accent.s}%, ${accent.l}%, ${0.05 + bassPower * 0.1})`
+      ctx.fill()
+    }
+  })
 
-            const x1 = cx + Math.cos(angle) * innerRadius
-            const y1 = cy + Math.sin(angle) * innerRadius
-            const x2 = cx + Math.cos(angle) * (innerRadius + barLen)
-            const y2 = cy + Math.sin(angle) * (innerRadius + barLen)
-
-            const isSelected = selected === i
-            const isHovered = hovered === i
-            const hasSelection = selected !== null
-            const dimmed = hasSelection && !isSelected
-
-            const freqHue = (hue + (i / bins) * 60) % 360
-            const alpha = dimmed ? 0.1 : (isSelected ? 1 : 0.5 + ratio * 0.5)
-            const lw = isSelected
-                ? 3 + ratio * 3
-                : isHovered
-                    ? 2 + ratio * 2
-                    : 1.5 + ratio * 1.5
-
-            ctx.beginPath()
-            ctx.moveTo(x1, y1)
-            ctx.lineTo(x2, y2)
-            ctx.strokeStyle = `hsla(${freqHue}, 85%, ${isSelected ? 70 : 55}%, ${alpha})`
-            ctx.lineWidth = lw
-            ctx.lineCap = 'round'
-            ctx.stroke()
-
-            // Glow tip
-            if (ratio > 0.5 && !dimmed) {
-                ctx.beginPath()
-                ctx.arc(x2, y2, isSelected ? 3 + ratio * 4 : 1.5 + ratio * 2, 0, Math.PI * 2)
-                ctx.fillStyle = `hsla(${freqHue}, 100%, 80%, ${ratio * (isSelected ? 1 : 0.6)})`
-                if (isSelected) {
-                    ctx.shadowColor = `hsl(${freqHue}, 100%, 70%)`
-                    ctx.shadowBlur = 8
-                }
-                ctx.fill()
-                ctx.shadowBlur = 0
-            }
-        }
-
-        // Centre glow
-        const bassAvg = Array.from(data.slice(0, 8)).reduce((a, b) => a + b, 0) / 8
-        const bassRatio = bassAvg / 255
-        const glowRadius = innerRadius * (0.7 + bassRatio * 0.6)
-
-        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius)
-        grd.addColorStop(0, `hsla(${hue}, 90%, 65%, ${0.2 + bassRatio * 0.35})`)
-        grd.addColorStop(1, `hsla(${hue}, 80%, 60%, 0)`)
-        ctx.beginPath()
-        ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2)
-        ctx.fillStyle = grd
-        ctx.fill()
-
-        // Selected band label in centre
-        if (selected !== null) {
-            ctx.fillStyle = `hsla(${hue}, 80%, 70%, 0.9)`
-            ctx.font = `600 11px monospace`
-            ctx.textAlign = 'center'
-            ctx.textBaseline = 'middle'
-            ctx.fillText(getBandLabel(selected, bins), cx, cy)
-        }
-    }, [])
-
-    const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
-
-    useEffect(() => {
-        start()
-        return () => stop()
-    }, [start, stop])
-
-    const getClickedBin = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current
-        if (!canvas) return null
-        const rect = canvas.getBoundingClientRect()
-        const x = e.clientX - rect.left - canvas.width / 2
-        const y = e.clientY - rect.top - canvas.height / 2
-        const dist = Math.sqrt(x * x + y * y)
-        const innerRadius = canvas.width * 0.18
-
-        if (dist < innerRadius * 0.7) return null // centre click — deselect
-
-        let angle = Math.atan2(y, x) + Math.PI / 2
-        if (angle < 0) angle += Math.PI * 2
-
-        const bins = 64 // half of 128
-        const bin = Math.floor((angle / (Math.PI * 2)) * bins)
-        return bin
-    }, [])
-
-    const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-        const bin = getClickedBin(e)
-        if (bin === null) {
-            selectedBandRef.current = null
-            setSelectedBand(null)
-            setTooltip(null)
-            return
-        }
-        if (selectedBandRef.current === bin) {
-            selectedBandRef.current = null
-            setSelectedBand(null)
-        } else {
-            selectedBandRef.current = bin
-            setSelectedBand(bin)
-        }
-    }, [getClickedBin])
-
-    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const bin = getClickedBin(e)
-        hoveredBandRef.current = bin
-        if (bin !== null) {
-            const rect = canvas.getBoundingClientRect()
-            setTooltip({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top - 24,
-                label: getBandLabel(bin, 64),
-            })
-        } else {
-            setTooltip(null)
-        }
-    }, [getClickedBin])
-
-    const handleMouseLeave = useCallback(() => {
-        hoveredBandRef.current = null
-        setTooltip(null)
-    }, [])
-
-    return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-            <canvas
-                ref={canvasRef}
-                width={size}
-                height={size}
-                onClick={handleClick}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                style={{ display: 'block', cursor: 'crosshair' }}
-                title="Click a frequency band to isolate it"
-            />
-            {tooltip && (
-                <div style={{
-                    position: 'absolute',
-                    left: tooltip.x,
-                    top: tooltip.y,
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.75)',
-                    color: accentColour,
-                    fontFamily: 'monospace',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.08em',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '3px',
-                    pointerEvents: 'none',
-                    whiteSpace: 'nowrap',
-                    border: `1px solid ${accentColour}44`,
-                    transition: 'color 0.5s',
-                }}>
-                    {tooltip.label}
-                </div>
-            )}
-            {selectedBand !== null && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 4,
-                    left: 0,
-                    right: 0,
-                    textAlign: 'center',
-                    fontSize: '0.55rem',
-                    color: accentColour,
-                    opacity: 0.6,
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.1em',
-                    pointerEvents: 'none',
-                }}>
-                    click centre to deselect
-                </div>
-            )}
-        </div>
-    )
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <canvas
+        ref={canvasRef}
+        width={effectiveWidth}
+        height={effectiveHeight}
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+    </div>
+  )
 }
