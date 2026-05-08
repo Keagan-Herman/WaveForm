@@ -227,7 +227,7 @@ function Waveform() {
 
       <PlayerBar accentColour={accent.hex} />
 
-      <FullscreenOverlay accent={accent} isPlaying={isPlaying} />
+      <FullscreenOverlay accent={accent} isPlaying={isPlaying} tracks={searchTracks} />
     </div>
   )
 }

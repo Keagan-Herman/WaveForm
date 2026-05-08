@@ -42,6 +42,7 @@ interface PlayerStore {
   setQueue: (tracks: DeezerTrack[], startIndex?: number) => void
   nextTrack: () => DeezerTrack | null
   prevTrack: () => DeezerTrack | null
+  playTrackByAlbumId: (albumId: number) => void
   clearQueue: () => void
 }
 
@@ -79,6 +80,19 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const prev = queue[prevIndex]
     set({ queueIndex: prevIndex, currentTrack: prev, progress: 0 })
     return prev
+  },
+
+  playTrackByAlbumId: (albumId: number) => {
+    const { queue } = get()
+    const trackIndex = queue.findIndex(t => t.album.id === albumId)
+    if (trackIndex !== -1) {
+      set({
+        queueIndex: trackIndex,
+        currentTrack: queue[trackIndex],
+        progress: 0,
+        isPlaying: true
+      })
+    }
   },
 
   clearQueue: () => set({ queue: [], queueIndex: 0 }),
