@@ -3,28 +3,59 @@
  *
  * Zustand store for derived audio state that needs to cross the
  * canvas/React/R3F boundary.
- *
- * WHAT LIVES HERE:
- * - beat: boolean — fired by BeatDetector, consumed by R3F album field
- * - bassPower: number (0–1) — consumed by BackgroundPulse
- *
- * WHAT DOES NOT LIVE HERE:
- * - Raw Uint8Array frequency data — that stays in the rAF loop and goes
- *   directly to canvas callbacks. Never put it in Zustand.
  */
 
 import { create } from 'zustand'
 
+export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal'
+
 interface VisualiserStore {
+  // Audio reactive state
   beat: boolean
   bassPower: number
+  beatConfidence: number
+
+  // UI / Mode state
+  visualLayer: VisualLayer
+  isFullscreen: boolean
+  isLowQuality: boolean
+
+  // Actions
   setBeat: (beat: boolean) => void
   setBassPower: (power: number) => void
+  setBeatConfidence: (confidence: number) => void
+  setVisualLayer: (layer: VisualLayer) => void
+  cycleVisualLayer: () => void
+  setIsFullscreen: (isFullscreen: boolean) => void
+  toggleFullscreen: () => void
+  setIsLowQuality: (isLowQuality: boolean) => void
+  toggleLowQuality: () => void
 }
 
-export const useVisualiserStore = create<VisualiserStore>(set => ({
+export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   beat: false,
   bassPower: 0,
+  beatConfidence: 0,
+
+  visualLayer: 'Ambient',
+  isFullscreen: false,
+  isLowQuality: false,
+
   setBeat: beat => set({ beat }),
   setBassPower: bassPower => set({ bassPower }),
+  setBeatConfidence: beatConfidence => set({ beatConfidence }),
+
+  setVisualLayer: visualLayer => set({ visualLayer }),
+  cycleVisualLayer: () => {
+    const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal']
+    const current = get().visualLayer
+    const nextIndex = (layers.indexOf(current) + 1) % layers.length
+    set({ visualLayer: layers[nextIndex] })
+  },
+
+  setIsFullscreen: isFullscreen => set({ isFullscreen }),
+  toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
+
+  setIsLowQuality: isLowQuality => set({ isLowQuality }),
+  toggleLowQuality: () => set(state => ({ isLowQuality: !state.isLowQuality })),
 }))

@@ -16,11 +16,15 @@ import { BackgroundPulse } from '@/components/visualiser/BackgroundPulse'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { NowPlaying } from '@/components/library/NowPlaying'
 import { GenrePanel } from '@/components/library/GenrePanel'
+import { AlbumGravityField } from '@/components/library/AlbumGravityField'
 import { usePlayerStore } from '@/stores/playerStore'
+import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useAlbumColour } from '@/hooks/useAlbumColour'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
 import { Spectrogram } from './components/visualiser/Spectogram'
+import { RadialVisualiser } from './components/visualiser/RadialVisualiser'
+import { FullscreenOverlay } from './components/visualiser/FullscreenOverlay'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -61,7 +65,6 @@ function VisualisersPanel({ accent }: { accent: AlbumColour }) {
 
 function GenrePanelQuadrant({
   tracks,
-  accent,
   onFilteredTracksChange,
 }: {
   tracks: DeezerTrack[]
@@ -93,14 +96,18 @@ function GenrePanelQuadrant({
 
 function KeyboardShortcuts() {
   const { isPlaying, setIsPlaying, currentTrack, nextTrack, prevTrack } = usePlayerStore()
+  const { toggleFullscreen, cycleVisualLayer } = useVisualiserStore()
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      switch (e.key) {
+      switch (e.key.toLowerCase()) {
         case ' ': e.preventDefault(); if (currentTrack) setIsPlaying(!isPlaying); break
-        case 'ArrowRight': e.preventDefault(); nextTrack(); break
-        case 'ArrowLeft': e.preventDefault(); prevTrack(); break
+        case 'arrowright': e.preventDefault(); nextTrack(); break
+        case 'arrowleft': e.preventDefault(); prevTrack(); break
+        case 'f': e.preventDefault(); toggleFullscreen(); break
+        case 'v': e.preventDefault(); cycleVisualLayer(); break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -115,6 +122,22 @@ function Waveform() {
   const [searchTracks, setSearchTracks] = useState<DeezerTrack[]>([])
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
   const accent = useAppAccent()
+  const { toggleFullscreen, visualLayer, isLowQuality, toggleLowQuality } = useVisualiserStore()
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+
+  // Inject CSS variables for global skinning
+  useEffect(() => {
+    const root = document.documentElement
+    const { palette } = accent
+    root.style.setProperty('--bg-color', palette.background)
+    root.style.setProperty('--surface-color', palette.surface)
+    root.style.setProperty('--primary-color', palette.primary)
+    root.style.setProperty('--secondary-color', palette.secondary)
+    root.style.setProperty('--accent-color', palette.accent)
+    root.style.setProperty('--text-color', palette.text)
+    root.style.setProperty('--text-dim', palette.textDim)
+    root.style.setProperty('--border-color', palette.border)
+  }, [accent])
 
   const handleFilteredTracksChange = useCallback((ids: string[] | null) => {
     setFilteredTrackIds(ids)
@@ -134,12 +157,28 @@ function Waveform() {
             title={`Album colour: ${accent.hex}`}
           />
         </div>
-        <p style={styles.headerSub}>
+        <div style={styles.headerSub}>
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate
-        </p>
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
+          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
+
+          <button
+            onClick={toggleFullscreen}
+            style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
+          >
+            Fullscreen
+          </button>
+
+          <button
+            onClick={toggleLowQuality}
+            style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: isLowQuality ? '#ff4444' : accent.hex }}
+          >
+            {isLowQuality ? 'HQ Off' : 'HQ On'}
+          </button>
+        </div>
       </header>
 
       <div style={styles.grid}>
@@ -154,8 +193,20 @@ function Waveform() {
           />
         </div>
 
-        {/* Top-right: visualisers */}
-        <VisualisersPanel accent={accent} />
+        {/* Top-right: visualisers or Hero Scene */}
+        <div style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}>
+          <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
+          {isPlaying ? (
+            <div style={styles.heroSceneWrap}>
+              <AlbumGravityField tracks={searchTracks} width={680} height={340} accent={accent} />
+              <div style={styles.heroOverlay}>
+                <RadialVisualiser width={300} height={300} accent={accent} />
+              </div>
+            </div>
+          ) : (
+            <VisualisersPanel accent={accent} />
+          )}
+        </div>
 
         {/* Bottom-left: now playing */}
         <div style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}>
@@ -168,13 +219,15 @@ function Waveform() {
         {/* Bottom-right: genre map */}
         <GenrePanelQuadrant
           tracks={searchTracks}
-          accent={accent}
           onFilteredTracksChange={handleFilteredTracksChange}
+          accent={accent}
         />
 
       </div>
 
       <PlayerBar accentColour={accent.hex} />
+
+      <FullscreenOverlay accent={accent} isPlaying={isPlaying} />
     </div>
   )
 }
@@ -195,11 +248,13 @@ const PLAYER_H = 70
 const styles: Record<string, React.CSSProperties> = {
   root: {
     height: '100vh',
-    color: '#f0f0f0',
+    backgroundColor: 'var(--bg-color, #050505)',
+    color: 'var(--text-color, #f0f0f0)',
     fontFamily: 'monospace',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    backgroundImage: 'radial-gradient(circle at top right, var(--surface-color), transparent)',
   },
   header: {
     height: HEADER_H,
@@ -236,12 +291,24 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerSub: {
     fontSize: '0.6rem',
-    opacity: 0.38,
     letterSpacing: '0.05em',
     display: 'flex',
     alignItems: 'center',
     gap: '0.35rem',
     flexShrink: 0,
+    color: 'var(--text-dim)',
+  },
+  headerBtn: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid',
+    borderRadius: '4px',
+    padding: '0.2rem 0.5rem',
+    fontSize: '0.55rem',
+    cursor: 'pointer',
+    fontFamily: 'monospace',
+    marginLeft: '0.5rem',
+    textTransform: 'uppercase',
+    transition: 'all 0.2s ease',
   },
   kbd: {
     background: 'rgba(255,255,255,0.06)',
@@ -310,6 +377,25 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.3rem',
+    background: 'rgba(0,0,0,0.2)',
+    padding: '0.75rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)',
+    backdropFilter: 'blur(8px)',
+  },
+  heroSceneWrap: {
+    position: 'relative',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  heroOverlay: {
+    position: 'absolute',
+    pointerEvents: 'none',
+    zIndex: 5,
+    opacity: 0.7,
   },
   canvasLabel: {
     fontSize: '0.52rem',

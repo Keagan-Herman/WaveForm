@@ -34,6 +34,7 @@ import {
   type FC,
 } from 'react'
 import * as d3 from 'd3'
+import { useVisualiserStore } from '@/stores/visualiserStore'
 import type { GenreNode, GenreLink, GenreGraphData } from '@/lib/genreGraph'
 
 interface GenreForceGraphProps {
@@ -114,6 +115,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     // Tick handler — D3 calls this on every simulation step
     simulation.on('tick', () => {
       const root = d3.select(svg).select('g.root')
+      const { bassPower, beat } = useVisualiserStore.getState()
 
       root
         .select('g.links')
@@ -122,18 +124,22 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         .attr('y1', d => (d.source as GenreNode).y ?? 0)
         .attr('x2', d => (d.target as GenreNode).x ?? 0)
         .attr('y2', d => (d.target as GenreNode).y ?? 0)
+        .attr('stroke-opacity', 0.2 + bassPower * 0.4)
+        .attr('stroke', beat ? '#fff' : 'rgba(232,245,232,0.1)')
 
       root
         .select('g.nodes')
         .selectAll<SVGCircleElement, GenreNode>('circle')
         .attr('cx', d => clamp(d.x ?? 0, 20, width - 20))
         .attr('cy', d => clamp(d.y ?? 0, 20, height - 20))
+        .attr('r', d => nodeRadius(d) * (1 + bassPower * 0.15))
 
       root
         .select('g.labels')
         .selectAll<SVGTextElement, GenreNode>('text')
         .attr('x', d => clamp(d.x ?? 0, 20, width - 20))
-        .attr('y', d => clamp(d.y ?? 0, 20, height - 20) + nodeRadius(d) + 10)
+        .attr('y', d => clamp(d.y ?? 0, 20, height - 20) + nodeRadius(d) * (1 + bassPower * 0.15) + 10)
+        .attr('opacity', 0.5 + bassPower * 0.5)
     })
 
     // Drag behaviour

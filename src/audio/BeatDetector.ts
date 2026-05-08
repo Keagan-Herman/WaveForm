@@ -1,34 +1,18 @@
 /**
  * BeatDetector.ts
  *
- * Sliding window beat detector based on bass energy variance.
- *
- * HOW IT WORKS:
- * Maintains a history of bass energy values over a rolling window (~1 second).
- * A beat is detected when the current energy significantly exceeds the
- * recent average. The threshold multiplier C is dynamic — it increases
- * when energy variance is high (busy signal) to reduce false positives.
- *
- * KNOWN LIMITATIONS:
- * - Works best on music with hard transient kicks (electronic, hip-hop, rock)
- * - Will false-positive on tracks with sustained bass (jazz, classical)
- * - Heavily compressed pop music (low dynamic range) reduces detection accuracy
- * - The configurable `sensitivity` parameter lets you tune per-genre if needed
- *
- * This is a heuristic detector, not a ground-truth onset detector.
- * For a portfolio demo it is more than sufficient.
+ * Enhanced beat detector combining bass energy variance with spectral flux.
  */
 
 export class BeatDetector {
   // Rolling history of bass energy values
-  private history: number[] = []
+  private energyHistory: number[] = []
+  // Rolling history of spectral flux values
+  private fluxHistory: number[] = []
+  // Previous frequency data for flux calculation
+  private prevFrequencyData: Uint8Array | null = null
 
-  // ~1 second of history at 60fps
   private readonly windowSize: number
-
-  // Base threshold multiplier. Higher = less sensitive (fewer false positives).
-  // Lower = more sensitive (catches quieter beats, more false positives).
-  // Recommended range: 1.2 – 2.0
   private readonly sensitivity: number
 
   constructor(sensitivity = 1.5, windowSize = 43) {
@@ -38,36 +22,67 @@ export class BeatDetector {
 
   /**
    * Pass the current frequency data array on every animation frame.
-   * Returns true if a beat onset is detected on this frame.
+   * Returns an object with { beat: boolean, confidence: number }.
    */
-  detect(frequencyData: Uint8Array): boolean {
-    // Focus on bass frequencies: bins 0–10 in a 128-bin FFT
-    // These correspond roughly to 0–1700 Hz depending on sample rate
+  detect(frequencyData: Uint8Array): { beat: boolean; confidence: number } {
+    // 1. Bass Energy Detection (Current approach)
     const bassSlice = frequencyData.slice(0, 10)
     const bassEnergy = bassSlice.reduce((sum, v) => sum + v, 0) / bassSlice.length
 
-    this.history.push(bassEnergy)
-    if (this.history.length > this.windowSize) {
-      this.history.shift()
+    this.energyHistory.push(bassEnergy)
+    if (this.energyHistory.length > this.windowSize) {
+      this.energyHistory.shift()
     }
 
-    // Need at least half a window before making a decision
-    if (this.history.length < this.windowSize / 2) return false
+    // 2. Spectral Flux Detection
+    // Spectral flux measures the change in power spectrum from one frame to the next.
+    let flux = 0
+    if (this.prevFrequencyData) {
+      for (let i = 0; i < frequencyData.length; i++) {
+        const diff = frequencyData[i] - this.prevFrequencyData[i]
+        // Only count positive changes (onsets)
+        if (diff > 0) flux += diff
+      }
+    }
+    this.prevFrequencyData = new Uint8Array(frequencyData)
 
-    const average =
-      this.history.reduce((a, b) => a + b, 0) / this.history.length
+    this.fluxHistory.push(flux)
+    if (this.fluxHistory.length > this.windowSize) {
+      this.fluxHistory.shift()
+    }
 
-    const variance =
-      this.history.reduce((sum, v) => sum + Math.pow(v - average, 2), 0) /
-      this.history.length
+    // Need at least half a window
+    if (this.energyHistory.length < this.windowSize / 2) return { beat: false, confidence: 0 }
 
-    // Dynamic threshold: raises the bar when the signal is already energetic
-    const C = this.sensitivity + variance / 10000
+    // Energy stats
+    const energyAvg = this.energyHistory.reduce((a, b) => a + b, 0) / this.energyHistory.length
+    const energyVar = this.energyHistory.reduce((sum, v) => sum + Math.pow(v - energyAvg, 2), 0) / this.energyHistory.length
+    const energyThresh = (this.sensitivity + energyVar / 10000) * energyAvg
 
-    return bassEnergy > C * average && bassEnergy > 10 // ignore near-silence
+    // Flux stats
+    const fluxAvg = this.fluxHistory.reduce((a, b) => a + b, 0) / this.fluxHistory.length
+    const fluxVar = this.fluxHistory.reduce((sum, v) => sum + Math.pow(v - fluxAvg, 2), 0) / this.fluxHistory.length
+    const fluxThresh = (this.sensitivity + fluxVar / 10000) * fluxAvg
+
+    const energyBeat = bassEnergy > energyThresh && bassEnergy > 10
+    const fluxBeat = flux > fluxThresh && flux > 100 // flux is naturally higher magnitude
+
+    // Determine confidence based on how much thresholds were exceeded
+    const energyConfidence = energyBeat ? Math.min(1, (bassEnergy - energyThresh) / energyAvg) : 0
+    const fluxConfidence = fluxBeat ? Math.min(1, (flux - fluxThresh) / fluxAvg) : 0
+
+    // Combined confidence
+    const confidence = (energyConfidence + fluxConfidence) / 2
+
+    // Final beat decision: both usually agree on strong beats, flux helps on weak ones
+    const isBeat = energyBeat || (fluxBeat && fluxConfidence > 0.5)
+
+    return { beat: isBeat, confidence }
   }
 
   reset(): void {
-    this.history = []
+    this.energyHistory = []
+    this.fluxHistory = []
+    this.prevFrequencyData = null
   }
 }

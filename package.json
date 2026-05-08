@@ -12,13 +12,16 @@
   "dependencies": {
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "^8.17.10",
+    "@react-three/postprocessing": "^2.16.2",
     "@use-gesture/react": "^10.3.1",
     "d3": "^7.9.0",
     "framer-motion": "^12.38.0",
+    "postprocessing": "^6.36.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-reconciler": "0.29.0",
-    "three": "^0.184.0",
+    "three": "^0.170.0",
+    "tinycolor2": "^1.6.0",
     "zustand": "^4.5.7"
   },
   "pnpm": {
@@ -34,6 +37,7 @@
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@types/three": "^0.184.0",
+    "@types/tinycolor2": "^1.4.6",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
     "@vitejs/plugin-react": "^6.0.1",

@@ -24,18 +24,66 @@
  */
 
 import { useState, useEffect } from 'react'
+import tinycolor from 'tinycolor2'
 
 export interface AlbumColour {
   h: number
   s: number
   l: number
   hex: string
+  palette: {
+    background: string
+    surface: string
+    primary: string
+    secondary: string
+    accent: string
+    text: string
+    textDim: string
+    border: string
+  }
 }
 
 const DEBUG_LOG = true
 
 // Neutral blue-grey — only used on network/load error
-const ERROR_COLOUR: AlbumColour = { h: 220, s: 15, l: 52, hex: '#7082a0' }
+const ERROR_HEX = '#7082a0'
+const ERROR_COLOUR: AlbumColour = generatePaletteFromHex(ERROR_HEX, 220, 15, 52)
+
+function generatePaletteFromHex(hex: string, h: number, s: number, l: number): AlbumColour {
+  // Create a dark, moody background based on the dominant color
+  // We want it very dark, but slightly tinted
+  const background = tinycolor(hex).darken(45).desaturate(50).toHexString()
+  const surface = tinycolor(hex).darken(40).desaturate(40).toHexString()
+
+  // Primary is the dominant color itself
+  const primary = hex
+
+  // Secondary is a shifted hue or a lighter version
+  const secondary = tinycolor(hex).spin(30).lighten(10).toHexString()
+
+  // Accent is a high-contrast complementary or split-complementary
+  const accent = tinycolor(hex).complement().lighten(20).toHexString()
+
+  // Text should always be readable
+  const text = l > 70 ? '#111111' : '#f0f0f0'
+  const textDim = l > 70 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'
+
+  const border = tinycolor(hex).darken(20).setAlpha(0.2).toRgbString()
+
+  return {
+    h, s, l, hex,
+    palette: {
+      background,
+      surface,
+      primary,
+      secondary,
+      accent,
+      text,
+      textDim,
+      border,
+    }
+  }
+}
 
 function rgbToHsl(r: number, g: number, b: number) {
   r /= 255; g /= 255; b /= 255
@@ -197,12 +245,13 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
       }
 
       const hex = hslToHex(finalH, finalS, finalL)
+      const result = generatePaletteFromHex(hex, finalH, finalS, finalL)
 
       if (DEBUG_LOG) {
-        console.log('[AlbumColour] result →', { finalH, finalS, finalL, hex })
+        console.log('[AlbumColour] result →', result)
       }
 
-      setColour({ h: finalH, s: finalS, l: finalL, hex })
+      setColour(result)
     }
 
     img.onerror = () => setColour(ERROR_COLOUR)

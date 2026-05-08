@@ -57,7 +57,7 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
   const elapsedStr = `0:${String(elapsedSecs).padStart(2, '0')}`
 
   return (
-    <div style={styles.wrap}>
+    <div style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}>
 
       {/* Top row: small art + primary text */}
       <div style={styles.topRow}>
@@ -203,6 +203,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     width: 110,
     height: 110,
+    cursor: 'pointer',
+    transition: 'transform 0.3s ease',
   },
   art: {
     width: '100%',
