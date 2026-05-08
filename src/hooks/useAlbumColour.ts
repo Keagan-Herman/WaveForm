@@ -51,9 +51,16 @@ const ERROR_COLOUR: AlbumColour = generatePaletteFromHex(ERROR_HEX, 220, 15, 52)
 
 function generatePaletteFromHex(hex: string, h: number, s: number, l: number): AlbumColour {
   // Create a dark, moody background based on the dominant color
-  // We want it very dark, but slightly tinted
-  const background = tinycolor(hex).darken(45).desaturate(50).toHexString()
-  const surface = tinycolor(hex).darken(40).desaturate(40).toHexString()
+  // We want it very dark, but slightly tinted.
+  // FIX: For white/light albums, darkening by a fixed % still leaves it too bright.
+  // We now force a maximum lightness for background and surface.
+  const bg = tinycolor(hex).desaturate(50).toHsl()
+  bg.l = Math.min(bg.l, 0.08) // Max 8% lightness
+  const background = tinycolor(bg).toHexString()
+
+  const surf = tinycolor(hex).desaturate(40).toHsl()
+  surf.l = Math.min(surf.l, 0.12) // Max 12% lightness
+  const surface = tinycolor(surf).toHexString()
 
   // Primary is the dominant color itself
   const primary = hex

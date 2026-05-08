@@ -1,11 +1,12 @@
 
-> waveform@0.0.0 dev
+> waveform@0.0.0 dev /app
 > vite
 
 You or a plugin you are using have set `optimizeDeps.esbuildOptions` but this option is now deprecated. Vite now uses Rolldown to optimize the dependencies. Please use `optimizeDeps.rolldownOptions` instead.
 
-  VITE v8.0.10  ready in 277 ms
+  VITE v8.0.10  ready in 447 ms
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
-2:15:22 PM [vite] (client) [optimizer] bundling dependencies...
+5:51:47 PM [vite] (client) [optimizer] bundling dependencies...
+5:55:15 PM [vite] (client) hmr update /src/components/library/AlbumMesh.tsx

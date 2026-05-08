@@ -19,14 +19,16 @@
  * subscribing the R3F component to Zustand re-renders.
  */
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { useVisualiserStore } from '@/stores/visualiserStore'
+import { usePlayerStore } from '@/stores/playerStore'
 
 interface AlbumMeshProps {
   imageUrl: string
+  albumId?: string
   position: [number, number, number]
   phaseOffset: number      // 0–2π, makes float timing unique per album
   rotationSpeed: number    // radians per second, small value (0.02–0.08)
@@ -37,6 +39,7 @@ interface AlbumMeshProps {
 
 export function AlbumMesh({
   imageUrl,
+  albumId,
   position,
   phaseOffset,
   rotationSpeed,
@@ -46,6 +49,8 @@ export function AlbumMesh({
 }: AlbumMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const texture = useTexture(imageUrl)
+  const [hovered, setHovered] = useState(false)
+  const { playTrackByAlbumId } = usePlayerStore()
 
   // Memoise geometry and material — don't recreate on every render
   const geometry = useMemo(() => new THREE.PlaneGeometry(size, size), [size])
@@ -71,20 +76,29 @@ export function AlbumMesh({
       position[1] + Math.sin(t * floatSpeed * Math.PI * 2 + phaseOffset) * floatAmplitude
 
     // Slow drift rotation
-    mesh.rotation.y = Math.sin(t * rotationSpeed + phaseOffset) * 0.12
+    // Faster rotation on hover
+    const currentRotSpeed = hovered ? rotationSpeed * 4 : rotationSpeed
+    mesh.rotation.y += currentRotSpeed * 0.05
     mesh.rotation.x = Math.sin(t * rotationSpeed * 0.7 + phaseOffset) * 0.05
 
     // Beat pulse — read from store imperatively, not via subscription
     // This avoids Zustand re-renders propagating into the R3F tree
     const { beat } = useVisualiserStore.getState()
 
+    const targetScale = hovered ? size * 1.2 : size
+
     if (beat) {
       // Snap up
-      mesh.scale.setScalar(1.08)
+      mesh.scale.setScalar(targetScale * 1.1)
     } else {
-      // Lerp back to 1.0
+      // Lerp back to target
       const s = mesh.scale.x
-      mesh.scale.setScalar(s + (1.0 - s) * 0.12)
+      mesh.scale.setScalar(s + (targetScale - s) * 0.1)
+    }
+
+    // Material update for hover glow
+    if (material instanceof THREE.MeshBasicMaterial) {
+      material.opacity = hovered ? 1.0 : 0.92
     }
   })
 
@@ -94,6 +108,11 @@ export function AlbumMesh({
       position={position}
       geometry={geometry}
       material={material}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+      onClick={() => {
+        if (albumId) playTrackByAlbumId(Number(albumId))
+      }}
     />
   )
 }
