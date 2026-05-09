@@ -60,7 +60,7 @@ export function AlbumMesh({
         map: texture,
         transparent: true,
         opacity: 0.92,
-        side: THREE.FrontSide,
+        side: THREE.DoubleSide,
       }),
     [texture]
   )
