@@ -9,6 +9,9 @@ import { RadialVisualiser } from './RadialVisualiser'
 import { FrequencyBars } from './FrequencyBars'
 import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
+import { AudioOrb } from './AudioOrb'
+import { AudioTerrain } from './AudioTerrain'
+import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
@@ -58,8 +61,10 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
       <ParticleField color={accent.hex} />
 
       {visualLayer === 'Energy' && <WaveformTunnel accent={accent} />}
+      {visualLayer === 'Energy' && <AudioOrb accent={accent} />}
+      {visualLayer === 'Ambient' && <AudioTerrain accent={accent} />}
 
-      {visualLayer !== 'Minimal' && albumLayout.map(album => (
+      {(visualLayer === 'Ambient' || visualLayer === 'Energy') && albumLayout.map(album => (
         <AlbumMesh key={album.albumId} {...album} />
       ))}
 
@@ -79,17 +84,22 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   if (!isFullscreen) return null
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key={isFullscreen ? 'fullscreen' : 'none'}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         style={styles.overlay}
       >
         <div style={styles.canvasWrap}>
-          <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
-            <FullscreenScene accent={accent} tracks={tracks} />
-          </Canvas>
+          {visualLayer === 'Presets' ? (
+            <ButterchurnVisualiser />
+          ) : (
+            <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
+              <FullscreenScene accent={accent} tracks={tracks} />
+            </Canvas>
+          )}
         </div>
 
         <div style={styles.uiLayer}>

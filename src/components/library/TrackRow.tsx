@@ -28,11 +28,14 @@
  */
 
 import React, { useState, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { formatDuration, type DeezerTrack } from '@/lib/deezerApi'
+import { useUIStore } from '@/stores/uiStore'
 
 interface TrackRowProps {
   track: DeezerTrack
   isActive: boolean
+  isFocused?: boolean
   index: number
   onSelect: (track: DeezerTrack, index: number) => void
   accentColour?: string
@@ -41,6 +44,7 @@ interface TrackRowProps {
 export function TrackRow({
   track,
   isActive,
+  isFocused,
   index,
   onSelect,
   accentColour = '#1db954',
@@ -51,6 +55,11 @@ export function TrackRow({
     onSelect(track, index)
   }, [track, index, onSelect])
 
+  const handleArtistClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    useUIStore.getState().setSelectedArtistId(track.artist.id)
+  }, [track.artist.id])
+
   const accentBg = `${accentColour}18`
   const accentBorder = `${accentColour}40`
 
@@ -60,12 +69,15 @@ export function TrackRow({
         ...styles.row,
         background: isActive
           ? accentBg
-          : isHovered
+          : isHovered || isFocused
             ? 'rgba(255,255,255,0.05)'
             : 'transparent',
         borderColor: isActive
           ? accentBorder
-          : 'rgba(255,255,255,0.06)',
+          : isFocused
+            ? `${accentColour}60`
+            : 'rgba(255,255,255,0.06)',
+        boxShadow: isFocused ? `inset 0 0 0 1px ${accentColour}30` : 'none',
       }}
       onClick={handleSelect}
       onMouseEnter={() => setIsHovered(true)}
@@ -80,7 +92,8 @@ export function TrackRow({
         }
       </div>
 
-      <img
+      <motion.img
+        layoutId={`album-${track.id}`}
         src={track.album.cover_medium}
         alt={track.album.title}
         style={styles.albumArt}
@@ -95,7 +108,9 @@ export function TrackRow({
         }}>
           {track.title}
         </p>
-        <p style={styles.artist}>{track.artist.name}</p>
+        <p style={styles.artist} onClick={handleArtistClick}>
+          {track.artist.name}
+        </p>
       </div>
 
       <p style={styles.album}>{track.album.title}</p>

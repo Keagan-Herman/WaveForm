@@ -24,10 +24,12 @@
  */
 
 import React from 'react'
+import { motion } from 'framer-motion'
 import { useCallback } from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { formatDuration } from '@/lib/deezerApi'
+import { WaveformScrubber } from './WaveformScrubber'
 
 interface PlayerBarProps {
   accentColour?: string
@@ -65,23 +67,16 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
 
   return (
     <div style={styles.bar}>
-      {/* Progress bar */}
+      {/* Waveform Scrubber */}
       <div style={styles.progressTrack}>
-        <div style={{
-          ...styles.progressFill,
-          width: `${progress * 100}%`,
-          background: beat ? '#fff' : accentColour,
-          boxShadow: beat ? `0 0 8px ${accentColour}` : 'none',
-          transition: beat
-            ? 'background 0.05s, box-shadow 0.05s'
-            : 'background 0.5s, width 0.1s linear',
-        }} />
+        <WaveformScrubber width={window.innerWidth} height={16} accentColour={accentColour} />
       </div>
 
       <div style={styles.inner}>
         {/* Track info */}
         <div style={styles.trackInfo}>
-          <img
+          <motion.img
+            layoutId={`album-${currentTrack.id}`}
             src={currentTrack.album.cover_medium}
             alt={currentTrack.album.title}
             style={{

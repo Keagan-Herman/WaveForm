@@ -7,13 +7,14 @@
 
 import { create } from 'zustand'
 
-export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal'
+export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
 
 interface VisualiserStore {
   // Audio reactive state
   beat: boolean
   bassPower: number
   beatConfidence: number
+  bpm: number
 
   // UI / Mode state
   visualLayer: VisualLayer
@@ -24,6 +25,7 @@ interface VisualiserStore {
   setBeat: (beat: boolean) => void
   setBassPower: (power: number) => void
   setBeatConfidence: (confidence: number) => void
+  setBpm: (bpm: number) => void
   setVisualLayer: (layer: VisualLayer) => void
   cycleVisualLayer: () => void
   setIsFullscreen: (isFullscreen: boolean) => void
@@ -36,6 +38,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   beat: false,
   bassPower: 0,
   beatConfidence: 0,
+  bpm: 0,
 
   visualLayer: 'Ambient',
   isFullscreen: false,
@@ -44,10 +47,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setBeat: beat => set({ beat }),
   setBassPower: bassPower => set({ bassPower }),
   setBeatConfidence: beatConfidence => set({ beatConfidence }),
+  setBpm: bpm => set({ bpm }),
 
   setVisualLayer: visualLayer => set({ visualLayer }),
   cycleVisualLayer: () => {
-    const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal']
+    const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
     const current = get().visualLayer
     const nextIndex = (layers.indexOf(current) + 1) % layers.length
     set({ visualLayer: layers[nextIndex] })

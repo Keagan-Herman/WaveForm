@@ -15,6 +15,9 @@ export class BeatDetector {
   private readonly windowSize: number
   private readonly sensitivity: number
 
+  private lastBeatTime: number = 0
+  private bpmHistory: number[] = []
+
   constructor(sensitivity = 1.5, windowSize = 43) {
     this.sensitivity = sensitivity
     this.windowSize = windowSize
@@ -22,9 +25,14 @@ export class BeatDetector {
 
   /**
    * Pass the current frequency data array on every animation frame.
-   * Returns an object with { beat: boolean, confidence: number, bassEnergy: number }.
+   * Returns an object with { beat: boolean, confidence: number, bassEnergy: number, bpm: number }.
    */
-  detect(frequencyData: Uint8Array): { beat: boolean; confidence: number; bassEnergy: number } {
+  detect(frequencyData: Uint8Array): {
+    beat: boolean
+    confidence: number
+    bassEnergy: number
+    bpm: number
+  } {
     // 1. Bass Energy Detection (Current approach)
     // PERFORMANCE: Avoid .slice() and .reduce() in hot path to reduce GC pressure
     let bassEnergyTotal = 0
@@ -63,7 +71,7 @@ export class BeatDetector {
 
     // Need at least half a window
     if (this.energyHistory.length < this.windowSize / 2) {
-      return { beat: false, confidence: 0, bassEnergy: bassEnergy / 255 }
+      return { beat: false, confidence: 0, bassEnergy: bassEnergy / 255, bpm: 0 }
     }
 
     // Energy stats
@@ -89,12 +97,31 @@ export class BeatDetector {
     // Final beat decision: both usually agree on strong beats, flux helps on weak ones
     const isBeat = energyBeat || (fluxBeat && fluxConfidence > 0.5)
 
-    return { beat: isBeat, confidence, bassEnergy: bassEnergy / 255 }
+    if (isBeat) {
+      const now = performance.now()
+      const interval = now - this.lastBeatTime
+      if (interval > 300 && interval < 2000) {
+        // 30–200 BPM range
+        const instantBPM = 60000 / interval
+        this.bpmHistory.push(instantBPM)
+        if (this.bpmHistory.length > 8) this.bpmHistory.shift()
+      }
+      this.lastBeatTime = now
+    }
+
+    const bpm =
+      this.bpmHistory.length > 2
+        ? this.bpmHistory.reduce((a, b) => a + b, 0) / this.bpmHistory.length
+        : 0
+
+    return { beat: isBeat, confidence, bassEnergy: bassEnergy / 255, bpm }
   }
 
   reset(): void {
     this.energyHistory = []
     this.fluxHistory = []
     this.prevFrequencyData = null
+    this.bpmHistory = []
+    this.lastBeatTime = 0
   }
 }

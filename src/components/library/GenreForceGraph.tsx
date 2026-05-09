@@ -299,15 +299,31 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     d3.select(svg)
       .select('g.nodes')
       .selectAll<SVGCircleElement, GenreNode>('circle')
+      .transition()
+      .duration(300)
       .attr('stroke', d => (activeGenre === d.id ? '#fff' : 'rgba(255,255,255,0.15)'))
       .attr('stroke-width', d => (activeGenre === d.id ? 2 : 1))
+      .style('opacity', d => (activeGenre === null || activeGenre === d.id ? 1 : 0.15))
 
     d3.select(svg)
       .select('g.labels')
       .selectAll<SVGTextElement, GenreNode>('text')
-      .attr('fill', d =>
-        activeGenre === d.id ? '#fff' : 'rgba(232,245,232,0.45)'
-      )
+      .transition()
+      .duration(300)
+      .attr('fill', d => (activeGenre === d.id ? '#fff' : 'rgba(232,245,232,0.45)'))
+      .style('opacity', d => (activeGenre === null || activeGenre === d.id ? 1 : 0.05))
+
+    d3.select(svg)
+      .select('g.links')
+      .selectAll<SVGLineElement, GenreLink>('line')
+      .transition()
+      .duration(300)
+      .style('opacity', d => {
+        if (activeGenre === null) return 1
+        const s = typeof d.source === 'string' ? d.source : d.source.id
+        const t = typeof d.target === 'string' ? d.target : d.target.id
+        return s === activeGenre || t === activeGenre ? 1 : 0.02
+      })
   }, [activeGenre]) // Styling only — no simulation touch
 
   return (

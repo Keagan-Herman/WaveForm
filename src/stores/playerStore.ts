@@ -33,6 +33,7 @@ interface PlayerStore {
   duration: number
   queue: DeezerTrack[]
   queueIndex: number
+  isTransitioning: boolean
 
   setTrack: (track: DeezerTrack) => void
   setIsPlaying: (playing: boolean) => void
@@ -54,8 +55,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   duration: 0,
   queue: [],
   queueIndex: 0,
+  isTransitioning: false,
 
-  setTrack: track => set({ currentTrack: track, progress: 0 }),
+  setTrack: track => {
+    set({ currentTrack: track, progress: 0, isTransitioning: true })
+    setTimeout(() => {
+      set({ isTransitioning: false })
+    }, 2000)
+  },
   setIsPlaying: isPlaying => set({ isPlaying }),
   setIsLoading: isLoading => set({ isLoading }),
   setProgress: progress => set({ progress }),

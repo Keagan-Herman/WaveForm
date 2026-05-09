@@ -144,8 +144,20 @@ export async function getTrack(trackId: number): Promise<DeezerFullTrack> {
 /**
  * Get artist details.
  */
-export async function getArtist(artistId: number): Promise<DeezerArtist & { genres?: { data: DeezerGenre[] } }> {
+export async function getArtist(
+  artistId: number
+): Promise<DeezerArtist & { genres?: { data: DeezerGenre[] } }> {
   return deezerFetch(`/artist/${artistId}`)
+}
+
+/**
+ * Get artist's top tracks.
+ */
+export async function getArtistTopTracks(artistId: number, limit = 10): Promise<DeezerTrack[]> {
+  const data = await deezerFetch<{ data: DeezerTrack[] }>(`/artist/${artistId}/top`, {
+    limit: String(limit),
+  })
+  return data.data ?? []
 }
 
 /**

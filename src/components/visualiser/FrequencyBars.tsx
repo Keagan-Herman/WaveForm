@@ -53,14 +53,17 @@ export function FrequencyBars({
     ctx.clearRect(0, 0, w, h)
 
     const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
-    const barWidth = Math.max(1, (w / bins) - 1.5)
+    const barWidth = Math.max(1, (w / (mirrorMode ? data.length : bins)) - 1.5)
 
-    for (let i = 0; i < bins; i++) {
-      const value = mirrorMode
-        ? (data[i] + data[data.length - 1 - i]) / 2
-        : data[i]
+    const processedData = mirrorMode
+      ? [...[...data.slice(0, bins)].reverse(), ...data.slice(0, bins)]
+      : data.slice(0, bins)
 
-      const barHeight = (value / 255) * h
+    const drawCount = processedData.length
+
+    for (let i = 0; i < drawCount; i++) {
+      const value = processedData[i]
+      const barHeight = (value / 255) * (h * 0.7)
       const ratio = value / 255
       const x = i * (barWidth + 1.5)
 
@@ -88,22 +91,31 @@ export function FrequencyBars({
       }
 
       ctx.fillStyle = grad
-      ctx.fillRect(x, h - barHeight, barWidth, barHeight)
+      ctx.fillRect(x, (h * 0.7) - barHeight, barWidth, barHeight)
 
       // Glow cap
       if (barHeight > 6) {
         const capLit = isLight ? 85 : 85
         ctx.fillStyle = `hsla(${barHue}, 100%, ${capLit}%, 0.8)`
-        ctx.fillRect(x, h - barHeight, barWidth, 2)
+        ctx.fillRect(x, (h * 0.7) - barHeight, barWidth, 2)
 
         if (ratio > 0.7) {
           ctx.shadowColor = `hsl(${barHue}, 100%, 70%)`
           ctx.shadowBlur = isLight ? 12 : 8
           ctx.fillStyle = `hsl(${barHue}, 100%, 92%)`
-          ctx.fillRect(x, h - barHeight - 1, barWidth, 2)
+          ctx.fillRect(x, (h * 0.7) - barHeight - 1, barWidth, 2)
           ctx.shadowBlur = 0
         }
       }
+
+      // Reflection
+      ctx.save()
+      ctx.globalAlpha = 0.2
+      ctx.translate(0, h * 0.7)
+      ctx.scale(1, -1)
+      ctx.fillStyle = grad
+      ctx.fillRect(x, -barHeight * 0.4, barWidth, barHeight * 0.4)
+      ctx.restore()
     }
   }, [])
 
