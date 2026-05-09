@@ -17,6 +17,14 @@ export class AudioEngine {
   private source: MediaElementAudioSourceNode | null = null
   private _isInitialised = false
 
+  // Reusable buffers to avoid allocations in the hot path
+  private freqBuffer: Uint8Array | null = null
+  private waveBuffer: Uint8Array | null = null
+
+  // Pre-allocated empty buffers for idle state
+  private emptyFreq = new Uint8Array(128)
+  private emptyWave = new Uint8Array(256).fill(128)
+
   private constructor() {}
 
   static getInstance(): AudioEngine {
@@ -61,29 +69,33 @@ export class AudioEngine {
   /**
    * Returns frequency-domain data (0–255 per bin).
    * Use for bar visualisers and beat detection.
-   * Returns a zeroed array if the engine is not yet initialised.
+   * NOTE: Returns a shared reference to an internal buffer. Do not modify or store.
    */
   getFrequencyData(): Uint8Array {
-    if (!this.analyser) return new Uint8Array(128)
-    const data = new Uint8Array(this.analyser.frequencyBinCount)
-    this.analyser.getByteFrequencyData(data)
-    return data
+    if (!this.analyser) return this.emptyFreq
+    if (!this.freqBuffer) {
+      this.freqBuffer = new Uint8Array(this.analyser.frequencyBinCount)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.analyser.getByteFrequencyData(this.freqBuffer as any)
+    return this.freqBuffer
   }
 
   /**
    * Returns time-domain (waveform) data (0–255 per sample, 128 = silence).
    * Use for the scrolling waveform line visualiser.
-   * Returns a flat array if the engine is not yet initialised.
+   * NOTE: Returns a shared reference to an internal buffer. Do not modify or store.
    */
   getWaveformData(): Uint8Array {
     if (!this.analyser) {
-      const silence = new Uint8Array(256)
-      silence.fill(128)
-      return silence
+      return this.emptyWave
     }
-    const data = new Uint8Array(this.analyser.fftSize)
-    this.analyser.getByteTimeDomainData(data)
-    return data
+    if (!this.waveBuffer) {
+      this.waveBuffer = new Uint8Array(this.analyser.fftSize)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.analyser.getByteTimeDomainData(this.waveBuffer as any)
+    return this.waveBuffer
   }
 
   get isInitialised(): boolean {
