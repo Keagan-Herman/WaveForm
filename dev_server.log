@@ -4,9 +4,9 @@
 
 You or a plugin you are using have set `optimizeDeps.esbuildOptions` but this option is now deprecated. Vite now uses Rolldown to optimize the dependencies. Please use `optimizeDeps.rolldownOptions` instead.
 
-  VITE v8.0.10  ready in 447 ms
+  VITE v8.0.10  ready in 505 ms
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
-5:51:47 PM [vite] (client) [optimizer] bundling dependencies...
-5:55:15 PM [vite] (client) hmr update /src/components/library/AlbumMesh.tsx
+2:14:21 AM [vite] (client) [optimizer] bundling dependencies...
+ ELIFECYCLE  Command failed with exit code 143.

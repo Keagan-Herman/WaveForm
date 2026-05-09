@@ -75,7 +75,10 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
             }}
           />
           {currentTrack.explicit_lyrics && (
-            <div style={{ ...styles.explicitBadge, color: accent, borderColor: `${accent}55` }}>
+            <div
+              style={{ ...styles.explicitBadge, color: accent, borderColor: `${accent}55` }}
+              aria-label="Explicit content"
+            >
               E
             </div>
           )}
