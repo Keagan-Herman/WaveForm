@@ -65,6 +65,7 @@ function VisualisersPanel({ accent }: { accent: AlbumColour }) {
 
 function GenrePanelQuadrant({
   tracks,
+  accent,
   onFilteredTracksChange,
 }: {
   tracks: DeezerTrack[]
@@ -80,6 +81,7 @@ function GenrePanelQuadrant({
             tracks={tracks}
             width={680}
             onFilteredTracksChange={onFilteredTracksChange}
+            accent={accent}
           />
         ) : (
           <div style={styles.stateWrap}>

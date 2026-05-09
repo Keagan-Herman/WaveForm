@@ -25,16 +25,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { GenreForceGraph } from './GenreForceGraph'
 import { useGenreGraph } from '@/hooks/useGenreGraph'
 import type { DeezerTrack } from '@/lib/deezerApi'
+import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface GenrePanelProps {
   tracks: DeezerTrack[]
   width: number
   onFilteredTracksChange?: (trackIds: string[] | null) => void
+  accent?: AlbumColour
 }
 
-export function GenrePanel({ tracks, width, onFilteredTracksChange }: GenrePanelProps) {
+export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: GenrePanelProps) {
   const { graphData, isLoading } = useGenreGraph(tracks)
   const [activeGenre, setActiveGenre] = useState<string | null>(null)
+  const [isHovered, setIsHovered] = useState(false)
 
   const HEIGHT = 280
 
@@ -58,13 +61,23 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange }: GenrePanel
 
   if (!isLoading && graphData.nodes.length < 3) return null
 
+  const accentHex = accent?.hex ?? '#1db954'
+  const accentDim = accent ? `${accentHex}18` : 'rgba(29,185,84,0.12)'
+  const accentBorder = accent ? `${accentHex}40` : 'rgba(29,185,84,0.3)'
+
   return (
     <div style={styles.wrap}>
       <div style={styles.header}>
-        <p style={styles.label}>Genre Map</p>
         {activeGenre && (
           <button
-            style={styles.clearFilter}
+            style={{
+              ...styles.clearFilter,
+              color: accentHex,
+              borderColor: accentBorder,
+              background: isHovered ? `${accentHex}25` : accentDim,
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             onClick={() => handleSelectGenre(null)}
             aria-label="Clear genre filter"
           >
@@ -84,7 +97,7 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange }: GenrePanel
             activeGenre={activeGenre}
             onSelectGenre={handleSelectGenre}
           />
-          <p style={styles.hint}>
+          <p style={{ ...styles.hint, color: accent?.palette.textDim ?? 'rgba(232,245,232,0.15)' }}>
             Click a genre to filter tracks · Drag nodes to rearrange
           </p>
         </div>
@@ -98,21 +111,13 @@ const styles: Record<string, React.CSSProperties> = {
   header: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     gap: '1rem',
-  },
-  label: {
-    fontSize: '0.58rem',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    opacity: 0.2,
-    fontFamily: 'monospace',
+    minHeight: '22px',
   },
   clearFilter: {
-    background: 'rgba(29,185,84,0.12)',
-    border: '1px solid rgba(29,185,84,0.3)',
     borderRadius: '100px',
-    color: '#1db954',
+    border: '1px solid',
     fontFamily: 'monospace',
     fontSize: '0.6rem',
     letterSpacing: '0.05em',
@@ -122,6 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     maxWidth: 200,
+    transition: 'background 0.2s ease, border-color 0.2s ease',
   },
   skeleton: {
     background: 'rgba(255,255,255,0.03)',
