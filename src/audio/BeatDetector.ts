@@ -22,12 +22,17 @@ export class BeatDetector {
 
   /**
    * Pass the current frequency data array on every animation frame.
-   * Returns an object with { beat: boolean, confidence: number }.
+   * Returns an object with { beat: boolean, confidence: number, bassEnergy: number }.
    */
-  detect(frequencyData: Uint8Array): { beat: boolean; confidence: number } {
+  detect(frequencyData: Uint8Array): { beat: boolean; confidence: number; bassEnergy: number } {
     // 1. Bass Energy Detection (Current approach)
-    const bassSlice = frequencyData.slice(0, 10)
-    const bassEnergy = bassSlice.reduce((sum, v) => sum + v, 0) / bassSlice.length
+    // PERFORMANCE: Avoid .slice() and .reduce() in hot path to reduce GC pressure
+    let bassEnergyTotal = 0
+    const bassCount = 10
+    for (let i = 0; i < bassCount; i++) {
+      bassEnergyTotal += frequencyData[i]
+    }
+    const bassEnergy = bassEnergyTotal / bassCount
 
     this.energyHistory.push(bassEnergy)
     if (this.energyHistory.length > this.windowSize) {
@@ -44,7 +49,12 @@ export class BeatDetector {
         if (diff > 0) flux += diff
       }
     }
-    this.prevFrequencyData = new Uint8Array(frequencyData)
+
+    if (!this.prevFrequencyData || this.prevFrequencyData.length !== frequencyData.length) {
+      this.prevFrequencyData = new Uint8Array(frequencyData)
+    } else {
+      this.prevFrequencyData.set(frequencyData)
+    }
 
     this.fluxHistory.push(flux)
     if (this.fluxHistory.length > this.windowSize) {
@@ -52,7 +62,9 @@ export class BeatDetector {
     }
 
     // Need at least half a window
-    if (this.energyHistory.length < this.windowSize / 2) return { beat: false, confidence: 0 }
+    if (this.energyHistory.length < this.windowSize / 2) {
+      return { beat: false, confidence: 0, bassEnergy: bassEnergy / 255 }
+    }
 
     // Energy stats
     const energyAvg = this.energyHistory.reduce((a, b) => a + b, 0) / this.energyHistory.length
@@ -77,7 +89,7 @@ export class BeatDetector {
     // Final beat decision: both usually agree on strong beats, flux helps on weak ones
     const isBeat = energyBeat || (fluxBeat && fluxConfidence > 0.5)
 
-    return { beat: isBeat, confidence }
+    return { beat: isBeat, confidence, bassEnergy: bassEnergy / 255 }
   }
 
   reset(): void {

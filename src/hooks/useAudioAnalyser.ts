@@ -34,12 +34,11 @@ function tick() {
   // escape hatch for imperative / non-React contexts
   const { setBeat, setBassPower, setBeatConfidence } = useVisualiserStore.getState()
 
-  const { beat, confidence } = beatDetector.detect(freqData)
-  const bassAvg = freqData.slice(0, 10).reduce((s, v) => s + v, 0) / 10
+  const { beat, confidence, bassEnergy } = beatDetector.detect(freqData)
 
   setBeat(beat)
   setBeatConfidence(confidence)
-  setBassPower(bassAvg / 255)
+  setBassPower(bassEnergy)
 
   subscribers.forEach(cb => cb(freqData, waveData))
 
@@ -72,7 +71,9 @@ export function useAudioAnalyser(callbacks: AnalyserCallbacks = {}) {
   // Keep callbacks in a ref so the loop always has the latest version
   // without needing to re-register on every render
   const callbacksRef = useRef(callbacks)
-  callbacksRef.current = callbacks
+  useEffect(() => {
+    callbacksRef.current = callbacks
+  })
 
   const start = useCallback(() => {
     const key = keyRef.current
