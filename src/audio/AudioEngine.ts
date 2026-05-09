@@ -105,6 +105,14 @@ export class AudioEngine {
   get sampleRate(): number {
     return this.context?.sampleRate ?? 44100
   }
+
+  get audioContext(): AudioContext | null {
+    return this.context
+  }
+
+  get analyserNode(): AnalyserNode | null {
+    return this.analyser
+  }
 }
 
 // Export the singleton instance directly — import this everywhere,

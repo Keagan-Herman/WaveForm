@@ -7,7 +7,8 @@
  * it needs to render correctly for any album type.
  */
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
@@ -20,11 +21,16 @@ import { AlbumGravityField } from '@/components/library/AlbumGravityField'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useAlbumColour } from '@/hooks/useAlbumColour'
+import { useResize } from '@/hooks/useResize'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
-import { Spectrogram } from './components/visualiser/Spectogram'
+import { Spectrogram } from './components/visualiser/Spectrogram'
 import { RadialVisualiser } from './components/visualiser/RadialVisualiser'
 import { FullscreenOverlay } from './components/visualiser/FullscreenOverlay'
+import { QuadrantErrorBoundary } from '@/components/ui/QuadrantErrorBoundary'
+import { useUIStore } from '@/stores/uiStore'
+import { ArtistPanel } from '@/components/search/ArtistPanel'
+import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -121,11 +127,28 @@ function KeyboardShortcuts() {
 // ─── Root ──────────────────────────────────────────────────────────────────
 
 function Waveform() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { width } = useResize(containerRef)
+  const isMobile = (width || window.innerWidth) < 900
+
   const [searchTracks, setSearchTracks] = useState<DeezerTrack[]>([])
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
+  const [hasIntroPlayed, setHasIntroPlayed] = useState(false)
   const accent = useAppAccent()
   const { toggleFullscreen, visualLayer, isLowQuality, toggleLowQuality } = useVisualiserStore()
   const isPlaying = usePlayerStore(state => state.isPlaying)
+
+  useEffect(() => {
+    const played = sessionStorage.getItem('waveform_intro_played')
+    if (played) {
+      setHasIntroPlayed(true)
+    } else {
+      setTimeout(() => {
+        setHasIntroPlayed(true)
+        sessionStorage.setItem('waveform_intro_played', 'true')
+      }, 1200)
+    }
+  }, [])
 
   // Inject CSS variables for global skinning
   useEffect(() => {
@@ -145,14 +168,44 @@ function Waveform() {
     setFilteredTrackIds(ids)
   }, [])
 
+  const quadrantVariants = {
+    hidden: (custom: string) => ({
+      opacity: 0,
+      x: custom.includes('left') ? -60 : 60,
+      y: custom.includes('top') ? -60 : 60,
+    }),
+    visible: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any,
+    },
+  }
+
+  const logoVariants = {
+    hidden: { opacity: 0, letterSpacing: '0.1em' },
+    visible: {
+      opacity: 0.85,
+      letterSpacing: '0.35em',
+      transition: { duration: 1.5, ease: 'easeOut' } as any,
+    },
+  }
+
   return (
-    <div style={styles.root}>
+    <div ref={containerRef} style={styles.root}>
       <BackgroundPulse accent={accent} />
       <PreviewPlayer />
       <KeyboardShortcuts />
 
       <header style={{ ...styles.header, borderBottomColor: `${accent.hex}28` }}>
-        <h1 style={styles.logo}>Waveform</h1>
+        <motion.h1
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          variants={logoVariants}
+          style={styles.logo}
+        >
+          Waveform
+        </motion.h1>
         <div style={styles.headerMid}>
           <div
             style={{ ...styles.accentSwatch, background: accent.hex }}
@@ -174,6 +227,20 @@ function Waveform() {
             Fullscreen
           </button>
 
+          {filteredTrackIds && (
+            <button
+              onClick={() => setFilteredTrackIds(null)}
+              style={{
+                ...styles.headerBtn,
+                borderColor: `${accent.hex}aa`,
+                background: `${accent.hex}22`,
+                color: '#fff',
+              }}
+            >
+              Clear Filter ✕
+            </button>
+          )}
+
           <button
             onClick={toggleLowQuality}
             style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: isLowQuality ? '#ff4444' : accent.hex }}
@@ -183,51 +250,102 @@ function Waveform() {
         </div>
       </header>
 
-      <div style={styles.grid}>
-
+      <div style={{
+        ...styles.grid,
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gridTemplateRows: isMobile ? 'repeat(4, auto)' : '1fr 1fr',
+        overflowY: isMobile ? 'auto' : 'hidden'
+      }}>
         {/* Top-left: library */}
-        <div style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}>
+        <motion.div
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          custom="top-left"
+          variants={quadrantVariants}
+          style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}
+        >
           <div style={styles.quadLabel}>Library</div>
-          <SearchOverlay
-            onResultsChange={setSearchTracks}
-            filteredTrackIds={filteredTrackIds}
-            accentColour={accent.hex}
-          />
-        </div>
+          <QuadrantErrorBoundary label="Library" accent={accent.hex}>
+            <SearchOverlay
+              onResultsChange={setSearchTracks}
+              filteredTrackIds={filteredTrackIds}
+              accentColour={accent.hex}
+            />
+          </QuadrantErrorBoundary>
+        </motion.div>
 
         {/* Top-right: visualisers or Hero Scene */}
-        <div style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}>
+        <motion.div
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          custom="top-right"
+          variants={quadrantVariants}
+          style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}
+        >
           <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
-          {isPlaying ? (
-            <div style={styles.heroSceneWrap}>
-              <AlbumGravityField tracks={searchTracks} width={680} height={340} accent={accent} />
-              <div style={styles.heroOverlay}>
-                <RadialVisualiser width={300} height={300} accent={accent} />
+          <QuadrantErrorBoundary
+            label={isPlaying ? 'Hero Scene' : 'Visualisers'}
+            accent={accent.hex}
+          >
+            {isPlaying ? (
+              <div style={styles.heroSceneWrap}>
+                <AlbumGravityField tracks={searchTracks} width={680} height={340} accent={accent} />
+                <div style={styles.heroOverlay}>
+                  <RadialVisualiser width={300} height={300} accent={accent} />
+                </div>
               </div>
-            </div>
-          ) : (
-            <VisualisersPanel accent={accent} />
-          )}
-        </div>
+            ) : (
+              <VisualisersPanel accent={accent} />
+            )}
+          </QuadrantErrorBoundary>
+        </motion.div>
 
         {/* Bottom-left: now playing */}
-        <div style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}>
+        <motion.div
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          custom="bottom-left"
+          variants={quadrantVariants}
+          style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}
+        >
           <div style={styles.quadLabel}>Now Playing</div>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <NowPlaying accentColour={accent} />
+            <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
+              <NowPlaying accentColour={accent} />
+            </QuadrantErrorBoundary>
           </div>
-        </div>
+        </motion.div>
 
         {/* Bottom-right: genre map */}
-        <GenrePanelQuadrant
-          tracks={searchTracks}
-          onFilteredTracksChange={handleFilteredTracksChange}
-          accent={accent}
-        />
-
+        <motion.div
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          custom="bottom-right"
+          variants={quadrantVariants}
+          style={styles.quadrant}
+        >
+          <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
+            <GenrePanelQuadrant
+              tracks={searchTracks}
+              onFilteredTracksChange={handleFilteredTracksChange}
+              accent={accent}
+            />
+          </QuadrantErrorBoundary>
+        </motion.div>
       </div>
 
       <PlayerBar accentColour={accent.hex} />
+      <TrackTransitionOverlay accent={accent} />
+
+      <AnimatePresence>
+        {useUIStore(state => state.selectedArtistId) && (
+          <ArtistPanel
+            artistId={useUIStore.getState().selectedArtistId!}
+            accentColour={accent.hex}
+            onClose={() => useUIStore.getState().setSelectedArtistId(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <FullscreenOverlay accent={accent} isPlaying={isPlaying} tracks={searchTracks} />
     </div>

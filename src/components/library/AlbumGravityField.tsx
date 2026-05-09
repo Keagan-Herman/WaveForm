@@ -70,7 +70,7 @@ function seededRandom(seed: number) {
   return x - Math.floor(x)
 }
 
-function buildLayout(tracks: DeezerTrack[]): AlbumLayout[] {
+function buildLayout(tracks: DeezerTrack[], isLowQuality: boolean): AlbumLayout[] {
   const seen = new Set<number>()
   const unique = tracks.filter(t => {
     if (seen.has(t.album.id)) return false
@@ -78,7 +78,7 @@ function buildLayout(tracks: DeezerTrack[]): AlbumLayout[] {
     return true
   })
 
-  return unique.slice(0, 12).map((track, i) => {
+  return unique.slice(0, isLowQuality ? 6 : 12).map((track, i) => {
     const r = (n: number) => seededRandom(i * 17 + n)
     return {
       imageUrl: track.album.cover_medium,
@@ -133,13 +133,14 @@ function Scene({ layout, accent }: { layout: AlbumLayout[]; accent?: AlbumColour
 
 export function AlbumGravityField({
   tracks,
-  width: initialWidth = 560,
-  height: initialHeight = 340,
+  width: _initialWidth = 560,
+  height: _initialHeight = 340,
   accent
 }: AlbumGravityFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { width, height } = useResize(containerRef)
-  const layout = useMemo(() => buildLayout(tracks), [tracks])
+  const { width: _, height: __ } = useResize(containerRef)
+  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
+  const layout = useMemo(() => buildLayout(tracks, isLowQuality), [tracks, isLowQuality])
 
   if (layout.length === 0) return null
 

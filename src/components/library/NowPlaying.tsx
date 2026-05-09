@@ -7,8 +7,10 @@
  */
 
 import React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
+import { useUIStore } from '@/stores/uiStore'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
@@ -32,7 +34,7 @@ function formatRank(rank: number): string {
 
 export function NowPlaying({ accentColour }: NowPlayingProps) {
   const { currentTrack, isPlaying, progress } = usePlayerStore()
-  const beat = useVisualiserStore(state => state.beat)
+  const { beat, bpm } = useVisualiserStore()
 
   const accent = accentColour?.hex ?? '#7a8fa6'
   const accentDim = accentColour
@@ -41,10 +43,23 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
 
   if (!currentTrack) {
     return (
-      <div style={styles.empty}>
-        <p style={styles.emptyIcon}>◎</p>
-        <p style={styles.emptyText}>Nothing playing</p>
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={styles.empty}
+        >
+          <div style={styles.skeletonArt} />
+          <div style={styles.skeletonInfo}>
+            <div style={styles.skeletonText} />
+            <div style={{ ...styles.skeletonText, width: '60%', opacity: 0.5 }} />
+          </div>
+          <p style={styles.emptyIcon}>◎</p>
+          <p style={styles.emptyText}>Nothing playing</p>
+        </motion.div>
+      </AnimatePresence>
     )
   }
 
@@ -57,7 +72,13 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
   const elapsedStr = `0:${String(elapsedSecs).padStart(2, '0')}`
 
   return (
-    <div style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}>
+    <motion.div
+      key={currentTrack.id}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}
+    >
 
       {/* Top row: small art + primary text */}
       <div style={styles.topRow}>
@@ -88,7 +109,10 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
           <p style={styles.albumName}>{currentTrack.album.title}</p>
           <p style={styles.trackName}>{currentTrack.title}</p>
           <ArtistRipple active={isPlaying} color={accent}>
-            <p style={{ ...styles.artistName, color: accent }}>
+            <p
+              style={{ ...styles.artistName, color: accent, cursor: 'pointer' }}
+              onClick={() => useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)}
+            >
               {currentTrack.artist.name}
             </p>
           </ArtistRipple>
@@ -129,17 +153,48 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
         {currentTrack.artist.nb_fan !== undefined && currentTrack.artist.nb_fan > 0 && (
           <MetaRow label="Fans" value={formatFans(currentTrack.artist.nb_fan)} accent={accent} />
         )}
+        {bpm > 0 && (
+          <MetaRow
+            label="Live BPM"
+            value={`${Math.round(bpm)}`}
+            accent={accent}
+            indicator={beat}
+          />
+        )}
         <MetaRow label="Explicit" value={currentTrack.explicit_lyrics ? 'Yes' : 'No'} accent={accent} />
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-function MetaRow({ label, value, accent }: { label: string; value: string; accent: string }) {
+function MetaRow({
+  label,
+  value,
+  accent,
+  indicator,
+}: {
+  label: string
+  value: string
+  accent: string
+  indicator?: boolean
+}) {
   return (
     <div style={metaRowStyles.row}>
       <span style={metaRowStyles.label}>{label}</span>
-      <span style={{ ...metaRowStyles.value, color: `${accent}dd` }}>{value}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        {indicator !== undefined && (
+          <motion.div
+            animate={{
+              scale: indicator ? 1.4 : 1,
+              opacity: indicator ? 1 : 0.4,
+              backgroundColor: indicator ? '#fff' : accent,
+            }}
+            transition={{ duration: 0.1 }}
+            style={{ width: 4, height: 4, borderRadius: '50%', background: accent }}
+          />
+        )}
+        <span style={{ ...metaRowStyles.value, color: `${accent}dd` }}>{value}</span>
+      </div>
     </div>
   )
 }
@@ -178,11 +233,33 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.3,
     fontFamily: 'monospace',
   },
-  emptyIcon: { fontSize: '2rem' },
+  emptyIcon: { fontSize: '2rem', zIndex: 2 },
   emptyText: {
     fontSize: '0.72rem',
     letterSpacing: '0.15em',
     textTransform: 'uppercase',
+    zIndex: 2,
+  },
+  skeletonArt: {
+    width: 110,
+    height: 110,
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '6px',
+    marginBottom: '0.5rem',
+  },
+  skeletonInfo: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginBottom: '2rem',
+  },
+  skeletonText: {
+    width: '80%',
+    height: 12,
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '2px',
   },
   wrap: {
     display: 'flex',

@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -24,7 +25,9 @@ export function SearchOverlay({
   accentColour = '#7a8fa6',
 }: SearchOverlayProps) {
   const [query, setQuery] = useState('')
+  const [focusedIndex, setFocusedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const { tracks, isLoading, error } = useDeezerSearch(query)
   const { currentTrack, setTrack, setIsPlaying, setQueue } = usePlayerStore()
 
@@ -54,11 +57,44 @@ export function SearchOverlay({
         e.preventDefault()
         inputRef.current?.focus()
       }
-      if (e.key === 'Escape') inputRef.current?.blur()
+      if (e.key === 'Escape') {
+        inputRef.current?.blur()
+        setFocusedIndex(-1)
+      }
+
+      if (focusedIndex !== -1 || (document.activeElement === inputRef.current && visibleTracks.length > 0)) {
+        const isInputFocused = document.activeElement === inputRef.current
+
+        if (e.key === 'ArrowDown' || (!isInputFocused && (e.key.toLowerCase() === 'j'))) {
+          e.preventDefault()
+          setFocusedIndex(prev => Math.min(prev + 1, visibleTracks.length - 1))
+          if (isInputFocused) inputRef.current?.blur()
+        } else if (e.key === 'ArrowUp' || (!isInputFocused && (e.key.toLowerCase() === 'k'))) {
+          e.preventDefault()
+          setFocusedIndex(prev => Math.max(prev - 1, 0))
+          if (isInputFocused) inputRef.current?.blur()
+        } else if (e.key === 'Enter' && focusedIndex !== -1) {
+          e.preventDefault()
+          handleSelectTrack(visibleTracks[focusedIndex], focusedIndex)
+        }
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [visibleTracks, focusedIndex, handleSelectTrack])
+
+  useEffect(() => {
+    if (focusedIndex !== -1) {
+      const el = listRef.current?.children[focusedIndex] as HTMLElement
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      }
+    }
+  }, [focusedIndex])
+
+  useEffect(() => {
+    setFocusedIndex(-1)
+  }, [query, filteredTrackIds])
 
   return (
     <div style={styles.panel}>
@@ -118,7 +154,13 @@ export function SearchOverlay({
         {isLoading && (
           <div style={styles.skeletonWrap}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={{ ...styles.skeleton, opacity: 1 - i * 0.1 }} />
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1 - i * 0.1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                style={styles.skeleton}
+              />
             ))}
           </div>
         )}
@@ -149,18 +191,29 @@ export function SearchOverlay({
         )}
 
         {!isLoading && !error && visibleTracks.length > 0 && (
-          <div style={styles.trackList}>
-            {visibleTracks.map((track, i) => (
-              <div key={track.id} role="listitem">
-                <TrackRow
-                  track={track}
-                  index={i}
-                  isActive={currentTrack?.id === track.id}
-                  onSelect={handleSelectTrack}
-                  accentColour={accentColour}
-                />
-              </div>
-            ))}
+          <div style={styles.trackList} ref={listRef}>
+            <AnimatePresence mode="popLayout">
+              {visibleTracks.map((track, i) => (
+                <motion.div
+                  key={track.id}
+                  layout
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  role="listitem"
+                >
+                  <TrackRow
+                    track={track}
+                    index={i}
+                    isActive={currentTrack?.id === track.id}
+                    isFocused={focusedIndex === i}
+                    onSelect={handleSelectTrack}
+                    accentColour={accentColour}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
