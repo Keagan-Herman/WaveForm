@@ -10,6 +10,7 @@ const vertexShader = `
   varying float vDisplacement;
   uniform float uTime;
   uniform float uBass;
+  uniform float uBeat;
   uniform sampler2D uFreq;
 
   //	Simplex 3D Noise 
@@ -82,12 +83,28 @@ const vertexShader = `
     vUv = uv;
     
     float freq = texture2D(uFreq, vec2(uv.x, 0.5)).r;
-    float noise = snoise(vec3(position.x * 0.1 + uTime * 0.2, position.z * 0.1, uTime * 0.1));
     
-    float displacement = (noise * 2.0 * uBass) + (freq * 1.5);
+    // More organic and extreme morphing
+    float noiseScale = 0.2 + uBass * 0.3;
+    float noiseSpeed = 0.2 + uBass * 0.5;
+    float noise = snoise(vec3(
+      position.x * noiseScale + uTime * noiseSpeed,
+      position.y * noiseScale + uTime * noiseSpeed * 1.1,
+      position.z * noiseScale + uTime * noiseSpeed * 1.2
+    ));
+
+    // Stretchy distortions
+    float stretch = sin(position.y * 2.0 + uTime) * uBass * 0.5;
+
+    float displacement = (noise * 3.0 * uBass) + (freq * 2.5) + (uBeat * 0.5) + stretch;
     vDisplacement = displacement;
     
     vec3 newPosition = position + normal * displacement;
+
+    // Add some non-spherical expansion
+    newPosition.x += sin(uTime * 2.0 + position.y) * uBass * 0.3;
+    newPosition.z += cos(uTime * 2.0 + position.x) * uBass * 0.3;
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
 `
@@ -95,19 +112,34 @@ const vertexShader = `
 const fragmentShader = `
   varying vec2 vUv;
   varying float vDisplacement;
-  uniform vec3 uColor;
+  uniform vec3 uColor1;
+  uniform vec3 uColor2;
+  uniform vec3 uColor3;
+  uniform float uColorMix;
   uniform float uTime;
 
   void main() {
-    float intensity = vDisplacement * 0.15;
-    vec3 color = uColor + vec3(intensity * 0.5, intensity * 0.2, intensity);
-    gl_FragColor = vec4(color, 0.8);
+    float intensity = vDisplacement * 0.12;
+
+    // Color cycling logic
+    vec3 color;
+    if (uColorMix < 1.0) {
+      color = mix(uColor1, uColor2, uColorMix);
+    } else if (uColorMix < 2.0) {
+      color = mix(uColor2, uColor3, uColorMix - 1.0);
+    } else {
+      color = mix(uColor3, uColor1, uColorMix - 2.0);
+    }
+
+    color += vec3(intensity * 0.4, intensity * 0.2, intensity * 0.6);
+    gl_FragColor = vec4(color, 0.85);
   }
 `
 
 export function AudioOrb({ accent }: { accent: AlbumColour }) {
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
+  const colorMixRef = useRef(0)
   
   const freqData = useMemo(() => new Uint8Array(128), [])
   const freqTexture = useMemo(() => {
@@ -119,32 +151,46 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uBass: { value: 0 },
+    uBeat: { value: 0 },
     uFreq: { value: freqTexture },
-    uColor: { value: new THREE.Color(accent.hex) }
+    uColor1: { value: new THREE.Color(accent.palette.primary) },
+    uColor2: { value: new THREE.Color(accent.palette.secondary) },
+    uColor3: { value: new THREE.Color(accent.palette.accent) },
+    uColorMix: { value: 0 }
   }), [accent, freqTexture])
 
   useEffect(() => {
     if (materialRef.current) {
-      materialRef.current.uniforms.uColor.value.set(accent.hex)
+      materialRef.current.uniforms.uColor1.value.set(accent.palette.primary)
+      materialRef.current.uniforms.uColor2.value.set(accent.palette.secondary)
+      materialRef.current.uniforms.uColor3.value.set(accent.palette.accent)
     }
   }, [accent])
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
-    const { bassPower } = useVisualiserStore.getState()
+    const { bassPower, beat } = useVisualiserStore.getState()
 
     if (materialRef.current) {
-      freqData.set(data.subarray(0, 128))  // subarray = view, no allocation
+      freqData.set(data.subarray(0, 128))
       freqTexture.needsUpdate = true
       
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower
+
+      // Smoothly pulse uBeat
+      const targetBeat = beat ? 1.0 : 0.0
+      materialRef.current.uniforms.uBeat.value += (targetBeat - materialRef.current.uniforms.uBeat.value) * 0.2
+
+      // Cycle colors
+      colorMixRef.current = (colorMixRef.current + delta * (0.2 + bassPower * 0.5)) % 3.0
+      materialRef.current.uniforms.uColorMix.value = colorMixRef.current
     }
 
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.005
-      meshRef.current.rotation.z += 0.003
+      meshRef.current.rotation.y += 0.005 + bassPower * 0.01
+      meshRef.current.rotation.z += 0.003 + bassPower * 0.008
     }
   })
 

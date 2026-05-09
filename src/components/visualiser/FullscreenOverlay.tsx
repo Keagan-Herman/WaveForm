@@ -60,11 +60,10 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
 
       <ParticleField color={accent.hex} />
 
-      {visualLayer === 'Energy' && <WaveformTunnel accent={accent} />}
       {visualLayer === 'Energy' && <AudioOrb accent={accent} />}
       {visualLayer === 'Ambient' && <AudioTerrain accent={accent} />}
 
-      {(visualLayer === 'Ambient' || visualLayer === 'Energy') && albumLayout.map(album => (
+      {visualLayer === 'Ambient' && albumLayout.map(album => (
         <AlbumMesh key={album.albumId} {...album} />
       ))}
 
@@ -78,7 +77,7 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
 }
 
 export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
-  const { isFullscreen, visualLayer, toggleFullscreen } = useVisualiserStore()
+  const { isFullscreen, visualLayer, toggleFullscreen, setVisualLayer } = useVisualiserStore()
   const { currentTrack } = usePlayerStore()
 
   // AnimatePresence must wrap the conditional — early return here would
@@ -95,7 +94,7 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
         >
         <div style={styles.canvasWrap}>
           {visualLayer === 'Presets' ? (
-            <ButterchurnVisualiser />
+            <ButterchurnVisualiser onFailure={() => setVisualLayer('Minimal')} />
           ) : (
             <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
               <FullscreenScene accent={accent} tracks={tracks} />
@@ -116,11 +115,6 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             </motion.div>
           </AnimatePresence>
 
-          {visualLayer === 'Energy' && (
-            <div style={styles.energyVisWrap}>
-               <FrequencyBars width={800} height={200} accent={accent} mirrorMode />
-            </div>
-          )}
 
           {(visualLayer === 'Minimal') && (
             <div style={styles.radialWrap}>

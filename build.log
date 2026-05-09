@@ -1,6 +1,0 @@
-
-> waveform@0.0.0 build /app
-> tsc -b && vite build
-
-src/main.tsx(4,8): error TS2882: Cannot find module or type declarations for side-effect import of './index.css'.
- ELIFECYCLE  Command failed with exit code 1.

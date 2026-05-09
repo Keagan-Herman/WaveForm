@@ -5,7 +5,11 @@ import { audioEngine } from '@/audio/AudioEngine'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useResize } from '@/hooks/useResize'
 
-export function ButterchurnVisualiser() {
+interface ButterchurnVisualiserProps {
+  onFailure?: () => void
+}
+
+export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const visualizerRef = useRef<any>(null)
@@ -29,10 +33,24 @@ export function ButterchurnVisualiser() {
 
     hasInitialisedRef.current = true
 
-    const visualizer = butterchurn.createVisualizer(audioContext, canvas, {
-      width: canvas.width,
-      height: canvas.height,
-    })
+    let visualizer: any
+    try {
+      // Handle ESM default import variations
+      const createVisualizer = (butterchurn as any).default?.createVisualizer || butterchurn.createVisualizer
+
+      if (typeof createVisualizer !== 'function') {
+        throw new Error('butterchurn.createVisualizer is not a function')
+      }
+
+      visualizer = createVisualizer(audioContext, canvas, {
+        width: canvas.width,
+        height: canvas.height,
+      })
+    } catch (err) {
+      console.error('Failed to initialize Butterchurn:', err)
+      onFailure?.()
+      return
+    }
 
     visualizer.connectAudio(analyser)
 
