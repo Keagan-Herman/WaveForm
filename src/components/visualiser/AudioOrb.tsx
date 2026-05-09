@@ -12,12 +12,12 @@ const vertexShader = `
   uniform float uBass;
   uniform sampler2D uFreq;
 
-  //	Simplex 3D Noise
+  //	Simplex 3D Noise 
   //	by Ian McEwan, Ashima Arts
   vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
   vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 
-  float snoise(vec3 v){
+  float snoise(vec3 v){ 
     const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
     const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -33,13 +33,13 @@ const vertexShader = `
     vec3 x2 = x0 - i2 + 2.0 * C.xxx;
     vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
 
-    i = mod(i, 289.0 );
-    vec4 p = permute( permute( permute(
+    i = mod(i, 289.0 ); 
+    vec4 p = permute( permute( permute( 
                i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-             + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+             + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
              + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
 
-    float n_ = 1.0/7.0;
+    float n_ = 1.0/7.0; 
     vec3  ns = n_ * D.wyz - D.xzx;
 
     vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
@@ -74,19 +74,19 @@ const vertexShader = `
 
     vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
     m = m * m;
-    return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
+    return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
                                   dot(p2,x2), dot(p3,x3) ) );
   }
 
   void main() {
     vUv = uv;
-
+    
     float freq = texture2D(uFreq, vec2(uv.x, 0.5)).r;
     float noise = snoise(vec3(position.x * 0.1 + uTime * 0.2, position.z * 0.1, uTime * 0.1));
-
+    
     float displacement = (noise * 2.0 * uBass) + (freq * 1.5);
     vDisplacement = displacement;
-
+    
     vec3 newPosition = position + normal * displacement;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
@@ -108,7 +108,7 @@ const fragmentShader = `
 export function AudioOrb({ accent }: { accent: AlbumColour }) {
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-
+  
   const freqData = useMemo(() => new Uint8Array(128), [])
   const freqTexture = useMemo(() => {
     const tex = new THREE.DataTexture(freqData, 128, 1, THREE.RedFormat)
@@ -135,9 +135,9 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
     const { bassPower } = useVisualiserStore.getState()
 
     if (materialRef.current) {
-      freqData.set(data.slice(0, 128))
+      freqData.set(data.subarray(0, 128))  // subarray = view, no allocation
       freqTexture.needsUpdate = true
-
+      
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower
     }

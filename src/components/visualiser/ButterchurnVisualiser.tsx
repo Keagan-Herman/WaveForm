@@ -2,22 +2,32 @@ import { useRef, useEffect } from 'react'
 import butterchurn from 'butterchurn'
 import butterchurnPresets from 'butterchurn-presets'
 import { audioEngine } from '@/audio/AudioEngine'
+import { usePlayerStore } from '@/stores/playerStore'
 import { useResize } from '@/hooks/useResize'
 
 export function ButterchurnVisualiser() {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const visualizerRef = useRef<any>(null)
+  const hasInitialisedRef = useRef(false)
+  const frameIdRef = useRef<number>()
   const { width, height } = useResize(containerRef)
 
   const currentPresetIndex = useRef(0)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
 
+  // AudioEngine is null until a user gesture — wait for isPlaying to become
+  // true before attempting initialisation. The ref prevents double-init.
   useEffect(() => {
+    if (!isPlaying || hasInitialisedRef.current) return
+
     const audioContext = audioEngine.audioContext
     const canvas = canvasRef.current
     const analyser = audioEngine.analyserNode
 
     if (!audioContext || !canvas || !analyser) return
+
+    hasInitialisedRef.current = true
 
     const visualizer = butterchurn.createVisualizer(audioContext, canvas, {
       width: canvas.width,
@@ -28,7 +38,6 @@ export function ButterchurnVisualiser() {
 
     const presets = butterchurnPresets.getPresets()
     const keys = Object.keys(presets)
-    // Pick a few "best of" presets as suggested
     const bestOfKeys = keys.filter(k =>
       k.toLowerCase().includes('flexi') ||
       k.toLowerCase().includes('milk') ||
@@ -39,17 +48,16 @@ export function ButterchurnVisualiser() {
     visualizer.loadPreset(presets[finalKeys[0]], 0)
     visualizerRef.current = { visualizer, presets: finalKeys, allPresets: presets }
 
-    let frameId: number
     const render = () => {
       visualizer.render()
-      frameId = requestAnimationFrame(render)
+      frameIdRef.current = requestAnimationFrame(render)
     }
     render()
 
     return () => {
-      cancelAnimationFrame(frameId)
+      if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current)
     }
-  }, [])
+  }, [isPlaying])
 
   useEffect(() => {
     if (visualizerRef.current && width && height) {
@@ -57,7 +65,6 @@ export function ButterchurnVisualiser() {
     }
   }, [width, height])
 
-  // Cycle presets on P key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'p' && visualizerRef.current) {

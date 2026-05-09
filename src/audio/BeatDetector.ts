@@ -74,14 +74,30 @@ export class BeatDetector {
       return { beat: false, confidence: 0, bassEnergy: bassEnergy / 255, bpm: 0 }
     }
 
-    // Energy stats
-    const energyAvg = this.energyHistory.reduce((a, b) => a + b, 0) / this.energyHistory.length
-    const energyVar = this.energyHistory.reduce((sum, v) => sum + Math.pow(v - energyAvg, 2), 0) / this.energyHistory.length
+    // Energy stats — manual loops to avoid reduce() closure allocation at 60fps
+    let energySum = 0
+    for (let i = 0; i < this.energyHistory.length; i++) energySum += this.energyHistory[i]
+    const energyAvg = energySum / this.energyHistory.length
+
+    let energyVarSum = 0
+    for (let i = 0; i < this.energyHistory.length; i++) {
+      const d = this.energyHistory[i] - energyAvg
+      energyVarSum += d * d
+    }
+    const energyVar = energyVarSum / this.energyHistory.length
     const energyThresh = (this.sensitivity + energyVar / 10000) * energyAvg
 
     // Flux stats
-    const fluxAvg = this.fluxHistory.reduce((a, b) => a + b, 0) / this.fluxHistory.length
-    const fluxVar = this.fluxHistory.reduce((sum, v) => sum + Math.pow(v - fluxAvg, 2), 0) / this.fluxHistory.length
+    let fluxSum = 0
+    for (let i = 0; i < this.fluxHistory.length; i++) fluxSum += this.fluxHistory[i]
+    const fluxAvg = fluxSum / this.fluxHistory.length
+
+    let fluxVarSum = 0
+    for (let i = 0; i < this.fluxHistory.length; i++) {
+      const d = this.fluxHistory[i] - fluxAvg
+      fluxVarSum += d * d
+    }
+    const fluxVar = fluxVarSum / this.fluxHistory.length
     const fluxThresh = (this.sensitivity + fluxVar / 10000) * fluxAvg
 
     const energyBeat = bassEnergy > energyThresh && bassEnergy > 10

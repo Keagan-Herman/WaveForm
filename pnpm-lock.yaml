@@ -20,7 +20,7 @@ importers:
         version: 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0)
       '@react-three/postprocessing':
         specifier: ^2.16.2
-        version: 2.16.2(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0))(@types/three@0.184.0)(react@18.3.1)(three@0.170.0)
+        version: 2.19.1(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0))(@types/three@0.184.0)(react@18.3.1)(three@0.170.0)
       '@use-gesture/react':
         specifier: ^10.3.1
         version: 10.3.1(react@18.3.1)
@@ -38,7 +38,7 @@ importers:
         version: 12.38.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       postprocessing:
         specifier: ^6.36.6
-        version: 6.36.6(three@0.170.0)
+        version: 6.39.1(three@0.170.0)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -357,11 +357,11 @@ packages:
       react-native:
         optional: true
 
-  '@react-three/postprocessing@2.16.2':
-    resolution: {integrity: sha512-2ya1gXLDpzyfbELobi3rPHNNZZCrCfyq20GMYJD1yD7ZyBFSpRG9YSPMBnOal6A89kXanPBw273h6/Dqev0n7g==}
+  '@react-three/postprocessing@2.19.1':
+    resolution: {integrity: sha512-7P25LOSToH/I6b3UipNK17IIFlX4FDUmWcaomfwu82+CzhXTOz8Fcc1ZXEZ7vFA/5Fr/2peNlXgXZJvoa+aCdA==}
     peerDependencies:
-      '@react-three/fiber': '>=8.0'
-      react: '>=18.0'
+      '@react-three/fiber': ^8.0
+      react: ^18.0
       three: '>= 0.138.0'
 
   '@rolldown/binding-android-arm64@1.0.0-rc.17':
@@ -1333,11 +1333,6 @@ packages:
     resolution: {integrity: sha512-qif0+jGGZoLWdHey3UFHHWP0H7Gbmsk8T5VEqyYFbWqPr1XqvLGBbk/sl8V5exGmcYJklJOhOQq1pV9IcsiFag==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postprocessing@6.36.6:
-    resolution: {integrity: sha512-mjJjoXbC97XMV6iQVhOZYNjD5X93o3+/zpYm9oRmsyjP3LjfwedT8PgusECTk+s5DZeZoJ8vA9htdWuH8JH+mQ==}
-    peerDependencies:
-      three: '>= 0.157.0 < 0.173.0'
-
   postprocessing@6.39.1:
     resolution: {integrity: sha512-R2dG2zy+BAx3USl5EHw+PvnrlbT5PKnZVp3se0HCR0pWH8WQdh742yNG4YWOsq6c0bFpffk0Gd2RqPeoP/wKng==}
     peerDependencies:
@@ -1926,7 +1921,7 @@ snapshots:
       - '@types/react'
       - immer
 
-  '@react-three/postprocessing@2.16.2(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0))(@types/three@0.184.0)(react@18.3.1)(three@0.170.0)':
+  '@react-three/postprocessing@2.19.1(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0))(@types/three@0.184.0)(react@18.3.1)(three@0.170.0)':
     dependencies:
       '@react-three/fiber': 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0)
       buffer: 6.0.3
@@ -2862,10 +2857,6 @@ snapshots:
       nanoid: 3.3.12
       picocolors: 1.1.1
       source-map-js: 1.2.1
-
-  postprocessing@6.36.6(three@0.170.0):
-    dependencies:
-      three: 0.170.0
 
   postprocessing@6.39.1(three@0.170.0):
     dependencies:

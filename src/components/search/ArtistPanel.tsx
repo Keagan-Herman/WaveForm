@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import { getArtist, getArtistTopTracks, type DeezerArtist, type DeezerTrack } from '@/lib/deezerApi'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -112,7 +112,7 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   panel: {
     position: 'absolute',
     top: 0,

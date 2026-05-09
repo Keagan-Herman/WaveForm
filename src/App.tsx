@@ -137,6 +137,7 @@ function Waveform() {
   const accent = useAppAccent()
   const { toggleFullscreen, visualLayer, isLowQuality, toggleLowQuality } = useVisualiserStore()
   const isPlaying = usePlayerStore(state => state.isPlaying)
+  const selectedArtistId = useUIStore(state => state.selectedArtistId)
 
   useEffect(() => {
     const played = sessionStorage.getItem('waveform_intro_played')
@@ -338,9 +339,9 @@ function Waveform() {
       <TrackTransitionOverlay accent={accent} />
 
       <AnimatePresence>
-        {useUIStore(state => state.selectedArtistId) && (
+        {selectedArtistId !== null && (
           <ArtistPanel
-            artistId={useUIStore.getState().selectedArtistId!}
+            artistId={selectedArtistId}
             accentColour={accent.hex}
             onClose={() => useUIStore.getState().setSelectedArtistId(null)}
           />

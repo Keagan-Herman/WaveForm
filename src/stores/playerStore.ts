@@ -76,7 +76,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const nextIndex = queueIndex + 1
     if (nextIndex >= queue.length) return null
     const next = queue[nextIndex]
-    set({ queueIndex: nextIndex, currentTrack: next, progress: 0 })
+    set({ queueIndex: nextIndex, currentTrack: next, progress: 0, isTransitioning: true })
+    setTimeout(() => set({ isTransitioning: false }), 2000)
     return next
   },
 
@@ -85,7 +86,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const prevIndex = queueIndex - 1
     if (prevIndex < 0) return null
     const prev = queue[prevIndex]
-    set({ queueIndex: prevIndex, currentTrack: prev, progress: 0 })
+    set({ queueIndex: prevIndex, currentTrack: prev, progress: 0, isTransitioning: true })
+    setTimeout(() => set({ isTransitioning: false }), 2000)
     return prev
   },
 

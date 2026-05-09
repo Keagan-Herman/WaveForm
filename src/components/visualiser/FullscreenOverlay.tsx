@@ -81,17 +81,18 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const { isFullscreen, visualLayer, toggleFullscreen } = useVisualiserStore()
   const { currentTrack } = usePlayerStore()
 
-  if (!isFullscreen) return null
-
+  // AnimatePresence must wrap the conditional — early return here would
+  // prevent the exit animation from firing when isFullscreen goes false.
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        key={isFullscreen ? 'fullscreen' : 'none'}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={styles.overlay}
-      >
+      {isFullscreen && (
+        <motion.div
+          key="fullscreen"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={styles.overlay}
+        >
         <div style={styles.canvasWrap}>
           {visualLayer === 'Presets' ? (
             <ButterchurnVisualiser />
@@ -154,6 +155,7 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
           </div>
         </div>
       </motion.div>
+      )}
     </AnimatePresence>
   )
 }
