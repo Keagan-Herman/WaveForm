@@ -36,18 +36,16 @@ interface PlayerBarProps {
 }
 
 export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
-  const {
-    currentTrack,
-    isPlaying,
-    isLoading,
-    progress,
-    duration,
-    setIsPlaying,
-    nextTrack,
-    prevTrack,
-    queue,
-    queueIndex,
-  } = usePlayerStore()
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const isLoading = usePlayerStore(state => state.isLoading)
+  const progress = usePlayerStore(state => state.progress)
+  const duration = usePlayerStore(state => state.duration)
+  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const nextTrack = usePlayerStore(state => state.nextTrack)
+  const prevTrack = usePlayerStore(state => state.prevTrack)
+  const queue = usePlayerStore(state => state.queue)
+  const queueIndex = usePlayerStore(state => state.queueIndex)
 
   const beat = useVisualiserStore(state => state.beat)
 

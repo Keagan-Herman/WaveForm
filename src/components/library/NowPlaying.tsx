@@ -33,8 +33,12 @@ function formatRank(rank: number): string {
 }
 
 export function NowPlaying({ accentColour }: NowPlayingProps) {
-  const { currentTrack, isPlaying, progress } = usePlayerStore()
-  const { beat, bpm } = useVisualiserStore()
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const progress = usePlayerStore(state => state.progress)
+
+  const beat = useVisualiserStore(state => state.beat)
+  const bpm = useVisualiserStore(state => state.bpm)
 
   const accent = accentColour?.hex ?? '#7a8fa6'
   const accentDim = accentColour

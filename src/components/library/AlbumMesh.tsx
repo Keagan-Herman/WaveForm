@@ -50,7 +50,7 @@ export function AlbumMesh({
   const meshRef = useRef<THREE.Mesh>(null)
   const texture = useTexture(imageUrl)
   const [hovered, setHovered] = useState(false)
-  const { playTrackByAlbumId } = usePlayerStore()
+  const playTrackByAlbumId = usePlayerStore(state => state.playTrackByAlbumId)
 
   // Memoise geometry and material — don't recreate on every render
   const geometry = useMemo(() => new THREE.PlaneGeometry(size, size), [size])

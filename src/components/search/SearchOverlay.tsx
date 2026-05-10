@@ -29,7 +29,10 @@ export function SearchOverlay({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const { tracks, isLoading, error } = useDeezerSearch(query)
-  const { currentTrack, setTrack, setIsPlaying, setQueue } = usePlayerStore()
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const setTrack = usePlayerStore(state => state.setTrack)
+  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const setQueue = usePlayerStore(state => state.setQueue)
 
   useEffect(() => {
     onResultsChange?.(tracks)
