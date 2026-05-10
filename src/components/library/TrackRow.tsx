@@ -82,7 +82,7 @@ export function TrackRow({
       onClick={handleSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      aria-label={`Play ${track.title} by ${track.artist.name}`}
+      aria-label={`Play ${track.title} by ${track.artist.name}${track.explicit_lyrics ? ' (Explicit)' : ''}`}
       aria-pressed={isActive}
     >
       <div style={styles.indexWrap}>
@@ -92,13 +92,22 @@ export function TrackRow({
         }
       </div>
 
-      <motion.img
-        layoutId={`album-${track.id}`}
-        src={track.album.cover_medium}
-        alt={track.album.title}
-        style={styles.albumArt}
-        loading="lazy"
-      />
+      <div style={styles.artWrap}>
+        <motion.img
+          layoutId={`album-${track.id}`}
+          src={track.album.cover_medium}
+          alt={track.album.title}
+          style={styles.albumArt}
+          loading="lazy"
+        />
+        {track.explicit_lyrics && (
+          <div
+            style={{ ...styles.explicitBadge, color: accentColour, borderColor: `${accentColour}66` }}
+          >
+            E
+          </div>
+        )}
+      </div>
 
       <div style={styles.info}>
         <p style={{
@@ -144,12 +153,34 @@ const styles: Record<string, React.CSSProperties> = {
   },
   index: { fontSize: '0.65rem', opacity: 0.35 },
   playingIndicator: { fontSize: '0.6rem' },
-  albumArt: {
+  artWrap: {
+    position: 'relative',
     width: 36,
     height: 36,
+    flexShrink: 0,
+  },
+  explicitBadge: {
+    position: 'absolute',
+    top: 1,
+    right: 1,
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    border: '1px solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.42rem',
+    fontWeight: 700,
+    background: 'rgba(0,0,0,0.7)',
+    pointerEvents: 'none',
+  },
+  albumArt: {
+    width: '100%',
+    height: '100%',
     borderRadius: '3px',
     objectFit: 'cover',
-    flexShrink: 0,
+    display: 'block',
   },
   info: { minWidth: 0 },
   name: {
