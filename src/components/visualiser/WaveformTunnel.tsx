@@ -19,13 +19,16 @@ export function WaveformTunnel({ accent }: WaveformTunnelProps) {
   const rings = useMemo(() => {
     return Array.from({ length: ringCount }).map((_, i) => ({
       z: -i * (tunnelLength / ringCount),
-      id: i
+      id: i,
     }))
   }, [])
 
-  const geometry = useMemo(() => new THREE.RingGeometry(tunnelRadius, tunnelRadius + 0.1, segmentCount), [])
+  const geometry = useMemo(
+    () => new THREE.RingGeometry(tunnelRadius, tunnelRadius + 0.1, segmentCount),
+    []
+  )
 
-  useFrame((state) => {
+  useFrame(state => {
     if (!groupRef.current) return
     const { bassPower } = useVisualiserStore.getState()
     const freqData = audioEngine.getFrequencyData()
@@ -56,14 +59,9 @@ export function WaveformTunnel({ accent }: WaveformTunnelProps) {
 
   return (
     <group ref={groupRef}>
-      {rings.map((ring) => (
+      {rings.map(ring => (
         <mesh key={ring.id} position={[0, 0, ring.z]} geometry={geometry}>
-          <meshBasicMaterial
-            transparent
-            side={THREE.DoubleSide}
-            color={accent.hex}
-            opacity={0.5}
-          />
+          <meshBasicMaterial transparent side={THREE.DoubleSide} color={accent.hex} opacity={0.5} />
         </mesh>
       ))}
     </group>

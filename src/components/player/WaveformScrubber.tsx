@@ -14,7 +14,7 @@ export function WaveformScrubber({ width, height, accentColour }: WaveformScrubb
   const isPlaying = usePlayerStore(state => state.isPlaying)
 
   const { start, stop } = useAudioAnalyser({
-    onWaveformData: (waveData) => {
+    onWaveformData: waveData => {
       const canvas = canvasRef.current
       if (!canvas) return
       const ctx = canvas.getContext('2d')
@@ -42,12 +42,12 @@ export function WaveformScrubber({ width, height, accentColour }: WaveformScrubb
         const y = (height - barHeight) / 2
 
         // Change color based on progress
-        const isPlayed = (i / totalBars) < progress
+        const isPlayed = i / totalBars < progress
         ctx.fillStyle = isPlayed ? (beat ? '#fff' : accentColour) : 'rgba(255,255,255,0.15)'
 
         ctx.fillRect(x, y, barWidth, barHeight)
       }
-    }
+    },
   })
 
   useEffect(() => {

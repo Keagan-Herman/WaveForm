@@ -93,17 +93,18 @@ const vertexShader = `
       position.z * noiseScale + uTime * noiseSpeed * 1.2
     ));
 
-    // Stretchy distortions
-    float stretch = sin(position.y * 2.0 + uTime) * uBass * 0.5;
+    // Stretchy distortions — subtle breathe
+    float stretch = sin(position.y * 1.5 + uTime * 0.5) * uBass * 0.3;
 
-    float displacement = (noise * 3.0 * uBass) + (freq * 2.5) + (uBeat * 0.5) + stretch;
+    // Smoothed displacement
+    float displacement = (noise * 2.0 * uBass) + (freq * 1.2) + (uBeat * 0.4) + stretch;
     vDisplacement = displacement;
     
     vec3 newPosition = position + normal * displacement;
 
-    // Add some non-spherical expansion
-    newPosition.x += sin(uTime * 2.0 + position.y) * uBass * 0.3;
-    newPosition.z += cos(uTime * 2.0 + position.x) * uBass * 0.3;
+    // Add some non-spherical expansion — more fluid
+    newPosition.x += sin(uTime * 1.2 + position.y * 0.5) * uBass * 0.2;
+    newPosition.z += cos(uTime * 1.2 + position.x * 0.5) * uBass * 0.2;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
@@ -140,7 +141,7 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const colorMixRef = useRef(0)
-  
+
   const freqData = useMemo(() => new Uint8Array(128), [])
   const freqTexture = useMemo(() => {
     const tex = new THREE.DataTexture(freqData, 128, 1, THREE.RedFormat)
@@ -148,16 +149,19 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
     return tex
   }, [freqData])
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uBass: { value: 0 },
-    uBeat: { value: 0 },
-    uFreq: { value: freqTexture },
-    uColor1: { value: new THREE.Color(accent.palette.primary) },
-    uColor2: { value: new THREE.Color(accent.palette.secondary) },
-    uColor3: { value: new THREE.Color(accent.palette.accent) },
-    uColorMix: { value: 0 }
-  }), [accent, freqTexture])
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uBeat: { value: 0 },
+      uFreq: { value: freqTexture },
+      uColor1: { value: new THREE.Color(accent.palette.primary) },
+      uColor2: { value: new THREE.Color(accent.palette.secondary) },
+      uColor3: { value: new THREE.Color(accent.palette.accent) },
+      uColorMix: { value: 0 },
+    }),
+    [accent, freqTexture]
+  )
 
   useEffect(() => {
     if (materialRef.current) {
@@ -167,30 +171,46 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
     }
   }, [accent])
 
+  const smoothedBass = useRef(0)
+  const smoothedRotation = useRef({ y: 0, z: 0 })
+
   useFrame((state, delta) => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
     const { bassPower, beat } = useVisualiserStore.getState()
 
+    // Inertia for bass reactivity
+    smoothedBass.current += (bassPower - smoothedBass.current) * 0.12
+
     if (materialRef.current) {
+      // Sub-sample frequency data for smoother texture
       freqData.set(data.subarray(0, 128))
       freqTexture.needsUpdate = true
-      
+
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
-      materialRef.current.uniforms.uBass.value = bassPower
+      materialRef.current.uniforms.uBass.value = smoothedBass.current
 
-      // Smoothly pulse uBeat
+      // Smoothly pulse uBeat with inertia
       const targetBeat = beat ? 1.0 : 0.0
-      materialRef.current.uniforms.uBeat.value += (targetBeat - materialRef.current.uniforms.uBeat.value) * 0.2
+      materialRef.current.uniforms.uBeat.value +=
+        (targetBeat - materialRef.current.uniforms.uBeat.value) * 0.15
 
-      // Cycle colors
-      colorMixRef.current = (colorMixRef.current + delta * (0.2 + bassPower * 0.5)) % 3.0
+      // Cycle colors more gracefully
+      colorMixRef.current =
+        (colorMixRef.current + delta * (0.15 + smoothedBass.current * 0.3)) % 3.0
       materialRef.current.uniforms.uColorMix.value = colorMixRef.current
     }
 
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.005 + bassPower * 0.01
-      meshRef.current.rotation.z += 0.003 + bassPower * 0.008
+      // Rotation with inertia
+      const targetRotY = 0.004 + smoothedBass.current * 0.008
+      const targetRotZ = 0.002 + smoothedBass.current * 0.006
+
+      smoothedRotation.current.y += (targetRotY - smoothedRotation.current.y) * 0.1
+      smoothedRotation.current.z += (targetRotZ - smoothedRotation.current.z) * 0.1
+
+      meshRef.current.rotation.y += smoothedRotation.current.y
+      meshRef.current.rotation.z += smoothedRotation.current.z
     }
   })
 

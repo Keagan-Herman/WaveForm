@@ -54,8 +54,12 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
     setIsPlaying(!isPlaying)
   }, [currentTrack, isPlaying, setIsPlaying])
 
-  const handleNext = useCallback(() => { nextTrack() }, [nextTrack])
-  const handlePrev = useCallback(() => { prevTrack() }, [prevTrack])
+  const handleNext = useCallback(() => {
+    nextTrack()
+  }, [nextTrack])
+  const handlePrev = useCallback(() => {
+    prevTrack()
+  }, [prevTrack])
 
   const canPrev = queueIndex > 0
   const canNext = queueIndex < queue.length - 1
@@ -125,9 +129,7 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
 
         {/* Time */}
         <div style={styles.time}>
-          <span style={styles.timeText}>
-            {formatDuration(Math.floor(currentTime))} / 30
-          </span>
+          <span style={styles.timeText}>{formatDuration(Math.floor(currentTime))} / 30</span>
           <span style={styles.previewLabel}>30s preview</span>
         </div>
       </div>
@@ -237,13 +239,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timeText: {
     fontFamily: 'monospace',
-    fontSize: '0.72rem',
+    fontSize: '0.75rem',
     opacity: 0.55,
     fontVariantNumeric: 'tabular-nums',
   },
   previewLabel: {
     fontFamily: 'monospace',
-    fontSize: '0.55rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.1em',
     opacity: 0.25,
     textTransform: 'uppercase',

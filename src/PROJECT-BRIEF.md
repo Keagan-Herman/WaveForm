@@ -10,16 +10,16 @@ This file documents what has been built, what decisions were made and why, and w
 
 All eight phases are complete. The app is deployed and functional on Vercel.
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| 0 | Scaffold — Vite, tsconfig, ESLint, Prettier, folder structure | ✅ Complete |
-| 1 | AudioEngine singleton, BeatDetector, AudioContext provider, shared rAF loop via `useAudioAnalyser` | ✅ Complete |
-| 2 | FrequencyBars canvas, WaveformLine oscilloscope, BackgroundPulse with Zustand | ✅ Complete |
-| 3 | Deezer API integration (`deezerApi.ts`, `useDeezerSearch`), Vercel rewrite proxy | ✅ Complete |
-| 4 | `playerStore` (Zustand), `PreviewPlayer` hidden audio element, `PlayerBar` UI | ✅ Complete |
-| 5 | `TrackRow`, `SearchOverlay`, `ArtistRipple`, `NowPlaying` panel, `useReducedMotion`, keyboard shortcuts | ✅ Complete |
-| 6 | `AlbumMesh`, `AlbumGravityField` via React Three Fiber | ✅ Complete |
-| 7 | D3 force-directed `GenreForceGraph`, `GenrePanel`, `useGenreGraph`, genre-based track filtering | ✅ Complete |
+| Phase | Scope                                                                                                   | Status      |
+| ----- | ------------------------------------------------------------------------------------------------------- | ----------- |
+| 0     | Scaffold — Vite, tsconfig, ESLint, Prettier, folder structure                                           | ✅ Complete |
+| 1     | AudioEngine singleton, BeatDetector, AudioContext provider, shared rAF loop via `useAudioAnalyser`      | ✅ Complete |
+| 2     | FrequencyBars canvas, WaveformLine oscilloscope, BackgroundPulse with Zustand                           | ✅ Complete |
+| 3     | Deezer API integration (`deezerApi.ts`, `useDeezerSearch`), Vercel rewrite proxy                        | ✅ Complete |
+| 4     | `playerStore` (Zustand), `PreviewPlayer` hidden audio element, `PlayerBar` UI                           | ✅ Complete |
+| 5     | `TrackRow`, `SearchOverlay`, `ArtistRipple`, `NowPlaying` panel, `useReducedMotion`, keyboard shortcuts | ✅ Complete |
+| 6     | `AlbumMesh`, `AlbumGravityField` via React Three Fiber                                                  | ✅ Complete |
+| 7     | D3 force-directed `GenreForceGraph`, `GenrePanel`, `useGenreGraph`, genre-based track filtering         | ✅ Complete |
 
 ---
 
@@ -29,12 +29,14 @@ All eight phases are complete. The app is deployed and functional on Vercel.
 Spotify was the original API choice. During Phase 3, we discovered that Spotify's Development Mode now requires Premium accounts to play audio. This broke the core feature of the app — 30-second preview playback.
 
 Deezer was chosen as the replacement because:
+
 - Free, public search endpoints — no API key or OAuth required
 - Every track result includes a 30-second preview MP3 (`preview` field) — guaranteed, never null
 - No serverless token proxy needed (Spotify required a `/api/spotify-token` function)
 - CORS is handled by a single Vercel rewrite rule in `vercel.json` — no function, no secret
 
 **The only infrastructure needed:**
+
 ```json
 // vercel.json
 {
@@ -100,6 +102,7 @@ This is the strictest boundary in the codebase. The rule is:
 > React renders one `<svg>` element. D3 owns everything inside it.
 
 Implementation:
+
 - `GenreForceGraph.tsx` takes `width`, `height`, `nodes`, `links`, and a callback prop
 - It renders `<svg ref={svgRef}>` only
 - Inside a `useEffect`, D3 selects `svgRef.current` and creates all elements imperatively
@@ -114,6 +117,7 @@ Do not refactor this to use React for node rendering. The force simulation requi
 ## The AlbumColour System
 
 `useAlbumColour(imageUrl)` is the global theming hook. It:
+
 1. Fetches the album art image via `fetch`
 2. Draws it to an off-screen canvas
 3. Samples pixel colours to derive a palette
@@ -123,6 +127,7 @@ Do not refactor this to use React for node rendering. The force simulation requi
    - `hue`, `saturation`, `lightness`
 
 The palette is injected as CSS custom properties on `:root` in `App.tsx`:
+
 ```ts
 root.style.setProperty('--bg-color', palette.background)
 // ... etc
@@ -135,6 +140,7 @@ All components that need colour receive `accent: AlbumColour` as a prop. No comp
 ## Render Loop Coexistence — Confirmed Working
 
 Three independent loops run simultaneously without conflict:
+
 1. `useAudioAnalyser` module-level rAF — canvas writes only
 2. R3F `useFrame` — Three.js object mutations only
 3. D3 force simulation tick — SVG DOM mutations only
@@ -147,14 +153,14 @@ This was validated during Phase 6. Key insight: they only conflict if they share
 
 Implemented in `KeyboardShortcuts` component inside `App.tsx`:
 
-| Key       | Action                       |
-|-----------|------------------------------|
-| `Space`   | Play / Pause                 |
-| `←`       | Previous track in queue      |
-| `→`       | Next track in queue          |
-| `F`       | Toggle fullscreen visualiser |
-| `V`       | Cycle visual layer           |
-| `/`       | Open search (displayed only) |
+| Key     | Action                       |
+| ------- | ---------------------------- |
+| `Space` | Play / Pause                 |
+| `←`     | Previous track in queue      |
+| `→`     | Next track in queue          |
+| `F`     | Toggle fullscreen visualiser |
+| `V`     | Cycle visual layer           |
+| `/`     | Open search (displayed only) |
 
 Shortcuts are disabled when focus is on `INPUT` or `TEXTAREA`.
 
@@ -168,7 +174,7 @@ Shortcuts are disabled when focus is on `INPUT` or `TEXTAREA`.
 
 ## Known Issues / Future Work
 
-- The `Spectrogram` filename has a typo: the file is `Spectogram.tsx` (missing 'r'). It's imported correctly with the typo. Fix by renaming and updating the import in `App.tsx`.
+- The `Spectrogram` filename typo has been fixed.
 - Genre data from Deezer requires a second API fetch per album (`getAlbumGenres`). This is intentional — the search endpoint doesn't include genres. Results are cached via `fetchWithCache`.
 - `useAlbumColour` does its own canvas-based colour sampling (tinycolor2). If performance is ever a concern, this could be debounced more aggressively or moved to a web worker.
 - The HQ/Low Quality toggle (`isLowQuality` in `visualiserStore`) exists but its effect on individual components is partial — not all visualisers respond to it yet.

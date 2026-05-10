@@ -53,7 +53,7 @@ export function FrequencyBars({
     ctx.clearRect(0, 0, w, h)
 
     const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
-    const barWidth = Math.max(1, (w / (mirrorMode ? data.length : bins)) - 1.5)
+    const barWidth = Math.max(1, w / (mirrorMode ? data.length : bins) - 1.5)
 
     const processedData = mirrorMode
       ? [...[...data.slice(0, bins)].reverse(), ...data.slice(0, bins)]
@@ -91,19 +91,19 @@ export function FrequencyBars({
       }
 
       ctx.fillStyle = grad
-      ctx.fillRect(x, (h * 0.7) - barHeight, barWidth, barHeight)
+      ctx.fillRect(x, h * 0.7 - barHeight, barWidth, barHeight)
 
       // Glow cap
       if (barHeight > 6) {
         const capLit = isLight ? 85 : 85
         ctx.fillStyle = `hsla(${barHue}, 100%, ${capLit}%, 0.8)`
-        ctx.fillRect(x, (h * 0.7) - barHeight, barWidth, 2)
+        ctx.fillRect(x, h * 0.7 - barHeight, barWidth, 2)
 
         if (ratio > 0.7) {
           ctx.shadowColor = `hsl(${barHue}, 100%, 70%)`
           ctx.shadowBlur = isLight ? 12 : 8
           ctx.fillStyle = `hsl(${barHue}, 100%, 92%)`
-          ctx.fillRect(x, (h * 0.7) - barHeight - 1, barWidth, 2)
+          ctx.fillRect(x, h * 0.7 - barHeight - 1, barWidth, 2)
           ctx.shadowBlur = 0
         }
       }

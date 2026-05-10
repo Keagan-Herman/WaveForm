@@ -41,93 +41,98 @@ interface TrackRowProps {
   accentColour?: string
 }
 
-export const TrackRow = React.memo(({
-  track,
-  isActive,
-  isFocused,
-  index,
-  onSelect,
-  accentColour = '#1db954',
-}: TrackRowProps) => {
-  const [isHovered, setIsHovered] = useState(false)
+export const TrackRow = React.memo(
+  ({ track, isActive, isFocused, index, onSelect, accentColour = '#1db954' }: TrackRowProps) => {
+    const [isHovered, setIsHovered] = useState(false)
 
-  const handleSelect = useCallback(() => {
-    onSelect(track, index)
-  }, [track, index, onSelect])
+    const handleSelect = useCallback(() => {
+      onSelect(track, index)
+    }, [track, index, onSelect])
 
-  const handleArtistClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    useUIStore.getState().setSelectedArtistId(track.artist.id)
-  }, [track.artist.id])
+    const handleArtistClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation()
+        useUIStore.getState().setSelectedArtistId(track.artist.id)
+      },
+      [track.artist.id]
+    )
 
-  const accentBg = `${accentColour}18`
-  const accentBorder = `${accentColour}40`
+    const accentBg = `${accentColour}18`
+    const accentBorder = `${accentColour}40`
 
-  return (
-    <button
-      style={{
-        ...styles.row,
-        background: isActive
-          ? accentBg
-          : isHovered || isFocused
-            ? 'rgba(255,255,255,0.05)'
-            : 'transparent',
-        borderColor: isActive
-          ? accentBorder
-          : isFocused
-            ? `${accentColour}60`
-            : 'rgba(255,255,255,0.06)',
-        boxShadow: isFocused ? `inset 0 0 0 1px ${accentColour}30` : 'none',
-      }}
-      onClick={handleSelect}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      aria-label={`Play ${track.title} by ${track.artist.name}${track.explicit_lyrics ? ' (Explicit)' : ''}`}
-      aria-pressed={isActive}
-    >
-      <div style={styles.indexWrap}>
-        {isActive
-          ? <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
-          : <span style={styles.index}>{index + 1}</span>
-        }
-      </div>
+    return (
+      <button
+        style={{
+          ...styles.row,
+          background: isActive
+            ? accentBg
+            : isHovered || isFocused
+              ? 'rgba(255,255,255,0.05)'
+              : 'transparent',
+          borderColor: isActive
+            ? accentBorder
+            : isFocused
+              ? `${accentColour}60`
+              : 'rgba(255,255,255,0.06)',
+          boxShadow: isFocused ? `inset 0 0 0 1px ${accentColour}30` : 'none',
+        }}
+        onClick={handleSelect}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        aria-label={`Play ${track.title} by ${track.artist.name}${track.explicit_lyrics ? ' (Explicit)' : ''}`}
+        aria-pressed={isActive}
+      >
+        <div style={styles.indexWrap}>
+          {isActive ? (
+            <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
+          ) : (
+            <span style={styles.index}>{index + 1}</span>
+          )}
+        </div>
 
-      <div style={styles.artWrap}>
-        <motion.img
-          layoutId={`album-${track.id}`}
-          src={track.album.cover_medium}
-          alt={track.album.title}
-          style={styles.albumArt}
-          loading="lazy"
-        />
-        {track.explicit_lyrics && (
-          <div
-            style={{ ...styles.explicitBadge, color: accentColour, borderColor: `${accentColour}66` }}
+        <div style={styles.artWrap}>
+          <motion.img
+            layoutId={`album-${track.id}`}
+            src={track.album.cover_medium}
+            alt={track.album.title}
+            style={styles.albumArt}
+            loading="lazy"
+          />
+          {track.explicit_lyrics && (
+            <div
+              style={{
+                ...styles.explicitBadge,
+                color: accentColour,
+                borderColor: `${accentColour}66`,
+              }}
+            >
+              E
+            </div>
+          )}
+        </div>
+
+        <div style={styles.info}>
+          <p
+            style={{
+              ...styles.name,
+              color: isActive ? accentColour : '#f0f0f0',
+              transition: 'color 0.5s ease',
+            }}
           >
-            E
-          </div>
-        )}
-      </div>
+            {track.title}
+          </p>
+          <p style={styles.artist} onClick={handleArtistClick}>
+            {track.artist.name}
+          </p>
+        </div>
 
-      <div style={styles.info}>
-        <p style={{
-          ...styles.name,
-          color: isActive ? accentColour : '#f0f0f0',
-          transition: 'color 0.5s ease',
-        }}>
-          {track.title}
-        </p>
-        <p style={styles.artist} onClick={handleArtistClick}>
-          {track.artist.name}
-        </p>
-      </div>
+        <p style={styles.album}>{track.album.title}</p>
 
-      <p style={styles.album}>{track.album.title}</p>
-
-      <span style={styles.duration}>{formatDuration(track.duration)}</span>
-    </button>
-  )
-})
+        <span style={styles.duration}>{formatDuration(track.duration)}</span>
+      </button>
+    )
+  }
+)
 
 const styles: Record<string, React.CSSProperties> = {
   row: {
@@ -151,8 +156,8 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: { fontSize: '0.65rem', opacity: 0.35 },
-  playingIndicator: { fontSize: '0.6rem' },
+  index: { fontSize: '0.7rem', opacity: 0.35 },
+  playingIndicator: { fontSize: '0.7rem' },
   artWrap: {
     position: 'relative',
     width: 36,
@@ -170,7 +175,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '0.42rem',
+    fontSize: '0.65rem',
     fontWeight: 700,
     background: 'rgba(0,0,0,0.7)',
     pointerEvents: 'none',
@@ -191,14 +196,14 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '0.12rem',
   },
   artist: {
-    fontSize: '0.68rem',
+    fontSize: '0.7rem',
     opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   album: {
-    fontSize: '0.65rem',
+    fontSize: '0.7rem',
     opacity: 0.3,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -206,7 +211,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'monospace',
   },
   duration: {
-    fontSize: '0.65rem',
+    fontSize: '0.7rem',
     opacity: 0.4,
     flexShrink: 0,
     fontVariantNumeric: 'tabular-nums',

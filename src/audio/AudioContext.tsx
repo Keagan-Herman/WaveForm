@@ -17,11 +17,7 @@ const AudioEngineContext = createContext<AudioEngine>(audioEngine)
 export function AudioProvider({ children }: { children: ReactNode }) {
   // audioEngine is a singleton — no state, no effect needed here.
   // We're just making it available to the React tree via context.
-  return (
-    <AudioEngineContext.Provider value={audioEngine}>
-      {children}
-    </AudioEngineContext.Provider>
-  )
+  return <AudioEngineContext.Provider value={audioEngine}>{children}</AudioEngineContext.Provider>
 }
 
 export function useAudio(): AudioEngine {

@@ -28,11 +28,7 @@
  * in a portfolio.
  */
 
-import {
-  useRef,
-  useEffect,
-  type FC,
-} from 'react'
+import { useRef, useEffect, type FC } from 'react'
 import * as d3 from 'd3'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import type { GenreNode, GenreLink, GenreGraphData } from '@/lib/genreGraph'
@@ -106,8 +102,11 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       )
       .force('charge', d3.forceManyBody().strength(-120))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide<GenreNode>().radius(d => nodeRadius(d) + 4))
-      .alphaDecay(0.03)   // slower decay = more time to settle
+      .force(
+        'collision',
+        d3.forceCollide<GenreNode>().radius(d => nodeRadius(d) + 4)
+      )
+      .alphaDecay(0.03) // slower decay = more time to settle
       .velocityDecay(0.4) // more damping = less jitter
 
     simulationRef.current = simulation
@@ -138,7 +137,10 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         .select('g.labels')
         .selectAll<SVGTextElement, GenreNode>('text')
         .attr('x', d => clamp(d.x ?? 0, 20, width - 20))
-        .attr('y', d => clamp(d.y ?? 0, 20, height - 20) + nodeRadius(d) * (1 + bassPower * 0.15) + 10)
+        .attr(
+          'y',
+          d => clamp(d.y ?? 0, 20, height - 20) + nodeRadius(d) * (1 + bassPower * 0.15) + 10
+        )
         .attr('opacity', 0.5 + bassPower * 0.5)
     })
 
@@ -177,7 +179,11 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     if (!svg || !simulation) return
 
     const { nodes, links } = data
-    const drag = (svg as SVGSVGElement & { __drag?: d3.DragBehavior<SVGCircleElement, GenreNode, GenreNode | d3.SubjectPosition> }).__drag
+    const drag = (
+      svg as SVGSVGElement & {
+        __drag?: d3.DragBehavior<SVGCircleElement, GenreNode, GenreNode | d3.SubjectPosition>
+      }
+    ).__drag
 
     const root = d3.select(svg).select('g.root')
 
@@ -193,7 +199,10 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
 
     linkSel.exit().remove()
 
-    linkSel.enter().append('line').merge(linkSel as d3.Selection<SVGLineElement, GenreLink, SVGGElement, unknown>)
+    linkSel
+      .enter()
+      .append('line')
+      .merge(linkSel as d3.Selection<SVGLineElement, GenreLink, SVGGElement, unknown>)
       .attr('stroke', 'rgba(232,245,232,0.08)')
       .attr('stroke-width', d => Math.min((d.weight as number) * 0.8, 3))
 
@@ -203,12 +212,10 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .selectAll<SVGCircleElement, GenreNode>('circle')
       .data(nodes, d => d.id)
 
-    nodeSel.exit()
-      .transition().duration(300)
-      .attr('r', 0).style('opacity', 0)
-      .remove()
+    nodeSel.exit().transition().duration(300).attr('r', 0).style('opacity', 0).remove()
 
-    const nodeEnter = nodeSel.enter()
+    const nodeEnter = nodeSel
+      .enter()
       .append('circle')
       .attr('r', 0)
       .style('opacity', 0)
@@ -219,19 +226,19 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       })
       .on('mouseenter', function (_event, d) {
         d3.select(this)
-          .transition().duration(150)
+          .transition()
+          .duration(150)
           .attr('r', nodeRadius(d) * 1.25)
       })
       .on('mouseleave', function (_event, d) {
-        d3.select(this)
-          .transition().duration(150)
-          .attr('r', nodeRadius(d))
+        d3.select(this).transition().duration(150).attr('r', nodeRadius(d))
       })
 
     if (drag) nodeEnter.call(drag)
 
     nodeEnter
-      .transition().duration(400)
+      .transition()
+      .duration(400)
       .attr('r', d => nodeRadius(d))
       .style('opacity', 1)
 
@@ -240,11 +247,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .select('g.nodes')
       .selectAll<SVGCircleElement, GenreNode>('circle')
       .attr('fill', d => colorScale(d.id))
-      .attr('stroke', d =>
-        activeGenreRef.current === d.id
-          ? '#fff'
-          : 'rgba(255,255,255,0.15)'
-      )
+      .attr('stroke', d => (activeGenreRef.current === d.id ? '#fff' : 'rgba(255,255,255,0.15)'))
       .attr('stroke-width', d => (activeGenreRef.current === d.id ? 2 : 1))
 
     // ── Labels ───────────────────────────────────────────────────────────
@@ -253,27 +256,22 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .selectAll<SVGTextElement, GenreNode>('text')
       .data(nodes, d => d.id)
 
-    labelSel.exit()
-      .transition().duration(200)
-      .style('opacity', 0)
-      .remove()
+    labelSel.exit().transition().duration(200).style('opacity', 0).remove()
 
-    labelSel.enter()
+    labelSel
+      .enter()
       .append('text')
       .style('opacity', 0)
       .text(d => d.label)
-      .transition().duration(400)
+      .transition()
+      .duration(400)
       .style('opacity', 1)
 
     root
       .select('g.labels')
       .selectAll<SVGTextElement, GenreNode>('text')
       .attr('text-anchor', 'middle')
-      .attr('fill', d =>
-        activeGenreRef.current === d.id
-          ? '#fff'
-          : 'rgba(232,245,232,0.45)'
-      )
+      .attr('fill', d => (activeGenreRef.current === d.id ? '#fff' : 'rgba(232,245,232,0.45)'))
       .style('font-size', d => `${Math.max(9, Math.min(11, 8 + d.count))}px`)
       .style('font-family', 'monospace')
       .style('pointer-events', 'none')

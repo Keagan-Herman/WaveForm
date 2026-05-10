@@ -36,7 +36,8 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
     let visualizer: any
     try {
       // Handle ESM default import variations
-      const createVisualizer = (butterchurn as any).default?.createVisualizer || butterchurn.createVisualizer
+      const createVisualizer =
+        (butterchurn as any).default?.createVisualizer || butterchurn.createVisualizer
 
       if (typeof createVisualizer !== 'function') {
         throw new Error('butterchurn.createVisualizer is not a function')
@@ -56,10 +57,11 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
 
     const presets = butterchurnPresets.getPresets()
     const keys = Object.keys(presets)
-    const bestOfKeys = keys.filter(k =>
-      k.toLowerCase().includes('flexi') ||
-      k.toLowerCase().includes('milk') ||
-      k.toLowerCase().includes('yin')
+    const bestOfKeys = keys.filter(
+      k =>
+        k.toLowerCase().includes('flexi') ||
+        k.toLowerCase().includes('milk') ||
+        k.toLowerCase().includes('yin')
     )
     const finalKeys = bestOfKeys.length > 0 ? bestOfKeys : keys
 
@@ -103,15 +105,17 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
         height={height || 600}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
-      <div style={{
-        position: 'absolute',
-        bottom: '1rem',
-        left: '1rem',
-        fontSize: '0.6rem',
-        opacity: 0.3,
-        fontFamily: 'monospace',
-        pointerEvents: 'none'
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '1rem',
+          fontSize: '0.6rem',
+          opacity: 0.3,
+          fontFamily: 'monospace',
+          pointerEvents: 'none',
+        }}
+      >
         Press 'P' to cycle presets
       </div>
     </div>

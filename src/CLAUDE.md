@@ -24,6 +24,7 @@ If a task touches multiple files, output all of them. If a file is untouched, sa
 ## Reasoning Before Coding
 
 For any non-trivial change, briefly state:
+
 1. What the problem actually is (re-diagnose, don't assume the framing is correct)
 2. What the approach is and why
 3. Any tradeoffs or things that could go wrong
@@ -48,13 +49,13 @@ These come from `AGENTS.md` but are repeated here because Claude must flag viola
 
 Deezer is not Spotify. The types are defined in `src/lib/deezerApi.ts`. Key differences:
 
-| Field          | Deezer                  | (old) Spotify         |
-|----------------|-------------------------|-----------------------|
-| Artist         | `track.artist` (object) | `track.artists` (array) |
-| Preview URL    | `track.preview`         | `track.preview_url`   |
-| Duration       | `track.duration` (seconds) | `track.duration_ms` (ms) |
-| Popularity     | `track.rank` (0–1M)     | `track.popularity` (0–100) |
-| Album art      | `track.album.cover_medium` | `track.album.images[0].url` |
+| Field       | Deezer                     | (old) Spotify               |
+| ----------- | -------------------------- | --------------------------- |
+| Artist      | `track.artist` (object)    | `track.artists` (array)     |
+| Preview URL | `track.preview`            | `track.preview_url`         |
+| Duration    | `track.duration` (seconds) | `track.duration_ms` (ms)    |
+| Popularity  | `track.rank` (0–1M)        | `track.popularity` (0–100)  |
+| Album art   | `track.album.cover_medium` | `track.album.images[0].url` |
 
 If Claude ever writes code that accesses `track.artists`, `track.preview_url`, `track.duration_ms`, or `track.popularity` — that is a bug. Stop and correct it.
 
@@ -63,6 +64,7 @@ If Claude ever writes code that accesses `track.artists`, `track.preview_url`, `
 ## What "Done" Looks Like
 
 A feature is done when:
+
 - It compiles with `pnpm build` (no TypeScript errors)
 - It passes `pnpm lint` (no ESLint errors)
 - It respects the architectural principles above

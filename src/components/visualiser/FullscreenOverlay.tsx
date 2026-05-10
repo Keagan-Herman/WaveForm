@@ -61,9 +61,8 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
       {visualLayer === 'Energy' && <AudioOrb accent={accent} />}
       {visualLayer === 'Ambient' && <AudioTerrain accent={accent} />}
 
-      {visualLayer === 'Ambient' && albumLayout.map(album => (
-        <AlbumMesh key={album.albumId} {...album} />
-      ))}
+      {visualLayer === 'Ambient' &&
+        albumLayout.map(album => <AlbumMesh key={album.albumId} {...album} />)}
 
       {!isLowQuality && (
         <EffectComposer>
@@ -94,63 +93,64 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
           exit={{ opacity: 0 }}
           style={styles.overlay}
         >
-        <div style={styles.canvasWrap}>
-          {visualLayer === 'Presets' ? (
-            <ButterchurnVisualiser onFailure={() => setVisualLayer('Minimal')} />
-          ) : (
-            <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
-              <FullscreenScene accent={accent} tracks={tracks} />
-            </Canvas>
-          )}
-        </div>
+          <div style={styles.canvasWrap}>
+            {visualLayer === 'Presets' ? (
+              <ButterchurnVisualiser onFailure={() => setVisualLayer('Minimal')} />
+            ) : (
+              <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
+                <FullscreenScene accent={accent} tracks={tracks} />
+              </Canvas>
+            )}
+          </div>
 
-        <div style={styles.uiLayer}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={visualLayer}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={styles.layerIndicator}
-            >
-              Mode: {visualLayer}
-            </motion.div>
-          </AnimatePresence>
+          <div style={styles.uiLayer}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={visualLayer}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                style={styles.layerIndicator}
+              >
+                Mode: {visualLayer}
+              </motion.div>
+            </AnimatePresence>
 
-
-          {(visualLayer === 'Minimal') && (
-            <div style={styles.radialWrap}>
-              <RadialVisualiser width={500} height={500} accent={accent} />
-            </div>
-          )}
-
-          {currentTrack && (
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              style={styles.nowPlaying}
-            >
-              <img src={currentTrack.album.cover_medium} style={styles.nowPlayingArt} alt="" />
-              <div style={styles.nowPlayingInfo}>
-                <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
-                <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>{currentTrack.artist.name}</div>
+            {visualLayer === 'Minimal' && (
+              <div style={styles.radialWrap}>
+                <RadialVisualiser width={500} height={500} accent={accent} />
               </div>
-            </motion.div>
-          )}
+            )}
 
-          <div style={styles.controls}>
-            <button
-              onClick={toggleFullscreen}
-              style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
-            >
-              Exit Fullscreen (F)
-            </button>
-            <div style={styles.info}>
-              <span style={styles.layerLabel}>Press 'V' to cycle layers</span>
+            {currentTrack && (
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                style={styles.nowPlaying}
+              >
+                <img src={currentTrack.album.cover_medium} style={styles.nowPlayingArt} alt="" />
+                <div style={styles.nowPlayingInfo}>
+                  <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
+                  <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
+                    {currentTrack.artist.name}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <div style={styles.controls}>
+              <button
+                onClick={toggleFullscreen}
+                style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
+              >
+                Exit Fullscreen (F)
+              </button>
+              <div style={styles.info}>
+                <span style={styles.layerLabel}>Press 'V' to cycle layers</span>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   )
@@ -269,5 +269,5 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.5rem 1rem',
     borderRadius: '4px',
     backdropFilter: 'blur(10px)',
-  }
+  },
 }

@@ -6,7 +6,7 @@ export function useResize(ref: React.RefObject<HTMLElement>) {
   useEffect(() => {
     if (!ref.current) return
 
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(entries => {
       const entry = entries[0]
       if (entry) {
         setSize({

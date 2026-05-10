@@ -5,7 +5,7 @@ interface UIStore {
   setSelectedArtistId: (id: number | null) => void
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+export const useUIStore = create<UIStore>(set => ({
   selectedArtistId: null,
-  setSelectedArtistId: (id) => set({ selectedArtistId: id }),
+  setSelectedArtistId: id => set({ selectedArtistId: id }),
 }))

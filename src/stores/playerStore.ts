@@ -68,8 +68,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setProgress: progress => set({ progress }),
   setDuration: duration => set({ duration }),
 
-  setQueue: (tracks, startIndex = 0) =>
-    set({ queue: tracks, queueIndex: startIndex }),
+  setQueue: (tracks, startIndex = 0) => set({ queue: tracks, queueIndex: startIndex }),
 
   nextTrack: () => {
     const { queue, queueIndex } = get()
@@ -99,7 +98,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         queueIndex: trackIndex,
         currentTrack: queue[trackIndex],
         progress: 0,
-        isPlaying: true
+        isPlaying: true,
       })
     }
   },

@@ -113,12 +113,7 @@ function Scene({ layout, accent }: { layout: AlbumLayout[]; accent?: AlbumColour
 
       {!isLowQuality && (
         <EffectComposer>
-          <Bloom
-            luminanceThreshold={0.2}
-            mipmapBlur
-            intensity={1.2}
-            radius={0.4}
-          />
+          <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.2} radius={0.4} />
           <ChromaticAberration
             offset={new THREE.Vector2(0.002, 0.002)}
             radialModulation={false}
@@ -135,7 +130,7 @@ export function AlbumGravityField({
   tracks,
   width: _initialWidth = 560,
   height: _initialHeight = 340,
-  accent
+  accent,
 }: AlbumGravityFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { width: _, height: __ } = useResize(containerRef)
@@ -147,7 +142,13 @@ export function AlbumGravityField({
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', borderRadius: 6, overflow: 'hidden', background: 'transparent' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        borderRadius: 6,
+        overflow: 'hidden',
+        background: 'transparent',
+      }}
       aria-hidden="true"
     >
       <Canvas
@@ -155,7 +156,7 @@ export function AlbumGravityField({
         gl={{
           alpha: true,
           antialias: !useVisualiserStore.getState().isLowQuality,
-          powerPreference: 'high-performance'
+          powerPreference: 'high-performance',
         }}
         style={{ background: 'transparent' }}
         frameloop="always"

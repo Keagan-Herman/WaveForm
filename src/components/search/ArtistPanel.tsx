@@ -43,7 +43,9 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
     }
 
     loadData()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [artistId])
 
   const handleSelectTrack = (track: DeezerTrack, index: number) => {
@@ -160,7 +162,7 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '4px',
     padding: '0.4rem 0.8rem',
-    fontSize: '0.65rem',
+    fontSize: '0.7rem',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
     cursor: 'pointer',
@@ -203,7 +205,7 @@ const styles: Record<string, CSSProperties> = {
     gap: '1rem',
   },
   sectionTitle: {
-    fontSize: '0.65rem',
+    fontSize: '0.7rem',
     textTransform: 'uppercase',
     letterSpacing: '0.2em',
     opacity: 0.4,
