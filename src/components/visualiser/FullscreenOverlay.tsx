@@ -4,9 +4,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { FluidBackground } from './FluidBackground'
-import { WaveformTunnel } from './WaveformTunnel'
 import { RadialVisualiser } from './RadialVisualiser'
-import { FrequencyBars } from './FrequencyBars'
 import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
 import { AudioOrb } from './AudioOrb'
@@ -77,8 +75,12 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
 }
 
 export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
-  const { isFullscreen, visualLayer, toggleFullscreen, setVisualLayer } = useVisualiserStore()
-  const { currentTrack } = usePlayerStore()
+  const isFullscreen = useVisualiserStore(state => state.isFullscreen)
+  const visualLayer = useVisualiserStore(state => state.visualLayer)
+  const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
+  const setVisualLayer = useVisualiserStore(state => state.setVisualLayer)
+
+  const currentTrack = usePlayerStore(state => state.currentTrack)
 
   // AnimatePresence must wrap the conditional — early return here would
   // prevent the exit animation from firing when isFullscreen goes false.

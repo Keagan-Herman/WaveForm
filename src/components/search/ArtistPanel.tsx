@@ -14,7 +14,11 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   const [artist, setArtist] = useState<DeezerArtist | null>(null)
   const [tracks, setTracks] = useState<DeezerTrack[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { setTrack, setIsPlaying, setQueue, currentTrack } = usePlayerStore()
+
+  const setTrack = usePlayerStore(state => state.setTrack)
+  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const setQueue = usePlayerStore(state => state.setQueue)
+  const currentTrack = usePlayerStore(state => state.currentTrack)
 
   useEffect(() => {
     let mounted = true

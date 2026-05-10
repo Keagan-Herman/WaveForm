@@ -103,8 +103,14 @@ function GenrePanelQuadrant({
 // ─── Keyboard shortcuts ────────────────────────────────────────────────────
 
 function KeyboardShortcuts() {
-  const { isPlaying, setIsPlaying, currentTrack, nextTrack, prevTrack } = usePlayerStore()
-  const { toggleFullscreen, cycleVisualLayer } = useVisualiserStore()
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const nextTrack = usePlayerStore(state => state.nextTrack)
+  const prevTrack = usePlayerStore(state => state.prevTrack)
+
+  const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
+  const cycleVisualLayer = useVisualiserStore(state => state.cycleVisualLayer)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -135,7 +141,12 @@ function Waveform() {
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
   const [hasIntroPlayed, setHasIntroPlayed] = useState(false)
   const accent = useAppAccent()
-  const { toggleFullscreen, visualLayer, isLowQuality, toggleLowQuality } = useVisualiserStore()
+
+  const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
+  const visualLayer = useVisualiserStore(state => state.visualLayer)
+  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
+  const toggleLowQuality = useVisualiserStore(state => state.toggleLowQuality)
+
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const selectedArtistId = useUIStore(state => state.selectedArtistId)
 

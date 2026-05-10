@@ -12,8 +12,6 @@ interface WaveformScrubberProps {
 export function WaveformScrubber({ width, height, accentColour }: WaveformScrubberProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isPlaying = usePlayerStore(state => state.isPlaying)
-  const progress = usePlayerStore(state => state.progress)
-  const beat = useVisualiserStore(state => state.beat)
 
   const { start, stop } = useAudioAnalyser({
     onWaveformData: (waveData) => {
@@ -21,6 +19,10 @@ export function WaveformScrubber({ width, height, accentColour }: WaveformScrubb
       if (!canvas) return
       const ctx = canvas.getContext('2d')
       if (!ctx) return
+
+      // Pull high-frequency state imperatively to avoid React re-renders
+      const progress = usePlayerStore.getState().progress
+      const beat = useVisualiserStore.getState().beat
 
       ctx.clearRect(0, 0, width, height)
 

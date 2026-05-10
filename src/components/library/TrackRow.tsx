@@ -41,14 +41,14 @@ interface TrackRowProps {
   accentColour?: string
 }
 
-export function TrackRow({
+export const TrackRow = React.memo(({
   track,
   isActive,
   isFocused,
   index,
   onSelect,
   accentColour = '#1db954',
-}: TrackRowProps) {
+}: TrackRowProps) => {
   const [isHovered, setIsHovered] = useState(false)
 
   const handleSelect = useCallback(() => {
@@ -118,7 +118,7 @@ export function TrackRow({
       <span style={styles.duration}>{formatDuration(track.duration)}</span>
     </button>
   )
-}
+})
 
 const styles: Record<string, React.CSSProperties> = {
   row: {
