@@ -53,16 +53,19 @@ export function FrequencyBars({
     ctx.clearRect(0, 0, w, h)
 
     const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
-    const barWidth = Math.max(1, (w / (mirrorMode ? data.length : bins)) - 1.5)
-
-    const processedData = mirrorMode
-      ? [...[...data.slice(0, bins)].reverse(), ...data.slice(0, bins)]
-      : data.slice(0, bins)
-
-    const drawCount = processedData.length
+    const drawCount = mirrorMode ? bins * 2 : bins
+    const barWidth = Math.max(1, (w / drawCount) - 1.5)
 
     for (let i = 0; i < drawCount; i++) {
-      const value = processedData[i]
+      // PERFORMANCE: Avoid array slicing/spreading in hot path.
+      // Index mapping directly from source data to avoid GC pressure.
+      let value: number
+      if (mirrorMode) {
+        value = i < bins ? data[bins - 1 - i] : data[i - bins]
+      } else {
+        value = data[i]
+      }
+
       const barHeight = (value / 255) * (h * 0.7)
       const ratio = value / 255
       const x = i * (barWidth + 1.5)
