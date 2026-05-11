@@ -38,7 +38,9 @@ export function Spectrogram({
   const accentRef = useRef(accent)
   const [hoverInfo, setHoverInfo] = useState<{ x: number; freqLabel: string } | null>(null)
 
-  useEffect(() => { accentRef.current = accent }, [accent])
+  useEffect(() => {
+    accentRef.current = accent
+  }, [accent])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -81,25 +83,19 @@ export function Spectrogram({
         // White/grey album — neutral warm colour map, no hue cast
         // Dark silence → warm grey → bright white/cream at peaks
         const lightness = 12 + ratio * 75
-        const warmth = ratio * 15  // slight warm tint at peaks only
+        const warmth = ratio * 15 // slight warm tint at peaks only
         fillStyle = `hsl(${30 + warmth}, ${ratio * 12}%, ${lightness}%)`
-
       } else if (isLight) {
         // Bright saturated album — vivid mid-tones, shifts toward white at peaks
         const freqHue = (hue + ratio * 45) % 360
         const lightness = 30 + ratio * 55
-        const saturation = ratio < 0.5
-          ? 50 + ratio * 50
-          : Math.max(20, 100 - ratio * 70)
+        const saturation = ratio < 0.5 ? 50 + ratio * 50 : Math.max(20, 100 - ratio * 70)
         fillStyle = `hsl(${freqHue}, ${saturation}%, ${lightness}%)`
-
       } else {
         // Dark/normal album — existing behaviour: dark → vivid → bright
         const freqHue = (hue + ratio * 50) % 360
         const lightness = 8 + ratio * 72
-        const saturation = ratio < 0.4
-          ? ratio * 200
-          : 80 - (ratio - 0.4) * 60
+        const saturation = ratio < 0.4 ? ratio * 200 : 80 - (ratio - 0.4) * 60
         fillStyle = `hsl(${freqHue}, ${saturation}%, ${lightness}%)`
       }
 
@@ -123,9 +119,7 @@ export function Spectrogram({
     const x = e.clientX - rect.left
     const ratio = 1 - y / canvas.height
     const freq = Math.round(ratio * 22050)
-    const label = freq >= 1000
-      ? `${(freq / 1000).toFixed(1)} kHz`
-      : `${freq} Hz`
+    const label = freq >= 1000 ? `${(freq / 1000).toFixed(1)} kHz` : `${freq} Hz`
     setHoverInfo({ x, freqLabel: label })
   }, [])
 
@@ -136,7 +130,13 @@ export function Spectrogram({
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', display: 'block', cursor: 'crosshair', width: '100%', height: '100%' }}
+      style={{
+        position: 'relative',
+        display: 'block',
+        cursor: 'crosshair',
+        width: '100%',
+        height: '100%',
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -144,29 +144,40 @@ export function Spectrogram({
         ref={canvasRef}
         width={effectiveWidth}
         height={effectiveHeight}
-        style={{ display: 'block', borderRadius: 4, imageRendering: 'pixelated', width: '100%', height: '100%' }}
+        style={{
+          display: 'block',
+          borderRadius: 4,
+          imageRendering: 'pixelated',
+          width: '100%',
+          height: '100%',
+        }}
       />
 
       {/* Frequency axis labels */}
-      <div style={{
-        position: 'absolute',
-        right: 4,
-        top: 0,
-        bottom: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        pointerEvents: 'none',
-        padding: '2px 0',
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          right: 4,
+          top: 0,
+          bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          pointerEvents: 'none',
+          padding: '2px 0',
+        }}
+      >
         {['20k', '10k', '4k', '1k', '250', '60'].map(label => (
-          <span key={label} style={{
-            fontSize: '0.45rem',
-            color: `${accentHex}99`,
-            fontFamily: 'monospace',
-            lineHeight: 1,
-            transition: 'color 1s ease',
-          }}>
+          <span
+            key={label}
+            style={{
+              fontSize: '0.6rem',
+              color: `${accentHex}99`,
+              fontFamily: 'monospace',
+              lineHeight: 1,
+              transition: 'color 1s ease',
+            }}
+          >
             {label}
           </span>
         ))}
@@ -174,30 +185,34 @@ export function Spectrogram({
 
       {hoverInfo && (
         <>
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: hoverInfo.x,
-            width: 1,
-            background: `${accentHex}55`,
-            pointerEvents: 'none',
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: 4,
-            left: Math.min(hoverInfo.x + 6, width - 80),
-            fontFamily: 'monospace',
-            fontSize: '0.55rem',
-            color: accentHex,
-            background: 'rgba(0,0,0,0.75)',
-            padding: '0.15rem 0.4rem',
-            borderRadius: 3,
-            pointerEvents: 'none',
-            border: `1px solid ${accentHex}33`,
-            whiteSpace: 'nowrap',
-            transition: 'color 1s ease',
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: hoverInfo.x,
+              width: 1,
+              background: `${accentHex}55`,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 4,
+              left: Math.min(hoverInfo.x + 6, width - 80),
+              fontFamily: 'monospace',
+              fontSize: '0.65rem',
+              color: accentHex,
+              background: 'rgba(0,0,0,0.75)',
+              padding: '0.15rem 0.4rem',
+              borderRadius: 3,
+              pointerEvents: 'none',
+              border: `1px solid ${accentHex}33`,
+              whiteSpace: 'nowrap',
+              transition: 'color 1s ease',
+            }}
+          >
             {hoverInfo.freqLabel}
           </div>
         </>

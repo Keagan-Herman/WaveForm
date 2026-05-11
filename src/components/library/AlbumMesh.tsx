@@ -30,11 +30,11 @@ interface AlbumMeshProps {
   imageUrl: string
   albumId?: string
   position: [number, number, number]
-  phaseOffset: number      // 0–2π, makes float timing unique per album
-  rotationSpeed: number    // radians per second, small value (0.02–0.08)
-  floatSpeed: number       // cycles per second (0.2–0.5)
-  floatAmplitude: number   // world units (0.08–0.2)
-  size: number             // card size in world units (0.8–1.4)
+  phaseOffset: number // 0–2π, makes float timing unique per album
+  rotationSpeed: number // radians per second, small value (0.02–0.08)
+  floatSpeed: number // cycles per second (0.2–0.5)
+  floatAmplitude: number // world units (0.08–0.2)
+  size: number // card size in world units (0.8–1.4)
 }
 
 export function AlbumMesh({

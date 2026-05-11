@@ -100,13 +100,11 @@ export function BackgroundPulse({ accent }: BackgroundPulseProps) {
     )`
 
     el.style.background = gradient
-    el.style.transition = beat
-      ? 'background 0.06s ease-out'
-      : 'background 0.6s ease-out'
+    el.style.transition = beat ? 'background 0.06s ease-out' : 'background 0.6s ease-out'
   }
 
   const { start, stop } = useAudioAnalyser({
-    onFrequencyData: updatePulse
+    onFrequencyData: updatePulse,
   })
 
   useEffect(() => {

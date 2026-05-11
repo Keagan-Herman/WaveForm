@@ -1,10 +1,14 @@
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -16,15 +20,28 @@ body {
 
 /* Skeleton loading shimmer */
 @keyframes shimmer {
-  0%   { opacity: 0.04; }
-  50%  { opacity: 0.08; }
-  100% { opacity: 0.04; }
+  0% {
+    opacity: 0.04;
+  }
+  50% {
+    opacity: 0.08;
+  }
+  100% {
+    opacity: 0.04;
+  }
 }
 
 /* Beat pulse — used on album art glow and loading pip */
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 /* Custom scrollbar — search results panel */

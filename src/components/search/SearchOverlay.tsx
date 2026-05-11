@@ -65,14 +65,17 @@ export function SearchOverlay({
         setFocusedIndex(-1)
       }
 
-      if (focusedIndex !== -1 || (document.activeElement === inputRef.current && visibleTracks.length > 0)) {
+      if (
+        focusedIndex !== -1 ||
+        (document.activeElement === inputRef.current && visibleTracks.length > 0)
+      ) {
         const isInputFocused = document.activeElement === inputRef.current
 
-        if (e.key === 'ArrowDown' || (!isInputFocused && (e.key.toLowerCase() === 'j'))) {
+        if (e.key === 'ArrowDown' || (!isInputFocused && e.key.toLowerCase() === 'j')) {
           e.preventDefault()
           setFocusedIndex(prev => Math.min(prev + 1, visibleTracks.length - 1))
           if (isInputFocused) inputRef.current?.blur()
-        } else if (e.key === 'ArrowUp' || (!isInputFocused && (e.key.toLowerCase() === 'k'))) {
+        } else if (e.key === 'ArrowUp' || (!isInputFocused && e.key.toLowerCase() === 'k')) {
           e.preventDefault()
           setFocusedIndex(prev => Math.max(prev - 1, 0))
           if (isInputFocused) inputRef.current?.blur()
@@ -101,7 +104,6 @@ export function SearchOverlay({
 
   return (
     <div style={styles.panel}>
-
       {/* Search input */}
       <div style={styles.inputWrap}>
         <span style={styles.searchIcon}>⌕</span>
@@ -115,9 +117,7 @@ export function SearchOverlay({
           aria-label="Search for tracks"
           spellCheck={false}
         />
-        {isLoading && (
-          <span style={{ ...styles.loadingPip, background: accentColour }} />
-        )}
+        {isLoading && <span style={{ ...styles.loadingPip, background: accentColour }} />}
         {query && !isLoading && (
           <button style={styles.clearBtn} onClick={() => setQuery('')} aria-label="Clear">
             ✕
@@ -127,7 +127,13 @@ export function SearchOverlay({
 
       {/* Genre filter banner */}
       {isFiltered && (
-        <div style={{ ...styles.filterBanner, color: accentColour, borderBottomColor: `${accentColour}25` }}>
+        <div
+          style={{
+            ...styles.filterBanner,
+            color: accentColour,
+            borderBottomColor: `${accentColour}25`,
+          }}
+        >
           <span style={{ ...styles.filterDot, background: accentColour }} />
           {visibleTracks.length} of {tracks.length} tracks · genre filtered
         </div>
@@ -145,7 +151,6 @@ export function SearchOverlay({
 
       {/* Results */}
       <div style={styles.results} role="list">
-
         {!query.trim() && (
           <div style={styles.stateWrap}>
             <p style={styles.stateIcon}>♫</p>
@@ -263,7 +268,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     color: 'rgba(240,240,240,0.35)',
     cursor: 'pointer',
-    fontSize: '0.68rem',
+    fontSize: '0.7rem',
     padding: '0.2rem',
     flexShrink: 0,
     lineHeight: 1,
@@ -275,7 +280,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.35rem 0.9rem',
     background: 'rgba(255,255,255,0.03)',
     borderBottom: '1px solid',
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     fontFamily: 'monospace',
     letterSpacing: '0.04em',
     flexShrink: 0,
@@ -293,7 +298,7 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: '24px 34px 1fr 1fr auto',
     gap: '0.6rem',
     padding: '0.3rem 0.7rem',
-    fontSize: '0.53rem',
+    fontSize: '0.6rem',
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
     opacity: 0.3,

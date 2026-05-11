@@ -61,7 +61,10 @@ export function useGenreGraph(tracks: DeezerTrack[]) {
         const albumGenreMap = new Map<number, string[]>()
         genreResults.forEach(({ albumId, genres }) => {
           if (genres.length > 0) {
-            albumGenreMap.set(albumId, genres.map(g => g.name))
+            albumGenreMap.set(
+              albumId,
+              genres.map(g => g.name)
+            )
           }
         })
 

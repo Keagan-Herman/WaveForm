@@ -6,7 +6,7 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 export function CoreOrb({ color = '#ffffff' }) {
   const meshRef = useRef<THREE.Mesh>(null)
 
-  useFrame((state) => {
+  useFrame(state => {
     if (!meshRef.current) return
     const { bassPower } = useVisualiserStore.getState()
     const t = state.clock.elapsedTime
@@ -20,12 +20,7 @@ export function CoreOrb({ color = '#ffffff' }) {
   return (
     <mesh ref={meshRef}>
       <icosahedronGeometry args={[1, 15]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={2}
-        wireframe
-      />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} wireframe />
       <pointLight color={color} intensity={2} distance={10} />
     </mesh>
   )

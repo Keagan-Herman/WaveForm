@@ -117,16 +117,39 @@ function KeyboardShortcuts() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       switch (e.key.toLowerCase()) {
-        case ' ': e.preventDefault(); if (currentTrack) setIsPlaying(!isPlaying); break
-        case 'arrowright': e.preventDefault(); nextTrack(); break
-        case 'arrowleft': e.preventDefault(); prevTrack(); break
-        case 'f': e.preventDefault(); toggleFullscreen(); break
-        case 'v': e.preventDefault(); cycleVisualLayer(); break
+        case ' ':
+          e.preventDefault()
+          if (currentTrack) setIsPlaying(!isPlaying)
+          break
+        case 'arrowright':
+          e.preventDefault()
+          nextTrack()
+          break
+        case 'arrowleft':
+          e.preventDefault()
+          prevTrack()
+          break
+        case 'f':
+          e.preventDefault()
+          toggleFullscreen()
+          break
+        case 'v':
+          e.preventDefault()
+          cycleVisualLayer()
+          break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isPlaying, currentTrack, setIsPlaying, nextTrack, prevTrack])
+  }, [
+    isPlaying,
+    currentTrack,
+    setIsPlaying,
+    nextTrack,
+    prevTrack,
+    toggleFullscreen,
+    cycleVisualLayer,
+  ])
   return null
 }
 
@@ -231,14 +254,12 @@ function Waveform() {
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
           <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
-
           <button
             onClick={toggleFullscreen}
             style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
           >
             Fullscreen
           </button>
-
           {filteredTrackIds && (
             <button
               onClick={() => setFilteredTrackIds(null)}
@@ -252,22 +273,27 @@ function Waveform() {
               Clear Filter ✕
             </button>
           )}
-
           <button
             onClick={toggleLowQuality}
-            style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: isLowQuality ? '#ff4444' : accent.hex }}
+            style={{
+              ...styles.headerBtn,
+              borderColor: `${accent.hex}44`,
+              color: isLowQuality ? '#ff4444' : accent.hex,
+            }}
           >
             {isLowQuality ? 'HQ Off' : 'HQ On'}
           </button>
         </div>
       </header>
 
-      <div style={{
-        ...styles.grid,
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gridTemplateRows: isMobile ? 'repeat(4, auto)' : '1fr 1fr',
-        overflowY: isMobile ? 'auto' : 'hidden'
-      }}>
+      <div
+        style={{
+          ...styles.grid,
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gridTemplateRows: isMobile ? 'repeat(4, auto)' : '1fr 1fr',
+          overflowY: isMobile ? 'auto' : 'hidden',
+        }}
+      >
         {/* Top-left: library */}
         <motion.div
           initial={hasIntroPlayed ? 'visible' : 'hidden'}
@@ -422,7 +448,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   headerSub: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.05em',
     display: 'flex',
     alignItems: 'center',
@@ -435,7 +461,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid',
     borderRadius: '4px',
     padding: '0.2rem 0.5rem',
-    fontSize: '0.55rem',
+    fontSize: '0.65rem',
     cursor: 'pointer',
     fontFamily: 'monospace',
     marginLeft: '0.5rem',
@@ -447,7 +473,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: '3px',
     padding: '0.08rem 0.3rem',
-    fontSize: '0.58rem',
+    fontSize: '0.65rem',
     fontFamily: 'monospace',
     transition: 'border-color 1s ease',
   },
@@ -467,7 +493,7 @@ const styles: Record<string, React.CSSProperties> = {
   borderRight: { borderRight: '1px solid rgba(255,255,255,0.07)' },
   borderBottom: { borderBottom: '1px solid rgba(255,255,255,0.07)' },
   quadLabel: {
-    fontSize: '0.5rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.22em',
     textTransform: 'uppercase',
     opacity: 0.2,
@@ -530,7 +556,7 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.7,
   },
   canvasLabel: {
-    fontSize: '0.52rem',
+    fontSize: '0.6rem',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',
     opacity: 0.3,
@@ -548,7 +574,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   stateIcon: { fontSize: '1.5rem' },
   stateDesc: {
-    fontSize: '0.68rem',
+    fontSize: '0.72rem',
     lineHeight: 1.6,
     maxWidth: 220,
     fontFamily: 'monospace',

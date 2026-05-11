@@ -145,12 +145,5 @@ export function PreviewPlayer() {
     }
   }, [setIsLoading, setDuration, setProgress, setIsPlaying, nextTrack, stopAnalyser])
 
-  return (
-    <audio
-      ref={audioRef}
-      crossOrigin="anonymous"
-      preload="none"
-      style={{ display: 'none' }}
-    />
-  )
+  return <audio ref={audioRef} crossOrigin="anonymous" preload="none" style={{ display: 'none' }} />
 }

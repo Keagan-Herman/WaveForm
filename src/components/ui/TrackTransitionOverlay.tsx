@@ -20,11 +20,7 @@ export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
             style={styles.artWrap}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <img
-              src={currentTrack.album.cover_big}
-              alt=""
-              style={styles.art}
-            />
+            <img src={currentTrack.album.cover_big} alt="" style={styles.art} />
           </motion.div>
 
           <motion.div
@@ -40,7 +36,7 @@ export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.8, ease: "linear" }}
+            transition={{ duration: 1.8, ease: 'linear' }}
             style={{ ...styles.progress, background: accent.hex }}
           />
         </motion.div>
@@ -98,5 +94,5 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     height: 4,
     transformOrigin: 'left',
-  }
+  },
 }

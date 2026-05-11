@@ -10,7 +10,11 @@ interface RadialVisualiserProps {
   accent: AlbumColour
 }
 
-export function RadialVisualiser({ width: initialWidth = 400, height: initialHeight = 400, accent }: RadialVisualiserProps) {
+export function RadialVisualiser({
+  width: initialWidth = 400,
+  height: initialHeight = 400,
+  accent,
+}: RadialVisualiserProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { width, height } = useResize(containerRef)
@@ -33,7 +37,7 @@ export function RadialVisualiser({ width: initialWidth = 400, height: initialHei
       const centerY = effectiveHeight / 2
       const radius = Math.min(effectiveWidth, effectiveHeight) * 0.25
       const barCount = isLowQuality ? 40 : 80
-      const barWidth = (2 * Math.PI * radius) / barCount * 0.8
+      const barWidth = ((2 * Math.PI * radius) / barCount) * 0.8
 
       ctx.strokeStyle = accent.hex
       ctx.lineWidth = barWidth
@@ -69,7 +73,7 @@ export function RadialVisualiser({ width: initialWidth = 400, height: initialHei
       ctx.arc(centerX, centerY, radius - 5, 0, Math.PI * 2)
       ctx.fillStyle = `hsla(${accent.h}, ${accent.s}%, ${accent.l}%, ${0.05 + bassPower * 0.1})`
       ctx.fill()
-    }
+    },
   })
 
   return (

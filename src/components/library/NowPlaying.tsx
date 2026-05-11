@@ -83,7 +83,6 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
       transition={{ duration: 0.4, ease: 'easeOut' }}
       style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}
     >
-
       {/* Top row: small art + primary text */}
       <div style={styles.topRow}>
         <div style={styles.artWrap}>
@@ -92,9 +91,7 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
             alt={currentTrack.album.title}
             style={{
               ...styles.art,
-              transform: beat && isPlaying
-                ? 'scale(1.04) rotate(0.3deg)'
-                : 'scale(1) rotate(0deg)',
+              transform: beat && isPlaying ? 'scale(1.04) rotate(0.3deg)' : 'scale(1) rotate(0deg)',
               transition: beat ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
               boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 20px ${accentDim}`,
             }}
@@ -126,22 +123,26 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
       {/* Scrubber */}
       <div style={styles.scrubberWrap}>
         <div style={styles.scrubberTrack}>
-          <div style={{
-            ...styles.scrubberFill,
-            width: `${progress * 100}%`,
-            background: beat ? '#fff' : accent,
-            boxShadow: beat ? `0 0 10px ${accent}` : 'none',
-            transition: beat
-              ? 'background 0.05s, box-shadow 0.05s'
-              : 'background 0.3s, width 0.1s linear',
-          }} />
-          <div style={{
-            ...styles.playhead,
-            left: `${progress * 100}%`,
-            background: accent,
-            boxShadow: `0 0 8px ${accent}`,
-            opacity: isPlaying ? 1 : 0,
-          }} />
+          <div
+            style={{
+              ...styles.scrubberFill,
+              width: `${progress * 100}%`,
+              background: beat ? '#fff' : accent,
+              boxShadow: beat ? `0 0 10px ${accent}` : 'none',
+              transition: beat
+                ? 'background 0.05s, box-shadow 0.05s'
+                : 'background 0.3s, width 0.1s linear',
+            }}
+          />
+          <div
+            style={{
+              ...styles.playhead,
+              left: `${progress * 100}%`,
+              background: accent,
+              boxShadow: `0 0 8px ${accent}`,
+              opacity: isPlaying ? 1 : 0,
+            }}
+          />
         </div>
         <div style={styles.scrubberLabels}>
           <span style={styles.timeLabel}>{elapsedStr}</span>
@@ -158,14 +159,13 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
           <MetaRow label="Fans" value={formatFans(currentTrack.artist.nb_fan)} accent={accent} />
         )}
         {bpm > 0 && (
-          <MetaRow
-            label="Live BPM"
-            value={`${Math.round(bpm)}`}
-            accent={accent}
-            indicator={beat}
-          />
+          <MetaRow label="Live BPM" value={`${Math.round(bpm)}`} accent={accent} indicator={beat} />
         )}
-        <MetaRow label="Explicit" value={currentTrack.explicit_lyrics ? 'Yes' : 'No'} accent={accent} />
+        <MetaRow
+          label="Explicit"
+          value={currentTrack.explicit_lyrics ? 'Yes' : 'No'}
+          accent={accent}
+        />
       </div>
     </motion.div>
   )
@@ -212,14 +212,14 @@ const metaRowStyles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
   label: {
-    fontSize: '0.58rem',
+    fontSize: '0.65rem',
     opacity: 0.42,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
     fontFamily: 'monospace',
   },
   value: {
-    fontSize: '0.68rem',
+    fontSize: '0.7rem',
     fontFamily: 'monospace',
     fontVariantNumeric: 'tabular-nums',
     transition: 'color 1s ease',
@@ -308,7 +308,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '0.5rem',
+    fontSize: '0.65rem',
     fontWeight: 700,
     background: 'rgba(0,0,0,0.6)',
   },
@@ -321,7 +321,7 @@ const styles: Record<string, React.CSSProperties> = {
     paddingTop: '0.1rem',
   },
   albumName: {
-    fontSize: '0.56rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
     opacity: 0.45,
@@ -378,7 +378,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '0.3rem',
   },
   timeLabel: {
-    fontSize: '0.56rem',
+    fontSize: '0.65rem',
     opacity: 0.5,
     fontVariantNumeric: 'tabular-nums',
   },

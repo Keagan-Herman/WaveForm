@@ -58,8 +58,8 @@ export function WaveformLine({
 
       for (let i = 0; i < data.length; i++) {
         // data[i] is 0–255; 128 = zero crossing (silence)
-        const v = data[i] / 128 - 1        // normalise to -1 → +1
-        const y = (v * h) / 2 + h / 2     // map to canvas y
+        const v = data[i] / 128 - 1 // normalise to -1 → +1
+        const y = (v * h) / 2 + h / 2 // map to canvas y
 
         if (i === 0) {
           ctx.moveTo(0, y)

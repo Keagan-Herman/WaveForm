@@ -67,17 +67,20 @@ export function FluidBackground({ accent }: FluidBackgroundProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const { viewport } = useThree()
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uBass: { value: 0 },
-    uColor: { value: new THREE.Color(accent.hex) }
-  }), [])
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uColor: { value: new THREE.Color(accent.hex) },
+    }),
+    []
+  )
 
   useEffect(() => {
     uniforms.uColor.value.set(accent.hex)
   }, [accent.hex, uniforms])
 
-  useFrame((state) => {
+  useFrame(state => {
     if (!meshRef.current) return
     const { bassPower } = useVisualiserStore.getState()
     uniforms.uTime.value = state.clock.elapsedTime

@@ -17,24 +17,24 @@ This is a solo portfolio project — not a product. Decisions prioritise visual 
 
 ## Tech Stack
 
-| Concern              | Technology                              | Version    |
-|----------------------|-----------------------------------------|------------|
-| Framework            | React                                   | 18.3.1     |
-| Language             | TypeScript                              | ~6.0.2     |
-| Build tool           | Vite                                    | ^8.0.10    |
-| State management     | Zustand                                 | ^4.5.7     |
-| Animation            | Framer Motion                           | ^12.38.0   |
-| 3D rendering         | React Three Fiber + Three.js            | ^8.17.10 / ^0.170.0 |
-| 3D helpers           | @react-three/drei                       | 9.122.0    |
-| Data visualisation   | D3.js                                   | ^7.9.0     |
-| Gesture handling     | @use-gesture/react                      | ^10.3.1    |
-| Colour extraction    | tinycolor2                              | ^1.6.0     |
-| Audio                | Web Audio API (native browser)          | —          |
-| Music API            | Deezer (no auth required)               | public     |
-| Deployment           | Vercel                                  | —          |
-| Linting              | ESLint + typescript-eslint              | ^10 / ^8   |
-| Formatting           | Prettier                                | ^3.8.3     |
-| Package manager      | pnpm                                    | —          |
+| Concern            | Technology                     | Version             |
+| ------------------ | ------------------------------ | ------------------- |
+| Framework          | React                          | 18.3.1              |
+| Language           | TypeScript                     | ~6.0.2              |
+| Build tool         | Vite                           | ^8.0.10             |
+| State management   | Zustand                        | ^4.5.7              |
+| Animation          | Framer Motion                  | ^12.38.0            |
+| 3D rendering       | React Three Fiber + Three.js   | ^8.17.10 / ^0.170.0 |
+| 3D helpers         | @react-three/drei              | 9.122.0             |
+| Data visualisation | D3.js                          | ^7.9.0              |
+| Gesture handling   | @use-gesture/react             | ^10.3.1             |
+| Colour extraction  | tinycolor2                     | ^1.6.0              |
+| Audio              | Web Audio API (native browser) | —                   |
+| Music API          | Deezer (no auth required)      | public              |
+| Deployment         | Vercel                         | —                   |
+| Linting            | ESLint + typescript-eslint     | ^10 / ^8            |
+| Formatting         | Prettier                       | ^3.8.3              |
+| Package manager    | pnpm                           | —                   |
 
 **Note on package manager:** Use `pnpm`. Do not use `npm` or `yarn`. The lockfile is `pnpm-lock.yaml`.
 
@@ -75,7 +75,7 @@ waveform/
 │   │       ├── FullscreenOverlay.tsx   # Fullscreen visualiser mode
 │   │       ├── LissaJousVisualiser.tsx # Lissajous curve visualiser
 │   │       ├── RadialVisualiser.tsx    # Radial frequency visualiser
-│   │       ├── Spectogram.tsx          # Scrolling spectrogram canvas
+│   │       ├── Spectrogram.tsx         # Scrolling spectrogram canvas
 │   │       ├── WaveformLine.tsx        # Canvas oscilloscope line
 │   │       └── WaveformTunnel.tsx      # Tunnel effect visualiser
 │   ├── hooks/
@@ -140,12 +140,15 @@ pnpm preview
 ## Architectural Principles
 
 ### 1. AudioEngine is a singleton — never recreate it
+
 `AudioEngine.ts` exports a single instance (`audioEngine`). Import this instance everywhere. Never call `new AudioEngine()`. The `AudioContext` is a limited browser resource — creating multiples causes glitches and errors.
 
 ### 2. Frequency data never enters React state
+
 The rAF loop in `useAudioAnalyser.ts` runs at 60fps. Raw `Uint8Array` frequency/waveform data is written directly to canvas via imperative callbacks. Only two derived values cross into Zustand: `beat` (boolean) and `bassPower` (float). This keeps React re-renders minimal.
 
 ### 3. Three render loops coexist — keep them separate
+
 - **rAF canvas loop** — `useAudioAnalyser` module-level loop, writes to `<canvas>` imperatively
 - **R3F `useFrame` loop** — reads from `useVisualiserStore.getState()` (not a subscription), drives Three.js objects
 - **D3 simulation tick** — D3's internal timer, touches only D3-managed DOM nodes
@@ -153,10 +156,13 @@ The rAF loop in `useAudioAnalyser.ts` runs at 60fps. Raw `Uint8Array` frequency/
 These loops must never interfere with each other. Do not put Three.js objects into React state. Do not put D3 nodes under React control.
 
 ### 4. D3 owns its DOM — React owns only the container
+
 In `GenreForceGraph.tsx`, React renders one `<svg>` element and passes a ref to D3. D3 creates all nodes, links, labels, and handles all events inside that SVG. React does not touch D3-managed elements. The simulation is stored in a `useRef`, never recreated on re-renders — only `.nodes()`, `.alpha()`, and `.restart()` are called when data changes.
 
 ### 5. Deezer API shape — key differences from Spotify
+
 When working with track data, remember:
+
 - `artist` is a single object, not an array
 - `preview` is the 30s MP3 URL (not `preview_url`)
 - `duration` is in **seconds** (not milliseconds)
@@ -165,12 +171,15 @@ When working with track data, remember:
 - Genre data comes from `getAlbumGenres(albumId)` — a separate fetch, not on the track object
 
 ### 6. CORS proxy — all Deezer calls go through `/deezer-api/*`
+
 Do not construct `https://api.deezer.com/...` URLs directly. Use the `deezerFetch` helper in `deezerApi.ts`, which prefixes `/deezer-api`. Vercel rewrites these to the real API server-side, bypassing CORS. This works in `vercel dev` and production — not in plain `vite dev`.
 
 ### 7. AlbumColour propagation
+
 The `useAlbumColour` hook extracts a full palette from the current track's album art and returns an `AlbumColour` object. This object is passed as `accent` to all components that need theming. CSS variables on `:root` are also updated. Do not hardcode colours in visualiser components — use the `accent` prop or CSS variables.
 
 ### 8. AudioContext must be created inside a user gesture
+
 Browser autoplay policy blocks `new AudioContext()` until the user has interacted with the page. `AudioEngine.init()` must be called from a click or keydown handler. It is idempotent — calling it twice is safe.
 
 ---
@@ -178,6 +187,7 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 ## Coding Style and Conventions
 
 ### TypeScript
+
 - Strict mode is on. No `any` without a comment explaining why.
 - Use `type` imports: `import type { Foo } from '...'`
 - All component props have named interfaces (e.g. `interface FrequencyBarsProps`)
@@ -185,6 +195,7 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 - `erasableSyntaxOnly: true` — no `const enum`, no `namespace`
 
 ### Formatting (Prettier)
+
 ```json
 {
   "semi": false,
@@ -197,10 +208,12 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 ```
 
 ### Imports
+
 - Path alias `@/` maps to `src/` — always use it for internal imports
 - External imports first, then internal, then types
 
 ### Component structure
+
 1. Interface definitions
 2. Hook calls (no conditional hooks)
 3. Imperative setup (refs, effects)
@@ -208,11 +221,13 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 5. Inline styles at the bottom if using `React.CSSProperties` style objects
 
 ### Canvas components
+
 - Canvas `ref` is always a `useRef<HTMLCanvasElement>`
 - Never put canvas pixels or frequency arrays in React state
 - Clear and redraw imperatively inside rAF callbacks
 
 ### Naming
+
 - Components: `PascalCase`
 - Hooks: `useCamelCase`
 - Stores: `useCamelCaseStore`
@@ -238,6 +253,7 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 ## How to Structure New Features
 
 ### New visualiser component
+
 1. Create `src/components/visualiser/MyVisualiser.tsx`
 2. Accept `accent: AlbumColour` and `width`/`height` props
 3. Use `useAudioAnalyser({ onFrequencyData, onWaveformData })` for audio data
@@ -246,16 +262,19 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 6. Export and wire up in `App.tsx`
 
 ### New Deezer API call
+
 1. Add the function to `src/lib/deezerApi.ts` using `deezerFetch`
 2. Add the TypeScript return type in the same file
 3. Wrap with `fetchWithCache` in any hook that calls it
 
 ### New hook
+
 1. Create in `src/hooks/`
 2. If it encapsulates state, consider whether the state belongs in a Zustand store instead
 3. Return a stable interface — don't expose internals
 
 ### New Zustand store
+
 1. Create in `src/stores/`
 2. Define the interface above the `create` call
 3. Keep actions colocated with state
@@ -266,6 +285,7 @@ Browser autoplay policy blocks `new AudioContext()` until the user has interacte
 ## External API Reference
 
 **Deezer API** (via `/deezer-api` proxy):
+
 - `GET /search?q={query}&limit=25&index=0` — track search
 - `GET /search/artist?q={query}&limit=10` — artist search
 - `GET /track/{id}` — full track details

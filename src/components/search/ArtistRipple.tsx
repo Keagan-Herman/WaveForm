@@ -21,7 +21,7 @@ interface RippleInstance {
 
 interface ArtistRippleProps {
   children: React.ReactNode
-  active?: boolean       // when true, ripple fires on beats too
+  active?: boolean // when true, ripple fires on beats too
   color?: string
   className?: string
 }
@@ -47,10 +47,7 @@ export function ArtistRipple({
   const handleMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect()
-      addRipple(
-        e.clientX - rect.left,
-        e.clientY - rect.top
-      )
+      addRipple(e.clientX - rect.left, e.clientY - rect.top)
     },
     [addRipple]
   )
@@ -62,11 +59,7 @@ export function ArtistRipple({
   }, [beat, active, addRipple])
 
   return (
-    <div
-      style={styles.wrap}
-      className={className}
-      onMouseEnter={handleMouseEnter}
-    >
+    <div style={styles.wrap} className={className} onMouseEnter={handleMouseEnter}>
       {children}
 
       <AnimatePresence>

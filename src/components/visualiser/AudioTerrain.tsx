@@ -108,7 +108,7 @@ const fragmentShader = `
 
 export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  
+
   const freqData = useMemo(() => new Uint8Array(128), [])
   const freqTexture = useMemo(() => {
     const tex = new THREE.DataTexture(freqData, 128, 1, THREE.RedFormat)
@@ -116,12 +116,15 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
     return tex
   }, [freqData])
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uBass: { value: 0 },
-    uFreq: { value: freqTexture },
-    uColor: { value: new THREE.Color(accent.hex) }
-  }), [accent, freqTexture])
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uFreq: { value: freqTexture },
+      uColor: { value: new THREE.Color(accent.hex) },
+    }),
+    [accent, freqTexture]
+  )
 
   useEffect(() => {
     if (materialRef.current) {
@@ -129,15 +132,15 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
     }
   }, [accent])
 
-  useFrame((state) => {
+  useFrame(state => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
     const { bassPower } = useVisualiserStore.getState()
 
     if (materialRef.current) {
-      freqData.set(data.subarray(0, 128))  // subarray = view, no allocation
+      freqData.set(data.subarray(0, 128)) // subarray = view, no allocation
       freqTexture.needsUpdate = true
-      
+
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower
     }

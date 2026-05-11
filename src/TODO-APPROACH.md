@@ -23,6 +23,7 @@ Per frame (useFrame):
 ```
 
 The vertex shader displaces each vertex along its normal direction using:
+
 - `fbm()` (fractal Brownian motion — layered Perlin noise) for the base organic shape
 - The sampled frequency value at a bin corresponding to the vertex's angular position for local reactivity
 - A `uBass` scale factor that pulses the entire mesh outward on beat
@@ -42,6 +43,7 @@ The vertex shader displaces each vertex along its normal direction using:
 **Location:** New file `src/components/visualiser/ButterchurnVisualiser.tsx`
 
 **Install:**
+
 ```bash
 pnpm add butterchurn butterchurn-presets
 ```
@@ -69,6 +71,7 @@ visualizer.render()
 ```
 
 **Problem:** `AudioEngine` currently does not expose the raw `AnalyserNode` or `AudioContext` — only the data methods. You will need to add two new getters:
+
 ```ts
 get analyserNode(): AnalyserNode | null { return this.analyser }
 get audioContext(): AudioContext | null { return this.context }
@@ -92,6 +95,7 @@ get audioContext(): AudioContext | null { return this.context }
 A `THREE.PlaneGeometry(20, 20, 64, 64)` rotated flat (`-Math.PI / 2` on x) with a custom `ShaderMaterial`. Same `DataTexture` pattern as the Orb (see 1.1).
 
 The vertex shader scrolls a 2D Perlin noise function across the plane over time. `uTime` drives the scroll speed. The y-displacement of each vertex is:
+
 ```glsl
 float noise = fbm(vec2(uv.x * 3.0 + uTime * 0.1, uv.y * 3.0));
 float freq  = texture2D(uFreq, vec2(uv.x, 0.5)).r;
@@ -159,6 +163,7 @@ The `getWaveformData()` from `AudioEngine` gives you the current time-domain sig
 **Recommendation: Option A.** The visual is compelling and it's technically interesting. Explain in a comment that you're showing the live signal, not the pre-computed envelope.
 
 **Scrub interaction:**
+
 ```ts
 const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
   const rect = canvasRef.current!.getBoundingClientRect()
@@ -213,9 +218,9 @@ Add `bpm: number` to `visualiserStore`. Display it in `NowPlaying` alongside the
 // Instead of iterating left-to-right:
 // Split the data into bass half (left) and treble half (right)
 const half = Math.floor(freqData.length / 2)
-const leftHalf  = freqData.slice(0, half).reverse() // bass on outside-left
-const rightHalf = freqData.slice(0, half)            // bass on outside-right
-const combined  = [...leftHalf, ...rightHalf]
+const leftHalf = freqData.slice(0, half).reverse() // bass on outside-left
+const rightHalf = freqData.slice(0, half) // bass on outside-right
+const combined = [...leftHalf, ...rightHalf]
 ```
 
 For reflection: after drawing the bars upward, use `ctx.scale(1, -1)` and redraw with `globalAlpha = 0.2` for a mirror image pointing downward. This is a 5-line addition to the existing draw loop.
@@ -290,6 +295,7 @@ git mv src/components/visualiser/Spectogram.tsx src/components/visualiser/Spectr
 ```
 
 Update the import in `App.tsx`:
+
 ```ts
 // Before:
 import { Spectrogram } from './components/visualiser/Spectogram'
@@ -340,6 +346,7 @@ Wrap each quadrant's content in `App.tsx`. Class components are required for err
 ## 3.4 · Responsive Layout
 
 **Approach:** Add a `useResize` call in `App.tsx` to get the current window width. Below 900px:
+
 - `gridTemplateColumns: '1fr'` (stack vertically)
 - `gridTemplateRows: 'repeat(4, auto)'`
 - Hide `GenrePanel` behind a toggle button
@@ -348,7 +355,9 @@ Wrap each quadrant's content in `App.tsx`. Class components are required for err
 This is intentionally minimal — Waveform is a desktop-first experience. Don't try to make it a proper mobile app. Just stop it being completely broken.
 
 Use a CSS custom property approach rather than duplicating style objects:
+
 ```ts
 root.style.setProperty('--grid-columns', width < 900 ? '1fr' : '1fr 1fr')
 ```
+
 Then use `var(--grid-columns)` in the grid style.

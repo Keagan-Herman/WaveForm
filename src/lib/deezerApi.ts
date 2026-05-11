@@ -49,11 +49,11 @@ export interface DeezerGenre {
 export interface DeezerTrack {
   id: number
   title: string
-  duration: number          // seconds
-  preview: string           // 30s MP3 URL — always present
+  duration: number // seconds
+  preview: string // 30s MP3 URL — always present
   artist: DeezerArtist
   album: DeezerAlbum
-  rank: number              // popularity proxy (0–1,000,000)
+  rank: number // popularity proxy (0–1,000,000)
   explicit_lyrics: boolean
 }
 
@@ -183,9 +183,12 @@ export function getAlbumArt(
   size: 'small' | 'medium' | 'large' = 'medium'
 ): string {
   switch (size) {
-    case 'small':  return track.album.cover_medium  // 250x250
-    case 'medium': return track.album.cover_medium  // 250x250
-    case 'large':  return track.album.cover_big     // 500x500
+    case 'small':
+      return track.album.cover_medium // 250x250
+    case 'medium':
+      return track.album.cover_medium // 250x250
+    case 'large':
+      return track.album.cover_big // 500x500
   }
 }
 

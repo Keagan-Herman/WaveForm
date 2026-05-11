@@ -71,14 +71,24 @@ function generatePaletteFromHex(hex: string, h: number, s: number, l: number): A
   // Accent is a high-contrast complementary or split-complementary
   const accent = tinycolor(hex).complement().lighten(20).toHexString()
 
-  // Text should always be readable
-  const text = l > 70 ? '#111111' : '#f0f0f0'
-  const textDim = l > 70 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'
+  // Text should always be readable against the DARK background
+  // Since we force background and surface to be very dark (max 8% and 12% lightness),
+  // we almost always want light text. We only switch to dark text if the accent color itself
+  // is extremely bright AND used as a background somewhere, but since our layout
+  // uses forced-dark backgrounds, we should default to light text for everything
+  // unless specifically styling an element that uses the accent as its background.
+
+  // FIX: Force light text for global variables because they are used on dark backgrounds.
+  const text = '#f0f0f0'
+  const textDim = 'rgba(255,255,255,0.5)'
 
   const border = tinycolor(hex).darken(20).setAlpha(0.2).toRgbString()
 
   return {
-    h, s, l, hex,
+    h,
+    s,
+    l,
+    hex,
     palette: {
       background,
       surface,
@@ -88,22 +98,32 @@ function generatePaletteFromHex(hex: string, h: number, s: number, l: number): A
       text,
       textDim,
       border,
-    }
+    },
   }
 }
 
 function rgbToHsl(r: number, g: number, b: number) {
-  r /= 255; g /= 255; b /= 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b)
   const l = (max + min) / 2
-  let h = 0, s = 0
+  let h = 0,
+    s = 0
   if (max !== min) {
     const d = max - min
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
     switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-      case g: h = ((b - r) / d + 2) / 6; break
-      case b: h = ((r - g) / d + 4) / 6; break
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      case b:
+        h = ((r - g) / d + 4) / 6
+        break
     }
   }
   return {
@@ -114,12 +134,15 @@ function rgbToHsl(r: number, g: number, b: number) {
 }
 
 function hslToHex(h: number, s: number, l: number): string {
-  s /= 100; l /= 100
+  s /= 100
+  l /= 100
   const a = s * Math.min(l, 1 - l)
   const f = (n: number) => {
     const k = (n + h / 30) % 12
     const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-    return Math.round(255 * c).toString(16).padStart(2, '0')
+    return Math.round(255 * c)
+      .toString(16)
+      .padStart(2, '0')
   }
   return `#${f(0)}${f(8)}${f(4)}`
 }
@@ -164,10 +187,12 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
       let pixelCount = 0
 
       for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i + 1], b = data[i + 2]
+        const r = data[i],
+          g = data[i + 1],
+          b = data[i + 2]
         const { h, s, l } = rgbToHsl(r, g, b)
 
-        totalBrightness += l   // use HSL lightness (0-100), not raw brightness
+        totalBrightness += l // use HSL lightness (0-100), not raw brightness
         totalSaturation += s
         pixelCount++
 
@@ -182,8 +207,8 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
         }
       }
 
-      const avgLightness = totalBrightness / pixelCount    // 0–100
-      const avgSaturation = totalSaturation / pixelCount   // 0–100
+      const avgLightness = totalBrightness / pixelCount // 0–100
+      const avgSaturation = totalSaturation / pixelCount // 0–100
       const totalHueVotes = hueBuckets.reduce((a, b) => a + b, 0)
 
       // Find dominant hue bucket
@@ -216,34 +241,36 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
         // Greyscale or very low colour — no reliable hue, theme on brightness
         if (avgLightness > 65) {
           // White / light album
-          finalH = 220; finalS = 12; finalL = 75
+          finalH = 220
+          finalS = 12
+          finalL = 75
         } else if (avgLightness > 35) {
           // Grey album
-          finalH = 220; finalS = 14; finalL = 52
+          finalH = 220
+          finalS = 14
+          finalL = 52
         } else {
           // Black album
-          finalH = 220; finalS = 18; finalL = 38
+          finalH = 220
+          finalS = 18
+          finalL = 38
         }
-
       } else if (avgLightness > 70 && avgSaturation < 30) {
         // Mostly white/light with small colour accents (e.g. Panchiko)
         // Use the dominant hue but render it as a light, visible pastel
         finalH = dominantHue
         finalS = Math.max(35, avgSaturation * 2.5)
         finalL = 68
-
       } else if (avgLightness > 70) {
         // Bright, saturated image
         finalH = dominantHue
         finalS = Math.min(100, avgSaturation * 1.1)
         finalL = 58
-
       } else if (avgLightness < 25) {
         // Very dark / black album with colour
         finalH = dominantHue
         finalS = Math.max(55, avgSaturation * 1.6)
         finalL = 50
-
       } else {
         // Normal colourful album
         finalH = dominantHue
