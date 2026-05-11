@@ -85,7 +85,7 @@ export const TrackRow = React.memo(({
       aria-label={`Play ${track.title} by ${track.artist.name}${track.explicit_lyrics ? ' (Explicit)' : ''}`}
       aria-pressed={isActive}
     >
-      <div style={styles.indexWrap}>
+      <div style={styles.indexWrap} aria-hidden="true">
         {isActive
           ? <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
           : <span style={styles.index}>{index + 1}</span>
@@ -151,7 +151,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: { fontSize: '0.65rem', opacity: 0.35 },
+  index: { fontSize: '0.7rem', opacity: 0.5 },
   playingIndicator: { fontSize: '0.6rem' },
   artWrap: {
     position: 'relative',
@@ -198,16 +198,16 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
   },
   album: {
-    fontSize: '0.65rem',
-    opacity: 0.3,
+    fontSize: '0.7rem',
+    opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: 'monospace',
   },
   duration: {
-    fontSize: '0.65rem',
-    opacity: 0.4,
+    fontSize: '0.7rem',
+    opacity: 0.5,
     flexShrink: 0,
     fontVariantNumeric: 'tabular-nums',
   },

@@ -104,7 +104,7 @@ export function SearchOverlay({
 
       {/* Search input */}
       <div style={styles.inputWrap}>
-        <span style={styles.searchIcon}>⌕</span>
+        <span style={styles.searchIcon} aria-hidden="true">⌕</span>
         <input
           ref={inputRef}
           style={styles.input}
@@ -148,7 +148,7 @@ export function SearchOverlay({
 
         {!query.trim() && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>♫</p>
+            <p style={styles.stateIcon} aria-hidden="true">♫</p>
             <p style={styles.stateTitle}>Find something to play</p>
             <p style={styles.stateDesc}>All results include a 30-second preview.</p>
           </div>
@@ -170,7 +170,7 @@ export function SearchOverlay({
 
         {error && !isLoading && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>⚠</p>
+            <p style={styles.stateIcon} aria-hidden="true">⚠</p>
             <p style={styles.stateTitle}>Something went wrong</p>
             <p style={styles.stateDesc}>{error}</p>
           </div>
@@ -178,7 +178,7 @@ export function SearchOverlay({
 
         {!isLoading && !error && tracks.length === 0 && query.trim() && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>∅</p>
+            <p style={styles.stateIcon} aria-hidden="true">∅</p>
             <p style={styles.stateTitle}>No results found</p>
             <p style={styles.stateDesc}>Try a different search term.</p>
           </div>
@@ -187,7 +187,7 @@ export function SearchOverlay({
         {/* Filtered empty state */}
         {!isLoading && !error && isFiltered && visibleTracks.length === 0 && tracks.length > 0 && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>∅</p>
+            <p style={styles.stateIcon} aria-hidden="true">∅</p>
             <p style={styles.stateTitle}>No tracks in this genre</p>
             <p style={styles.stateDesc}>Click the genre again to clear the filter.</p>
           </div>
@@ -293,10 +293,10 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: '24px 34px 1fr 1fr auto',
     gap: '0.6rem',
     padding: '0.3rem 0.7rem',
-    fontSize: '0.53rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    opacity: 0.3,
+    opacity: 0.5,
     fontFamily: 'monospace',
     borderBottom: '1px solid rgba(255,255,255,0.05)',
     flexShrink: 0,
@@ -315,7 +315,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     gap: '0.4rem',
   },
-  stateIcon: { fontSize: '1.75rem', opacity: 0.18, marginBottom: '0.4rem' },
+  stateIcon: { fontSize: '1.75rem', opacity: 0.4, marginBottom: '0.4rem' },
   stateTitle: { fontSize: '0.82rem', opacity: 0.55 },
   stateDesc: { fontSize: '0.7rem', opacity: 0.3, lineHeight: 1.6, maxWidth: 220 },
   skeletonWrap: { display: 'flex', flexDirection: 'column', gap: '3px', padding: '0.2rem 0' },
