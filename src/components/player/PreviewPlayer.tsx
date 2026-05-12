@@ -43,15 +43,13 @@ export function PreviewPlayer() {
   const engineInitialised = useRef(false)
   const { start: startAnalyser, stop: stopAnalyser } = useAudioAnalyser()
 
-  const {
-    currentTrack,
-    isPlaying,
-    setIsPlaying,
-    setIsLoading,
-    setProgress,
-    setDuration,
-    nextTrack,
-  } = usePlayerStore()
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const setIsLoading = usePlayerStore(state => state.setIsLoading)
+  const setProgress = usePlayerStore(state => state.setProgress)
+  const setDuration = usePlayerStore(state => state.setDuration)
+  const nextTrack = usePlayerStore(state => state.nextTrack)
 
   const ensureEngineInitialised = useCallback(async () => {
     if (engineInitialised.current) return

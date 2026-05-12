@@ -26,6 +26,12 @@ interface VisualiserStore {
   setBassPower: (power: number) => void
   setBeatConfidence: (confidence: number) => void
   setBpm: (bpm: number) => void
+  setAudioData: (data: {
+    beat: boolean
+    bassPower: number
+    beatConfidence: number
+    bpm: number
+  }) => void
   setVisualLayer: (layer: VisualLayer) => void
   cycleVisualLayer: () => void
   setIsFullscreen: (isFullscreen: boolean) => void
@@ -48,6 +54,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setBassPower: bassPower => set({ bassPower }),
   setBeatConfidence: beatConfidence => set({ beatConfidence }),
   setBpm: bpm => set({ bpm }),
+  setAudioData: data => set(data),
 
   setVisualLayer: visualLayer => set({ visualLayer }),
   cycleVisualLayer: () => {

@@ -21,7 +21,8 @@ interface FullscreenOverlayProps {
 }
 
 function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: DeezerTrack[] }) {
-  const { visualLayer, isLowQuality } = useVisualiserStore()
+  const visualLayer = useVisualiserStore(state => state.visualLayer)
+  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
 
   const albumLayout = useMemo(() => {
     const seen = new Set<number>()

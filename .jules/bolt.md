@@ -11,3 +11,7 @@
 ## 2025-05-15 - Redundant Renders via Zustand Subscriptions
 **Learning:** Bulk destructuring from Zustand stores (`const { x, y } = useStore()`) causes components to re-render whenever *any* property in the store changes. In this app, `playerStore` (via `progress`) and `visualiserStore` (via `bassPower`) update at 60fps. Any component using bulk destructuring from these stores will re-render at 60fps, even if they only need static data or low-frequency state.
 **Action:** Always use targeted selectors (`const x = useStore(state => state.x)`) to ensure components only react to the specific state they need. For high-frequency visual updates that don't need React's reconciliation (like a progress bar or canvas draw), use imperative `getState()` inside the loop.
+
+## 2025-05-16 - Batched Store Updates for High-Frequency Data
+**Learning:** In high-frequency loops (60fps), calling multiple individual Zustand setters (e.g., setBeat, setBassPower) triggers multiple store notifications and potentially multiple React render passes per frame.
+**Action:** Batch related high-frequency updates into a single store action (e.g., setAudioData) to reduce the overhead of listener notifications to once per frame.

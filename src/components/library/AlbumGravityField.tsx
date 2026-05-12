@@ -94,7 +94,7 @@ function buildLayout(tracks: DeezerTrack[], isLowQuality: boolean): AlbumLayout[
 }
 
 function Scene({ layout, accent }: { layout: AlbumLayout[]; accent?: AlbumColour }) {
-  const { isLowQuality } = useVisualiserStore()
+  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
   const color = accent?.hex ?? '#ffffff'
 
   return (
