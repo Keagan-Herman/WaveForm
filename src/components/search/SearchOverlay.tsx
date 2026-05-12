@@ -30,6 +30,7 @@ export function SearchOverlay({
   const listRef = useRef<HTMLDivElement>(null)
   const { tracks, isLoading, error } = useDeezerSearch(query)
   const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
   const setTrack = usePlayerStore(state => state.setTrack)
   const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
   const setQueue = usePlayerStore(state => state.setQueue)
@@ -56,7 +57,11 @@ export function SearchOverlay({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement !== inputRef.current) {
+      const isTyping =
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+
+      if (e.key === '/' && !isTyping) {
         e.preventDefault()
         inputRef.current?.focus()
       }
@@ -111,7 +116,7 @@ export function SearchOverlay({
           ref={inputRef}
           style={styles.input}
           type="text"
-          placeholder="Search tracks..."
+          placeholder="Search tracks... (/)"
           value={query}
           onChange={e => setQuery(e.target.value)}
           aria-label="Search for tracks"
@@ -215,6 +220,7 @@ export function SearchOverlay({
                     track={track}
                     index={i}
                     isActive={currentTrack?.id === track.id}
+                    isPlaying={currentTrack?.id === track.id && isPlaying}
                     isFocused={focusedIndex === i}
                     onSelect={handleSelectTrack}
                     accentColour={accentColour}
@@ -295,8 +301,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   columnHeaders: {
     display: 'grid',
-    gridTemplateColumns: '24px 34px 1fr 1fr auto',
-    gap: '0.6rem',
+    gridTemplateColumns: '28px 36px 1fr 1fr auto',
+    gap: '0.75rem',
     padding: '0.3rem 0.7rem',
     fontSize: '0.6rem',
     letterSpacing: '0.14em',

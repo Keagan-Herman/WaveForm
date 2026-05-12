@@ -103,6 +103,7 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
             onClick={handlePrev}
             disabled={!canPrev}
             aria-label="Previous track"
+            title="Previous track"
           >
             ⏮
           </button>
@@ -113,7 +114,9 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
               boxShadow: `0 0 20px ${accentColour}66`,
             }}
             onClick={handlePlayPause}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
+            aria-label={isLoading ? 'Loading track' : isPlaying ? 'Pause' : 'Play'}
+            aria-busy={isLoading}
+            title={isPlaying ? 'Pause' : 'Play'}
           >
             {isLoading ? '…' : isPlaying ? '⏸' : '▶'}
           </button>
@@ -122,6 +125,7 @@ export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
             onClick={handleNext}
             disabled={!canNext}
             aria-label="Next track"
+            title="Next track"
           >
             ⏭
           </button>
