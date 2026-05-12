@@ -4,7 +4,8 @@ import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
-  const { currentTrack, isTransitioning } = usePlayerStore()
+  const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isTransitioning = usePlayerStore(state => state.isTransitioning)
 
   return (
     <AnimatePresence>
