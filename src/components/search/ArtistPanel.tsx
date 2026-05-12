@@ -19,6 +19,7 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
   const setQueue = usePlayerStore(state => state.setQueue)
   const currentTrack = usePlayerStore(state => state.currentTrack)
+  const isPlaying = usePlayerStore(state => state.isPlaying)
 
   useEffect(() => {
     let mounted = true
@@ -103,6 +104,7 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
                     track={track}
                     index={i}
                     isActive={currentTrack?.id === track.id}
+                    isPlaying={currentTrack?.id === track.id && isPlaying}
                     onSelect={handleSelectTrack}
                     accentColour={accentColour}
                   />

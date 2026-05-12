@@ -35,14 +35,54 @@ import { useUIStore } from '@/stores/uiStore'
 interface TrackRowProps {
   track: DeezerTrack
   isActive: boolean
+  isPlaying?: boolean
   isFocused?: boolean
   index: number
   onSelect: (track: DeezerTrack, index: number) => void
   accentColour?: string
 }
 
+const PlayingBars = ({ color }: { color: string }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'flex-end',
+      gap: '2px',
+      height: '12px',
+      width: '12px',
+    }}
+  >
+    {[0.6, 0.8, 0.5].map((delay, i) => (
+      <motion.span
+        key={i}
+        animate={{
+          height: ['20%', '100%', '20%'],
+        }}
+        transition={{
+          duration: delay,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        style={{
+          flex: 1,
+          background: color,
+          borderRadius: '1px',
+        }}
+      />
+    ))}
+  </div>
+)
+
 export const TrackRow = React.memo(
-  ({ track, isActive, isFocused, index, onSelect, accentColour = '#1db954' }: TrackRowProps) => {
+  ({
+    track,
+    isActive,
+    isPlaying,
+    isFocused,
+    index,
+    onSelect,
+    accentColour = '#1db954',
+  }: TrackRowProps) => {
     const [isHovered, setIsHovered] = useState(false)
 
     const handleSelect = useCallback(() => {
@@ -84,7 +124,11 @@ export const TrackRow = React.memo(
       >
         <div style={styles.indexWrap}>
           {isActive ? (
-            <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
+            isPlaying ? (
+              <PlayingBars color={accentColour} />
+            ) : (
+              <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
+            )
           ) : (
             <span style={styles.index}>{index + 1}</span>
           )}
@@ -105,6 +149,8 @@ export const TrackRow = React.memo(
                 color: accentColour,
                 borderColor: `${accentColour}66`,
               }}
+              aria-label="Explicit content"
+              title="Explicit content"
             >
               E
             </div>
@@ -178,7 +224,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     fontWeight: 700,
     background: 'rgba(0,0,0,0.7)',
-    pointerEvents: 'none',
   },
   albumArt: {
     width: '100%',
