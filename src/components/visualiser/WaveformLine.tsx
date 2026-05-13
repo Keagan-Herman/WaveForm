@@ -1,13 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { audioEngine } from '../../audio/AudioEngine';
 import { usePlayerStore } from '../../stores/playerStore';
 import { isLocalTrack } from '../../types/track';
+import { useAlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Colours ──────────────────────────────────────────────────────────────────
 
-const GREEN = '#1db954';
-const GREEN_PLAYED = 'rgba(29, 185, 84, 0.9)';
-const GREEN_UNPLAYED = 'rgba(29, 185, 84, 0.28)';
 const PLAYHEAD = 'rgba(255, 255, 255, 0.9)';
 const PLAYHEAD_GLOW = 'rgba(255, 255, 255, 0.2)';
 
@@ -16,13 +14,14 @@ const PLAYHEAD_GLOW = 'rgba(255, 255, 255, 0.2)';
 function drawLiveOscilloscope(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
+  colour: string
 ) {
   const data = audioEngine.getWaveformData();
   ctx.clearRect(0, 0, width, height);
 
   ctx.beginPath();
-  ctx.strokeStyle = GREEN;
+  ctx.strokeStyle = colour;
   ctx.lineWidth = 1.5;
   ctx.lineJoin = 'round';
 
@@ -46,7 +45,8 @@ function drawStaticWaveform(
   width: number,
   height: number,
   waveform: Float32Array,
-  progress: number // 0–1
+  progress: number, // 0–1
+  colours: { played: string; unplayed: string }
 ) {
   ctx.clearRect(0, 0, width, height);
 
@@ -60,7 +60,7 @@ function drawStaticWaveform(
     const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
     const isPlayed = x <= playheadX;
 
-    ctx.fillStyle = isPlayed ? GREEN_PLAYED : GREEN_UNPLAYED;
+    ctx.fillStyle = isPlayed ? colours.played : colours.unplayed;
 
     // Mirror above and below centre
     ctx.fillRect(x, centerY - barHeight, Math.max(1, barWidth - 0.8), barHeight);
@@ -110,6 +110,30 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
+  const trackCover = currentTrack ? (isLocalTrack(currentTrack) ? currentTrack.album.cover : currentTrack.album.cover_medium) : null;
+  const { palette } = useAlbumColour(trackCover);
+
+  const themeColours = useMemo(() => ({
+    played: palette.accent,
+    unplayed: `${palette.accent}40`, // 25% opacity
+    live: palette.accent
+  }), [palette.accent]);
+
+  // ── Interaction: Seek on click ──
+
+  const handleSeek = (e: React.MouseEvent) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !currentTrack?.duration) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const fraction = Math.max(0, Math.min(1, x / rect.width));
+
+    const audio = document.getElementById('preview-audio') as HTMLAudioElement;
+    if (audio) {
+      audio.currentTime = fraction * currentTrack.duration;
+    }
+  };
 
   // ── Resize observer — keeps canvas in sync with flex container width ──
 
@@ -160,9 +184,9 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
 
       if (wf && wf.length > 0) {
         const progress = dur > 0 ? Math.min(1, currentTime / dur) : 0;
-        drawStaticWaveform(ctx, width, h, wf, progress);
+        drawStaticWaveform(ctx, width, h, wf, progress, themeColours);
       } else {
-        drawLiveOscilloscope(ctx, width, h);
+        drawLiveOscilloscope(ctx, width, h, themeColours.live);
       }
 
       rafRef.current = requestAnimationFrame(draw);
@@ -176,7 +200,11 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
   }, []);
 
   return (
-    <div ref={wrapperRef} style={{ width: '100%', height }}>
+    <div
+      ref={wrapperRef}
+      onClick={handleSeek}
+      style={{ width: '100%', height, cursor: 'pointer' }}
+    >
       <canvas
         ref={canvasRef}
         aria-label={

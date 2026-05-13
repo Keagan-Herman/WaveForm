@@ -2,6 +2,7 @@ import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
+import { getTrackCover, getTrackArtist } from '@/types/track'
 
 export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -21,7 +22,7 @@ export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
             style={styles.artWrap}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <img src={currentTrack.album.cover_big} alt="" style={styles.art} />
+            <img src={getTrackCover(currentTrack)} alt="" style={styles.art} />
           </motion.div>
 
           <motion.div
@@ -31,7 +32,7 @@ export function TrackTransitionOverlay({ accent }: { accent: AlbumColour }) {
             style={styles.info}
           >
             <h1 style={{ ...styles.title, color: accent.hex }}>{currentTrack.title}</h1>
-            <p style={styles.artist}>{currentTrack.artist.name}</p>
+            <p style={styles.artist}>{getTrackArtist(currentTrack)}</p>
           </motion.div>
 
           <motion.div

@@ -8,12 +8,13 @@ const SAMPLE_COUNT = 800; // resolution: 800 peaks across the full duration
  * Uses a temporary AudioContext (not OfflineAudioContext — we only need
  * decoding, not rendering). The context is closed immediately after.
  *
- * Returns a Float32Array of SAMPLE_COUNT values in the range [0, 1].
+ * Returns a Float32Array of SAMPLE_COUNT values in the range [0, 1]
+ * and the duration in seconds.
  */
 export async function computeWaveform(
   file: File,
   samples = SAMPLE_COUNT
-): Promise<Float32Array> {
+): Promise<{ waveform: Float32Array; duration: number }> {
   const arrayBuffer = await file.arrayBuffer();
 
   // Temporary context for decoding only — closed in finally block
@@ -21,6 +22,7 @@ export async function computeWaveform(
 
   try {
     const decoded = await ctx.decodeAudioData(arrayBuffer);
+    const duration = decoded.duration;
 
     // Use left channel (index 0); mono files only have one channel
     const raw = decoded.getChannelData(0);
@@ -50,7 +52,7 @@ export async function computeWaveform(
       }
     }
 
-    return out;
+    return { waveform: out, duration };
   } finally {
     // Always close — leaving AudioContexts open leaks OS audio resources
     ctx.close();

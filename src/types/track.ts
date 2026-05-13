@@ -3,15 +3,17 @@
 export interface DeezerArtist {
   id: number;
   name: string;
-  picture_medium?: string;
+  picture_medium: string;
+  picture_big: string;
+  nb_fan?: number;
 }
 
 export interface DeezerAlbum {
   id: number;
   title: string;
-  cover: string;
   cover_medium: string;
-  cover_big?: string;
+  cover_big: string;
+  release_date?: string;
 }
 
 export interface DeezerTrack {
@@ -23,6 +25,7 @@ export interface DeezerTrack {
   preview: string;   // 30-second preview URL
   duration: number;  // seconds
   rank: number;
+  explicit_lyrics: boolean;
 }
 
 // ─── Local file shape ─────────────────────────────────────────────────────────
@@ -61,7 +64,7 @@ export function isDeezerTrack(track: Track): track is DeezerTrack {
 
 export function getTrackCover(track: Track): string {
   if (track.source === 'local') return track.album.cover;
-  return track.album.cover_medium ?? track.album.cover;
+  return track.album.cover_medium;
 }
 
 export function getTrackArtist(track: Track): string {

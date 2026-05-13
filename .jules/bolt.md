@@ -15,3 +15,9 @@
 ## 2025-05-16 - Batched Store Updates for High-Frequency Data
 **Learning:** In high-frequency loops (60fps), calling multiple individual Zustand setters (e.g., setBeat, setBassPower) triggers multiple store notifications and potentially multiple React render passes per frame.
 **Action:** Batch related high-frequency updates into a single store action (e.g., setAudioData) to reduce the overhead of listener notifications to once per frame.
+
+## Local File Pipeline Optimization (2025-05-10)
+- **Problem:** `LocalFileLoader` performed two separate decoding passes (`getAudioDuration` and `computeWaveform`) for every uploaded file.
+- **Optimization:** Refactored `computeWaveform` to extract duration from the `AudioBuffer` during the peak-finding pass.
+- **Result:** Halved CPU and memory usage for file ingestion.
+- **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.

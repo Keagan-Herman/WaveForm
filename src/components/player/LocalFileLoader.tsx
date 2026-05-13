@@ -3,23 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePlayerStore } from '../../stores/playerStore';
 import { computeWaveform } from '../../hooks/useWaveformPrecompute';
 import { LocalTrack } from '../../types/track';
-import { buildLocalTrack, isAudioFile } from '@/hooks/usLocalFileMetadata';
+import { buildLocalTrack, isAudioFile } from '../../hooks/useLocalFileMetadata';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error';
-
-// ─── Duration helper ──────────────────────────────────────────────────────────
-
-function getAudioDuration(objectUrl: string): Promise<number> {
-  return new Promise((resolve) => {
-    const audio = new Audio(objectUrl);
-    audio.addEventListener('loadedmetadata', () => resolve(audio.duration), { once: true });
-    audio.addEventListener('error', () => resolve(0), { once: true });
-    audio.preload = 'metadata';
-    audio.src = objectUrl;
-  });
-}
 
 // ─── File processing pipeline ─────────────────────────────────────────────────
 
@@ -27,21 +15,36 @@ async function processFile(file: File): Promise<LocalTrack> {
   // Build metadata first — creates the objectUrl we'll reuse for everything
   const partialTrack = await buildLocalTrack(file);
 
-  // Run waveform computation and duration fetch in parallel
-  const [waveform, duration] = await Promise.all([
-    computeWaveform(file).catch(() => undefined), // non-fatal: track plays without waveform
-    getAudioDuration(partialTrack.objectUrl),
-  ]);
-
-  return { ...partialTrack, duration, waveform };
+  try {
+    const { waveform, duration } = await computeWaveform(file);
+    return { ...partialTrack, duration, waveform };
+  } catch (err) {
+    console.error('Failed to compute waveform/duration:', err);
+    // Return partial track with default duration if decoding fails
+    return { ...partialTrack, duration: 0 };
+  }
 }
 
 async function processFiles(files: File[]): Promise<LocalTrack[]> {
   const audioFiles = files.filter(isAudioFile);
   if (!audioFiles.length) throw new Error('No supported audio files found.');
 
-  // Process in parallel — each file gets its own AudioContext, all short-lived
-  return Promise.all(audioFiles.map(processFile));
+  // Process with limited concurrency to avoid memory spikes with many large files
+  const concurrencyLimit = 2;
+  const results: LocalTrack[] = [];
+  const remaining = [...audioFiles];
+
+  async function worker() {
+    while (remaining.length > 0) {
+      const file = remaining.shift();
+      if (file) {
+        results.push(await processFile(file));
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrencyLimit }, worker));
+  return results;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -51,8 +54,6 @@ export function LocalFileLoader() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [localCount, setLocalCount] = useState(0);
-
   const { registerLocalTrack, addToQueue, setTrack, currentTrack, queue } =
     usePlayerStore();
 
@@ -67,8 +68,6 @@ export function LocalFileLoader() {
       if (!currentTrack && tracks.length > 0) {
         setTrack(tracks[0]);
       }
-
-      setLocalCount((c) => c + tracks.length);
     },
     [registerLocalTrack, addToQueue, setTrack, currentTrack]
   );

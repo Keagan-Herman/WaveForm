@@ -23,7 +23,7 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useAlbumColour } from '@/hooks/useAlbumColour'
 import { useResize } from '@/hooks/useResize'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 import { Spectrogram } from './components/visualiser/Spectrogram'
 import { RadialVisualiser } from './components/visualiser/RadialVisualiser'
 import { FullscreenOverlay } from './components/visualiser/FullscreenOverlay'
@@ -34,7 +34,11 @@ import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
-  const imageUrl = currentTrack?.album.cover_medium ?? null
+  const imageUrl = currentTrack
+    ? currentTrack.source === 'local'
+      ? currentTrack.album.cover
+      : currentTrack.album.cover_medium
+    : null
   return useAlbumColour(imageUrl)
 }
 
@@ -104,7 +108,8 @@ function GenrePanelQuadrant({
 
 function KeyboardShortcuts() {
   const isPlaying = usePlayerStore(state => state.isPlaying)
-  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
+  const play = usePlayerStore(state => state.play)
+  const pause = usePlayerStore(state => state.pause)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const nextTrack = usePlayerStore(state => state.nextTrack)
   const prevTrack = usePlayerStore(state => state.prevTrack)
@@ -119,7 +124,10 @@ function KeyboardShortcuts() {
       switch (e.key.toLowerCase()) {
         case ' ':
           e.preventDefault()
-          if (currentTrack) setIsPlaying(!isPlaying)
+          if (currentTrack) {
+            if (isPlaying) pause()
+            else play()
+          }
           break
         case 'arrowright':
           e.preventDefault()
@@ -144,7 +152,8 @@ function KeyboardShortcuts() {
   }, [
     isPlaying,
     currentTrack,
-    setIsPlaying,
+    play,
+    pause,
     nextTrack,
     prevTrack,
     toggleFullscreen,
@@ -359,7 +368,7 @@ function Waveform() {
           <div style={styles.quadLabel}>Now Playing</div>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
-              <NowPlaying accentColour={accent} />
+              <NowPlaying accent={accent} />
             </QuadrantErrorBoundary>
           </div>
         </motion.div>
@@ -382,7 +391,7 @@ function Waveform() {
         </motion.div>
       </div>
 
-      <PlayerBar accentColour={accent.hex} />
+      <PlayerBar />
       <TrackTransitionOverlay accent={accent} />
 
       <AnimatePresence>
