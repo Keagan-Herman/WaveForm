@@ -47,6 +47,7 @@ export interface DeezerGenre {
 }
 
 export interface DeezerTrack {
+  source: 'deezer'
   id: number
   title: string
   duration: number // seconds
@@ -112,7 +113,7 @@ export async function searchTracks(
   })
 
   return {
-    tracks: data.data ?? [],
+    tracks: (data.data ?? []).map(t => ({ ...t, source: 'deezer' })),
     total: data.total ?? 0,
     hasMore: !!data.next,
     nextIndex: index + limit,
@@ -138,7 +139,8 @@ export async function searchArtists(query: string, limit = 10): Promise<DeezerAr
  * Genres are nested under track.album on the full track endpoint.
  */
 export async function getTrack(trackId: number): Promise<DeezerFullTrack> {
-  return deezerFetch<DeezerFullTrack>(`/track/${trackId}`)
+  const track = await deezerFetch<DeezerFullTrack>(`/track/${trackId}`)
+  return { ...track, source: 'deezer' }
 }
 
 /**
@@ -154,10 +156,10 @@ export async function getArtist(
  * Get artist's top tracks.
  */
 export async function getArtistTopTracks(artistId: number, limit = 10): Promise<DeezerTrack[]> {
-  const data = await deezerFetch<{ data: DeezerTrack[] }>(`/artist/${artistId}/top`, {
+  const data = await deezerFetch<{ data: any[] }>(`/artist/${artistId}/top`, {
     limit: String(limit),
   })
-  return data.data ?? []
+  return (data.data ?? []).map(t => ({ ...t, source: 'deezer' }))
 }
 
 /**

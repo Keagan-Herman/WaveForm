@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
 import { TrackRow } from '@/components/library/TrackRow'
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { Track, DeezerTrack } from '@/types/track'
 
 interface SearchOverlayProps {
   onResultsChange?: (tracks: DeezerTrack[]) => void
@@ -32,8 +32,9 @@ export function SearchOverlay({
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const setTrack = usePlayerStore(state => state.setTrack)
-  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
-  const setQueue = usePlayerStore(state => state.setQueue)
+  const play = usePlayerStore(state => state.play)
+  const addToQueue = usePlayerStore(state => state.addToQueue)
+  const clearQueue = usePlayerStore(state => state.clearQueue)
 
   useEffect(() => {
     onResultsChange?.(tracks)
@@ -41,18 +42,19 @@ export function SearchOverlay({
 
   // Filter tracks — completely remove non-matching ones
   const isFiltered = filteredTrackIds !== null && filteredTrackIds !== undefined
-  const visibleTracks = isFiltered
+  const visibleTracks = (isFiltered
     ? tracks.filter(t => filteredTrackIds!.includes(String(t.id)))
-    : tracks
+    : tracks) as Track[]
 
   const handleSelectTrack = useCallback(
-    (track: DeezerTrack, index: number) => {
-      // Queue from visible tracks, not all tracks
-      setQueue(visibleTracks, index)
+    (track: Track) => {
+      // Rebuild queue from visible tracks
+      clearQueue()
+      visibleTracks.forEach(t => addToQueue(t))
       setTrack(track)
-      setIsPlaying(true)
+      play()
     },
-    [visibleTracks, setQueue, setTrack, setIsPlaying]
+    [visibleTracks, clearQueue, addToQueue, setTrack, play]
   )
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export function SearchOverlay({
           if (isInputFocused) inputRef.current?.blur()
         } else if (e.key === 'Enter' && focusedIndex !== -1) {
           e.preventDefault()
-          handleSelectTrack(visibleTracks[focusedIndex], focusedIndex)
+          handleSelectTrack(visibleTracks[focusedIndex])
         }
       }
     }

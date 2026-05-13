@@ -13,9 +13,10 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useUIStore } from '@/stores/uiStore'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
+import { getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
 
 interface NowPlayingProps {
-  accentColour?: AlbumColour
+  accent?: AlbumColour
 }
 
 function formatFans(n: number): string {
@@ -32,10 +33,12 @@ function formatRank(rank: number): string {
   return 'Niche'
 }
 
-export function NowPlaying({ accentColour }: NowPlayingProps) {
+export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
-  const progress = usePlayerStore(state => state.progress)
+  const currentTime = usePlayerStore(state => state.currentTime)
+  const duration = currentTrack?.duration ?? 0
+  const progress = duration > 0 ? currentTime / duration : 0
 
   const beat = useVisualiserStore(state => state.beat)
   const bpm = useVisualiserStore(state => state.bpm)
@@ -69,13 +72,13 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
     )
   }
 
-  const releaseYear = currentTrack.album.release_date
-    ? new Date(currentTrack.album.release_date).getFullYear()
-    : null
+  const releaseYear =
+    isDeezerTrack(currentTrack) && currentTrack.album.release_date
+      ? new Date(currentTrack.album.release_date).getFullYear()
+      : null
 
-  const durationStr = `${Math.floor(currentTrack.duration / 60)}:${String(currentTrack.duration % 60).padStart(2, '0')}`
-  const elapsedSecs = Math.min(30, Math.round(progress * 30))
-  const elapsedStr = `0:${String(elapsedSecs).padStart(2, '0')}`
+  const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
+  const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
 
   return (
     <motion.div
@@ -89,8 +92,8 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
       <div style={styles.topRow}>
         <div style={styles.artWrap}>
           <img
-            src={currentTrack.album.cover_big}
-            alt={currentTrack.album.title}
+            src={getTrackCover(currentTrack)}
+            alt={getTrackAlbum(currentTrack)}
             style={{
               ...styles.art,
               transform: beat && isPlaying ? 'scale(1.04) rotate(0.3deg)' : 'scale(1) rotate(0deg)',
@@ -98,7 +101,7 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
               boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 20px ${accentDim}`,
             }}
           />
-          {currentTrack.explicit_lyrics && (
+          {isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
             <div
               style={{ ...styles.explicitBadge, color: accent, borderColor: `${accent}55` }}
               aria-label="Explicit content"
@@ -109,14 +112,18 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
         </div>
 
         <div style={styles.titleBlock}>
-          <p style={styles.albumName}>{currentTrack.album.title}</p>
+          <p style={styles.albumName}>{getTrackAlbum(currentTrack)}</p>
           <p style={styles.trackName}>{currentTrack.title}</p>
           <ArtistRipple active={isPlaying} color={accent}>
             <p
               style={{ ...styles.artistName, color: accent, cursor: 'pointer' }}
-              onClick={() => useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)}
+              onClick={() => {
+                if (isDeezerTrack(currentTrack)) {
+                  useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)
+                }
+              }}
             >
-              {currentTrack.artist.name}
+              {getTrackArtist(currentTrack)}
             </p>
           </ArtistRipple>
         </div>
@@ -148,24 +155,32 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
         </div>
         <div style={styles.scrubberLabels}>
           <span style={styles.timeLabel}>{elapsedStr}</span>
-          <span style={{ ...styles.timeLabel, opacity: 0.3 }}>0:30</span>
+          <span style={{ ...styles.timeLabel, opacity: 0.3 }}>{durationStr}</span>
         </div>
       </div>
 
       {/* Meta grid */}
       <div style={styles.metaGrid}>
         <MetaRow label="Duration" value={durationStr} accent={accent} />
-        <MetaRow label="Rank" value={formatRank(currentTrack.rank)} accent={accent} />
-        {releaseYear && <MetaRow label="Year" value={String(releaseYear)} accent={accent} />}
-        {currentTrack.artist.nb_fan !== undefined && currentTrack.artist.nb_fan > 0 && (
-          <MetaRow label="Fans" value={formatFans(currentTrack.artist.nb_fan)} accent={accent} />
+        {isDeezerTrack(currentTrack) && (
+          <MetaRow label="Rank" value={formatRank(currentTrack.rank)} accent={accent} />
         )}
+        {releaseYear && <MetaRow label="Year" value={String(releaseYear)} accent={accent} />}
+        {isDeezerTrack(currentTrack) &&
+          currentTrack.artist.nb_fan !== undefined &&
+          currentTrack.artist.nb_fan > 0 && (
+            <MetaRow
+              label="Fans"
+              value={formatFans(currentTrack.artist.nb_fan)}
+              accent={accent}
+            />
+          )}
         {bpm > 0 && (
           <MetaRow label="Live BPM" value={`${Math.round(bpm)}`} accent={accent} indicator={beat} />
         )}
         <MetaRow
           label="Explicit"
-          value={currentTrack.explicit_lyrics ? 'Yes' : 'No'}
+          value={isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics ? 'Yes' : 'No'}
           accent={accent}
         />
       </div>

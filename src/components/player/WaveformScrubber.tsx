@@ -21,7 +21,10 @@ export function WaveformScrubber({ width, height, accentColour }: WaveformScrubb
       if (!ctx) return
 
       // Pull high-frequency state imperatively to avoid React re-renders
-      const progress = usePlayerStore.getState().progress
+      const state = usePlayerStore.getState()
+      const { currentTime, currentTrack } = state
+      const duration = currentTrack?.duration || 0
+      const progress = duration > 0 ? currentTime / duration : 0
       const beat = useVisualiserStore.getState().beat
 
       ctx.clearRect(0, 0, width, height)
@@ -59,9 +62,8 @@ export function WaveformScrubber({ width, height, accentColour }: WaveformScrubb
     const rect = canvasRef.current!.getBoundingClientRect()
     const fraction = (e.clientX - rect.left) / rect.width
     const audioEl = document.getElementById('preview-audio') as HTMLAudioElement
-    if (audioEl) {
+    if (audioEl && !isNaN(audioEl.duration)) {
       audioEl.currentTime = fraction * audioEl.duration
-      usePlayerStore.getState().setProgress(fraction)
     }
   }
 

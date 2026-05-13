@@ -9,3 +9,8 @@
 ## 2026-05-24 - [Global Accessibility and Dynamic Context]
 **Learning:** In a dynamically themed application, hardcoded focus rings (like the legacy green) break visual harmony. Using CSS variables for `:focus-visible` ensures accessibility remains integrated with the current aesthetic. Additionally, media applications benefit greatly from document title state (Play/Pause) as it provides immediate context in the browser's tab list.
 **Action:** Always link global interaction styles (focus, selection) to the theme engine and leverage document title for ambient status updates.
+
+## Integrated Local/Cloud UX (2025-05-10)
+- **Unified Accessors:** Created `getTrackCover`, `getTrackArtist`, and `getTrackAlbum` to abstract away the `DeezerTrack | LocalTrack` union. Components should never check `source === 'local'` just to find an image.
+- **Waveform Interaction:** Added click-to-seek on the static waveform (`WaveformLine`). The waveform color now shifts from white (beat pulse) to accent (album-matched) based on playback progress.
+- **Visual Feedback:** `LocalFileLoader` provides explicit state transitions (Idle -> Processing -> Success) with a persistent count badge.

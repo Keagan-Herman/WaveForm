@@ -36,7 +36,8 @@ async function extractTags(file: File): Promise<RawMeta> {
   let coverObjectUrl: string | undefined;
   if (picture && picture.length > 0) {
     const pic = picture[0];
-    const blob = new Blob([pic.data], { type: pic.format });
+    // Cast pic.data as BlobPart to satisfy TypeScript
+    const blob = new Blob([pic.data as unknown as BlobPart], { type: pic.format });
     coverObjectUrl = URL.createObjectURL(blob);
   }
 

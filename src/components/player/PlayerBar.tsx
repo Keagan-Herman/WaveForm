@@ -100,7 +100,6 @@ export function PlayerBar() {
   } = usePlayerStore();
 
   const duration = currentTrack?.duration ?? 0;
-  const progress = duration > 0 ? currentTime / duration : 0;
 
   const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';

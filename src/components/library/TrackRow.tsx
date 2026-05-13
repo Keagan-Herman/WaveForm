@@ -29,16 +29,17 @@
 
 import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { formatDuration, type DeezerTrack } from '@/lib/deezerApi'
+import { formatDuration } from '@/lib/deezerApi'
 import { useUIStore } from '@/stores/uiStore'
+import { Track, getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
 
 interface TrackRowProps {
-  track: DeezerTrack
+  track: Track
   isActive: boolean
   isPlaying?: boolean
   isFocused?: boolean
   index: number
-  onSelect: (track: DeezerTrack, index: number) => void
+  onSelect: (track: Track, index: number) => void
   accentColour?: string
 }
 
@@ -93,9 +94,11 @@ export const TrackRow = React.memo(
     const handleArtistClick = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation()
-        useUIStore.getState().setSelectedArtistId(track.artist.id)
+        if (isDeezerTrack(track)) {
+          useUIStore.getState().setSelectedArtistId(track.artist.id)
+        }
       },
-      [track.artist.id]
+      [track]
     )
 
     const accentBg = `${accentColour}18`
@@ -120,7 +123,7 @@ export const TrackRow = React.memo(
         onClick={handleSelect}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        aria-label={`Play ${track.title} by ${track.artist.name}${track.explicit_lyrics ? ' (Explicit)' : ''}`}
+        aria-label={`Play ${track.title} by ${getTrackArtist(track)}${isDeezerTrack(track) && track.explicit_lyrics ? ' (Explicit)' : ''}`}
         aria-pressed={isActive}
       >
         <div style={styles.indexWrap}>
@@ -140,12 +143,12 @@ export const TrackRow = React.memo(
         <div style={styles.artWrap}>
           <motion.img
             layoutId={`album-${track.id}`}
-            src={track.album.cover_medium}
-            alt={track.album.title}
+            src={getTrackCover(track)}
+            alt={getTrackAlbum(track)}
             style={styles.albumArt}
             loading="lazy"
           />
-          {track.explicit_lyrics && (
+          {isDeezerTrack(track) && track.explicit_lyrics && (
             <div
               style={{
                 ...styles.explicitBadge,
@@ -171,11 +174,11 @@ export const TrackRow = React.memo(
             {track.title}
           </p>
           <p style={styles.artist} onClick={handleArtistClick}>
-            {track.artist.name}
+            {getTrackArtist(track)}
           </p>
         </div>
 
-        <p style={styles.album}>{track.album.title}</p>
+        <p style={styles.album}>{getTrackAlbum(track)}</p>
 
         <span style={styles.duration}>{formatDuration(track.duration)}</span>
       </button>

@@ -1,8 +1,9 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
-import { getArtist, getArtistTopTracks, type DeezerArtist, type DeezerTrack } from '@/lib/deezerApi'
+import { getArtist, getArtistTopTracks, type DeezerArtist } from '@/lib/deezerApi'
 import { TrackRow } from '@/components/library/TrackRow'
 import { usePlayerStore } from '@/stores/playerStore'
+import type { Track, DeezerTrack } from '@/types/track'
 
 interface ArtistPanelProps {
   artistId: number
@@ -16,8 +17,9 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   const [isLoading, setIsLoading] = useState(true)
 
   const setTrack = usePlayerStore(state => state.setTrack)
-  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
-  const setQueue = usePlayerStore(state => state.setQueue)
+  const play = usePlayerStore(state => state.play)
+  const addToQueue = usePlayerStore(state => state.addToQueue)
+  const clearQueue = usePlayerStore(state => state.clearQueue)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
 
@@ -49,10 +51,11 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
     }
   }, [artistId])
 
-  const handleSelectTrack = (track: DeezerTrack, index: number) => {
-    setQueue(tracks, index)
+  const handleSelectTrack = (track: Track) => {
+    clearQueue()
+    tracks.forEach(t => addToQueue(t as unknown as Track))
     setTrack(track)
-    setIsPlaying(true)
+    play()
   }
 
   return (

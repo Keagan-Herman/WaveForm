@@ -13,6 +13,7 @@ import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
+import { getTrackCover, getTrackArtist } from '@/types/track'
 
 interface FullscreenOverlayProps {
   accent: AlbumColour
@@ -129,11 +130,11 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 animate={{ opacity: 1, x: 0 }}
                 style={styles.nowPlaying}
               >
-                <img src={currentTrack.album.cover_medium} style={styles.nowPlayingArt} alt="" />
+                <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
                 <div style={styles.nowPlayingInfo}>
                   <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
                   <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
-                    {currentTrack.artist.name}
+                    {getTrackArtist(currentTrack)}
                   </div>
                 </div>
               </motion.div>

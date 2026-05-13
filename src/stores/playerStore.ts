@@ -28,6 +28,7 @@ interface PlayerStore {
   queue: Track[];
   currentTime: number;     // seconds — updated by PreviewPlayer on timeupdate
   localTrackCount: number; // derived: how many local tracks are in the queue
+  isTransitioning: boolean;
 
   // Playback
   setTrack: (track: Track) => void;
@@ -47,6 +48,7 @@ interface PlayerStore {
   removeLocalTrack: (id: string) => void;
   clearLocalTracks: () => void;
   updateLocalTrackDuration: (id: string, duration: number) => void;
+  playTrackByAlbumId: (albumId: number) => void;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -57,6 +59,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   queue: [],
   currentTime: 0,
   localTrackCount: 0,
+  isTransitioning: false,
 
   // ── Playback ──
 
@@ -150,6 +153,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         currentTime: currentIsLocal ? 0 : s.currentTime,
       };
     });
+  },
+
+  playTrackByAlbumId: (albumId) => {
+    const { queue } = get();
+    const track = queue.find((t) => t.source === 'deezer' && t.album.id === albumId);
+    if (track) {
+      set({ currentTrack: track, isPlaying: true, currentTime: 0 });
+    }
   },
 
   // Called by PreviewPlayer once the audio element fires loadedmetadata

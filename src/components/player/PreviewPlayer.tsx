@@ -107,6 +107,7 @@ export function PreviewPlayer() {
 
   return (
     <audio
+      id="preview-audio"
       ref={audioRef}
       preload="auto"
       crossOrigin="anonymous"   // Required for Web Audio API CORS
