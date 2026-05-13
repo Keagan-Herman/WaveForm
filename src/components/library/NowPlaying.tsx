@@ -60,7 +60,9 @@ export function NowPlaying({ accentColour }: NowPlayingProps) {
             <div style={styles.skeletonText} />
             <div style={{ ...styles.skeletonText, width: '60%', opacity: 0.5 }} />
           </div>
-          <p style={styles.emptyIcon}>◎</p>
+          <p style={styles.emptyIcon} aria-hidden="true">
+            ◎
+          </p>
           <p style={styles.emptyText}>Nothing playing</p>
         </motion.div>
       </AnimatePresence>

@@ -44,6 +44,7 @@ interface TrackRowProps {
 
 const PlayingBars = ({ color }: { color: string }) => (
   <div
+    aria-hidden="true"
     style={{
       display: 'flex',
       alignItems: 'flex-end',
@@ -127,7 +128,9 @@ export const TrackRow = React.memo(
             isPlaying ? (
               <PlayingBars color={accentColour} />
             ) : (
-              <span style={{ ...styles.playingIndicator, color: accentColour }}>▶</span>
+              <span style={{ ...styles.playingIndicator, color: accentColour }} aria-hidden="true">
+                ▶
+              </span>
             )
           ) : (
             <span style={styles.index}>{index + 1}</span>
