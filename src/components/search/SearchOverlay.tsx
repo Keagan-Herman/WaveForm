@@ -111,7 +111,9 @@ export function SearchOverlay({
     <div style={styles.panel}>
       {/* Search input */}
       <div style={styles.inputWrap}>
-        <span style={styles.searchIcon}>⌕</span>
+        <span style={styles.searchIcon} aria-hidden="true">
+          ⌕
+        </span>
         <input
           ref={inputRef}
           style={styles.input}
@@ -158,7 +160,9 @@ export function SearchOverlay({
       <div style={styles.results} role="list">
         {!query.trim() && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>♫</p>
+            <p style={styles.stateIcon} aria-hidden="true">
+              ♫
+            </p>
             <p style={styles.stateTitle}>Find something to play</p>
             <p style={styles.stateDesc}>All results include a 30-second preview.</p>
           </div>
@@ -180,7 +184,9 @@ export function SearchOverlay({
 
         {error && !isLoading && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>⚠</p>
+            <p style={styles.stateIcon} aria-hidden="true">
+              ⚠
+            </p>
             <p style={styles.stateTitle}>Something went wrong</p>
             <p style={styles.stateDesc}>{error}</p>
           </div>
@@ -188,7 +194,9 @@ export function SearchOverlay({
 
         {!isLoading && !error && tracks.length === 0 && query.trim() && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>∅</p>
+            <p style={styles.stateIcon} aria-hidden="true">
+              ∅
+            </p>
             <p style={styles.stateTitle}>No results found</p>
             <p style={styles.stateDesc}>Try a different search term.</p>
           </div>
@@ -197,7 +205,9 @@ export function SearchOverlay({
         {/* Filtered empty state */}
         {!isLoading && !error && isFiltered && visibleTracks.length === 0 && tracks.length > 0 && (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>∅</p>
+            <p style={styles.stateIcon} aria-hidden="true">
+              ∅
+            </p>
             <p style={styles.stateTitle}>No tracks in this genre</p>
             <p style={styles.stateDesc}>Click the genre again to clear the filter.</p>
           </div>

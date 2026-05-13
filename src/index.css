@@ -64,7 +64,7 @@ body {
 
 /* Focus ring — visible for keyboard navigation */
 :focus-visible {
-  outline: 1px solid rgba(29, 185, 84, 0.6);
+  outline: 2px solid var(--accent-color, rgba(29, 185, 84, 0.6));
   outline-offset: 2px;
   border-radius: 2px;
 }

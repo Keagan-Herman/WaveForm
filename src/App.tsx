@@ -171,7 +171,17 @@ function Waveform() {
   const toggleLowQuality = useVisualiserStore(state => state.toggleLowQuality)
 
   const isPlaying = usePlayerStore(state => state.isPlaying)
+  const currentTrack = usePlayerStore(state => state.currentTrack)
   const selectedArtistId = useUIStore(state => state.selectedArtistId)
+
+  useEffect(() => {
+    if (!currentTrack) {
+      document.title = 'Waveform'
+      return
+    }
+    const status = isPlaying ? '▶' : '⏸'
+    document.title = `${status} ${currentTrack.title} · ${currentTrack.artist.name} | Waveform`
+  }, [currentTrack, isPlaying])
 
   useEffect(() => {
     const played = sessionStorage.getItem('waveform_intro_played')

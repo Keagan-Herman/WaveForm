@@ -5,3 +5,7 @@
 ## 2026-05-20 - [Metadata Consistency Across Views]
 **Learning:** Users expect consistent information cues across different parts of the interface that represent the same data. Missing a critical metadata indicator (like 'Explicit' labels) in search results that is present in 'Now Playing' can lead to confusion or unintended playback of content.
 **Action:** Identify core metadata for data objects and ensure consistent visual and accessibility markers across all list, grid, and detail views.
+
+## 2026-05-24 - [Global Accessibility and Dynamic Context]
+**Learning:** In a dynamically themed application, hardcoded focus rings (like the legacy green) break visual harmony. Using CSS variables for `:focus-visible` ensures accessibility remains integrated with the current aesthetic. Additionally, media applications benefit greatly from document title state (Play/Pause) as it provides immediate context in the browser's tab list.
+**Action:** Always link global interaction styles (focus, selection) to the theme engine and leverage document title for ambient status updates.
