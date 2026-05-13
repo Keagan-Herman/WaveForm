@@ -50,19 +50,17 @@ export function FrequencyBars({
     const { h: hue, s: sat, l: lit } = accentRef.current
     const isLight = lit > 62
 
+    const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
+    const drawCount = mirrorMode ? bins * 2 : bins
+    const barWidth = Math.max(1, w / drawCount - 1.5)
+
     ctx.clearRect(0, 0, w, h)
 
-    const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
-    const barWidth = Math.max(1, w / (mirrorMode ? data.length : bins) - 1.5)
-
-    const processedData = mirrorMode
-      ? [...[...data.slice(0, bins)].reverse(), ...data.slice(0, bins)]
-      : data.slice(0, bins)
-
-    const drawCount = processedData.length
-
     for (let i = 0; i < drawCount; i++) {
-      const value = processedData[i]
+      // PERFORMANCE: Avoid array slicing, spreading, and reversing in the hot path (60fps).
+      // Use direct index mapping into the source buffer instead.
+      const dataIdx = mirrorMode ? (i < bins ? bins - 1 - i : i - bins) : i
+      const value = data[dataIdx]
       const barHeight = (value / 255) * (h * 0.7)
       const ratio = value / 255
       const x = i * (barWidth + 1.5)
@@ -117,7 +115,7 @@ export function FrequencyBars({
       ctx.fillRect(x, -barHeight * 0.4, barWidth, barHeight * 0.4)
       ctx.restore()
     }
-  }, [])
+  }, [mirrorMode])
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: drawBars })
 
