@@ -1,257 +1,341 @@
-/**
- * PlayerBar.tsx
- *
- * Fixed bottom bar with playback controls.
- * Reads from playerStore — does not own any audio logic.
- * All interactions go through the store; PreviewPlayer reacts to store changes.
- */
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { usePlayerStore } from '../../stores/playerStore';
+import { WaveformLine } from '../visualiser/WaveformLine';
+import { LocalFileLoader } from './LocalFileLoader';
+import { getTrackCover, getTrackArtist, isLocalTrack } from '../../types/track';
 
-/**
- * PlayerBar.tsx — Deezer version
- *
- * Changes from Spotify version:
- * - formatDuration now receives seconds (Deezer) not milliseconds (Spotify)
- * - artist name: track.artist.name instead of track.artists.map(...)
- * - album art: track.album.cover_medium instead of getAlbumArt helper
- */
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-/**
- * PlayerBar.tsx — enhanced
- *
- * Added accentColour prop for dynamic theming.
- * Play button, progress bar, and album art pulse all use the accent colour.
- * Contrast improved throughout.
- */
-
-import React from 'react'
-import { motion } from 'framer-motion'
-import { useCallback } from 'react'
-import { usePlayerStore } from '@/stores/playerStore'
-import { useVisualiserStore } from '@/stores/visualiserStore'
-import { formatDuration } from '@/lib/deezerApi'
-import { WaveformScrubber } from './WaveformScrubber'
-
-interface PlayerBarProps {
-  accentColour?: string
+function IconPrev() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M3 3.5L3 12.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M13 3.5L6 8L13 12.5V3.5Z" fill="currentColor" />
+    </svg>
+  );
 }
 
-export function PlayerBar({ accentColour = '#1db954' }: PlayerBarProps) {
-  const currentTrack = usePlayerStore(state => state.currentTrack)
-  const isPlaying = usePlayerStore(state => state.isPlaying)
-  const isLoading = usePlayerStore(state => state.isLoading)
-  const progress = usePlayerStore(state => state.progress)
-  const duration = usePlayerStore(state => state.duration)
-  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
-  const nextTrack = usePlayerStore(state => state.nextTrack)
-  const prevTrack = usePlayerStore(state => state.prevTrack)
-  const queue = usePlayerStore(state => state.queue)
-  const queueIndex = usePlayerStore(state => state.queueIndex)
+function IconNext() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M13 3.5L13 12.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M3 3.5L10 8L3 12.5V3.5Z" fill="currentColor" />
+    </svg>
+  );
+}
 
-  const beat = useVisualiserStore(state => state.beat)
+function IconPlay() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M4 2.5L14 9L4 15.5V2.5Z" fill="currentColor" />
+    </svg>
+  );
+}
 
-  const handlePlayPause = useCallback(() => {
-    if (!currentTrack) return
-    setIsPlaying(!isPlaying)
-  }, [currentTrack, isPlaying, setIsPlaying])
+function IconPause() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <rect x="4" y="2.5" width="3.5" height="13" rx="1" fill="currentColor" />
+      <rect x="10.5" y="2.5" width="3.5" height="13" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
 
-  const handleNext = useCallback(() => {
-    nextTrack()
-  }, [nextTrack])
-  const handlePrev = useCallback(() => {
-    prevTrack()
-  }, [prevTrack])
+// ─── Time formatter ───────────────────────────────────────────────────────────
 
-  const canPrev = queueIndex > 0
-  const canNext = queueIndex < queue.length - 1
-  const currentTime = duration * progress
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
-  if (!currentTrack) return null
+// ─── Control button ───────────────────────────────────────────────────────────
+
+interface ControlBtnProps {
+  onClick: () => void;
+  children: React.ReactNode;
+  label: string;
+  large?: boolean;
+}
+
+function ControlBtn({ onClick, children, label, large = false }: ControlBtnProps) {
+  return (
+    <motion.button
+      onClick={onClick}
+      aria-label={label}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: large ? 40 : 32,
+        height: large ? 40 : 32,
+        borderRadius: '50%',
+        border: 'none',
+        background: large ? '#1db954' : 'transparent',
+        color: large ? '#050e05' : 'rgba(255,255,255,0.75)',
+        cursor: 'pointer',
+        flexShrink: 0,
+        transition: 'background 0.15s, color 0.15s',
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+// ─── PlayerBar ────────────────────────────────────────────────────────────────
+
+export function PlayerBar() {
+  const {
+    currentTrack,
+    isPlaying,
+    currentTime,
+    togglePlay,
+    nextTrack,
+    prevTrack,
+  } = usePlayerStore();
+
+  const duration = currentTrack?.duration ?? 0;
+  const progress = duration > 0 ? currentTime / duration : 0;
+
+  const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
+  const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
+  const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
 
   return (
-    <div style={styles.bar}>
-      {/* Waveform Scrubber */}
-      <div style={styles.progressTrack}>
-        <WaveformScrubber width={window.innerWidth} height={16} accentColour={accentColour} />
+    <motion.div
+      initial={{ y: 80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 72,
+        background: 'rgba(5, 10, 5, 0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(29, 185, 84, 0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '0 20px',
+        zIndex: 200,
+      }}
+    >
+      {/* ── Track info ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          width: 220,
+          flexShrink: 0,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Album art */}
+        <AnimatePresence mode="popLayout">
+          {trackCover ? (
+            <motion.img
+              key={trackCover}
+              src={trackCover}
+              alt="Album art"
+              width={44}
+              height={44}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              style={{
+                borderRadius: 4,
+                objectFit: 'cover',
+                flexShrink: 0,
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            />
+          ) : (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 4,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                <circle cx="8" cy="8" r="2" fill="rgba(255,255,255,0.2)" />
+              </svg>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Title + artist */}
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <AnimatePresence mode="popLayout">
+            {currentTrack ? (
+              <motion.div
+                key={currentTrack.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#e8f5e8',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    margin: 0,
+                    lineHeight: 1.3,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {currentTrack.title}
+                </p>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: 'rgba(232, 245, 232, 0.45)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    margin: 0,
+                    lineHeight: 1.3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {isLocal && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontFamily: 'monospace',
+                        background: 'rgba(29, 185, 84, 0.15)',
+                        color: '#1db954',
+                        padding: '1px 4px',
+                        borderRadius: 3,
+                        letterSpacing: '0.05em',
+                        flexShrink: 0,
+                      }}
+                    >
+                      LOCAL
+                    </span>
+                  )}
+                  {trackArtist}
+                </p>
+              </motion.div>
+            ) : (
+              <motion.p
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(232, 245, 232, 0.25)',
+                  margin: 0,
+                  fontStyle: 'italic',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Nothing playing
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      <div style={styles.inner}>
-        {/* Track info */}
-        <div style={styles.trackInfo}>
-          <motion.img
-            layoutId={`album-${currentTrack.id}`}
-            src={currentTrack.album.cover_medium}
-            alt={currentTrack.album.title}
-            style={{
-              ...styles.albumArt,
-              transform: beat && isPlaying ? 'scale(1.06)' : 'scale(1)',
-              boxShadow: `0 4px 16px rgba(0,0,0,0.5)`,
-              transition: 'transform 0.1s',
-            }}
-          />
-          <div style={styles.trackText}>
-            <p style={styles.trackName}>{currentTrack.title}</p>
-            <p style={{ ...styles.trackArtist, color: `${accentColour}cc` }}>
-              {currentTrack.artist.name}
-            </p>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div style={styles.controls}>
-          <button
-            style={{ ...styles.controlBtn, opacity: canPrev ? 0.7 : 0.2 }}
-            onClick={handlePrev}
-            disabled={!canPrev}
-            aria-label="Previous track"
-            title="Previous track (←)"
-          >
-            ⏮
-          </button>
-          <button
-            style={{
-              ...styles.playBtn,
-              background: accentColour,
-              boxShadow: `0 0 20px ${accentColour}66`,
-            }}
-            onClick={handlePlayPause}
-            aria-label={isLoading ? 'Loading track' : isPlaying ? 'Pause' : 'Play'}
-            aria-busy={isLoading}
-            title={isLoading ? 'Loading track' : isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-          >
-            {isLoading ? '…' : isPlaying ? '⏸' : '▶'}
-          </button>
-          <button
-            style={{ ...styles.controlBtn, opacity: canNext ? 0.7 : 0.2 }}
-            onClick={handleNext}
-            disabled={!canNext}
-            aria-label="Next track"
-            title="Next track (→)"
-          >
-            ⏭
-          </button>
-        </div>
-
-        {/* Time */}
-        <div style={styles.time}>
-          <span style={styles.timeText}>{formatDuration(Math.floor(currentTime))} / 30</span>
-          <span style={styles.previewLabel}>30s preview</span>
-        </div>
+      {/* ── Controls ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          flexShrink: 0,
+        }}
+      >
+        <ControlBtn onClick={prevTrack} label="Previous track">
+          <IconPrev />
+        </ControlBtn>
+        <ControlBtn onClick={togglePlay} label={isPlaying ? 'Pause' : 'Play'} large>
+          {isPlaying ? <IconPause /> : <IconPlay />}
+        </ControlBtn>
+        <ControlBtn onClick={nextTrack} label="Next track">
+          <IconNext />
+        </ControlBtn>
       </div>
-    </div>
-  )
-}
 
-const styles: Record<string, React.CSSProperties> = {
-  bar: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    background: 'rgba(5,8,5,0.95)',
-    backdropFilter: 'blur(24px)',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-    zIndex: 50,
-  },
-  progressTrack: {
-    height: 2,
-    background: 'rgba(255,255,255,0.08)',
-    position: 'relative',
-  },
-  progressFill: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: '100%',
-    borderRadius: 1,
-  },
-  inner: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0.65rem 2rem',
-    gap: '1rem',
-  },
-  trackInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    flex: 1,
-    minWidth: 0,
-  },
-  albumArt: {
-    width: 42,
-    height: 42,
-    borderRadius: '4px',
-    flexShrink: 0,
-    objectFit: 'cover',
-  },
-  trackText: { minWidth: 0 },
-  trackName: {
-    fontSize: '0.85rem',
-    fontFamily: 'monospace',
-    color: '#f0f0f0',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    marginBottom: '0.18rem',
-  },
-  trackArtist: {
-    fontSize: '0.72rem',
-    fontFamily: 'monospace',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    transition: 'color 1s ease',
-  },
-  controls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    flexShrink: 0,
-  },
-  controlBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#f0f0f0',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    padding: '0.25rem',
-    lineHeight: 1,
-  },
-  playBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: '50%',
-    border: 'none',
-    color: '#050e05',
-    fontSize: '0.95rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 700,
-    flexShrink: 0,
-    transition: 'background 1s ease, box-shadow 1s ease',
-  },
-  time: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: '0.15rem',
-    flex: 1,
-    minWidth: 0,
-  },
-  timeText: {
-    fontFamily: 'monospace',
-    fontSize: '0.75rem',
-    opacity: 0.55,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  previewLabel: {
-    fontFamily: 'monospace',
-    fontSize: '0.65rem',
-    letterSpacing: '0.1em',
-    opacity: 0.25,
-    textTransform: 'uppercase',
-  },
+      {/* ── Waveform + time ── */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          minWidth: 0,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            fontFamily: 'monospace',
+            color: 'rgba(232, 245, 232, 0.4)',
+            flexShrink: 0,
+            width: 32,
+            textAlign: 'right',
+          }}
+        >
+          {formatTime(currentTime)}
+        </span>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <WaveformLine height={36} />
+        </div>
+
+        <span
+          style={{
+            fontSize: 11,
+            fontFamily: 'monospace',
+            color: 'rgba(232, 245, 232, 0.4)',
+            flexShrink: 0,
+            width: 32,
+          }}
+        >
+          {duration > 0 ? formatTime(duration) : '--:--'}
+        </span>
+      </div>
+
+      {/* ── Right controls: upload button ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexShrink: 0,
+        }}
+      >
+        <LocalFileLoader />
+      </div>
+    </motion.div>
+  );
 }

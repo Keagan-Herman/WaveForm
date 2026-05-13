@@ -1,147 +1,117 @@
-/**
- * PreviewPlayer.tsx
- *
- * A hidden <audio> element that owns all playback concerns.
- * This is NOT a visible UI component — it has no rendered output.
- * Mount it once at the app root and forget about it.
- *
- * RESPONSIBILITIES:
- * - Owns the HTMLAudioElement ref
- * - Initialises AudioEngine on first user-triggered play
- * - Responds to playerStore state changes (track, isPlaying)
- * - Updates playerStore with progress and duration
- * - Handles track end → auto-advance to next in queue
- * - Starts/stops the rAF analyser loop with playback
- *
- * DESIGN DECISION:
- * The audio element is managed by ref, not state. Putting it in state
- * would cause unnecessary re-renders. All interaction is imperative.
- *
- * CROSSORIGIN:
- * The crossOrigin="anonymous" attribute is required for Web Audio API
- * to process audio from a different origin (Spotify's CDN). Without it,
- * the browser blocks the AudioContext from reading the stream.
- */
+import { useEffect, useRef } from 'react';
+import { usePlayerStore } from '../../stores/playerStore';
+import { audioEngine } from '../../audio/AudioEngine';
 
 /**
- * PreviewPlayer.tsx — Deezer version
+ * PreviewPlayer — the hidden <audio> element that drives all playback.
  *
- * One change from Spotify version:
- * - track.preview_url → track.preview (Deezer's field name)
+ * Responsibilities:
+ * - Reflects playerStore.isPlaying into audio.play() / audio.pause()
+ * - Fires setCurrentTime on timeupdate (used by WaveformLine scrubber)
+ * - On loadedmetadata for local tracks, fires updateLocalTrackDuration
+ * - Initialises AudioEngine on first user-gesture play
  *
- * Everything else is identical — the audio engine wiring,
- * the rAF loop management, the event handlers.
+ * Both Deezer and local tracks are played via track.preview, which is:
+ *   - Deezer: a 30-second CDN preview URL
+ *   - Local:  a blob: URL (URL.createObjectURL(file))
  */
-
-import { useRef, useEffect, useCallback } from 'react'
-import { audioEngine } from '@/audio/AudioEngine'
-import { usePlayerStore } from '@/stores/playerStore'
-import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
-
 export function PreviewPlayer() {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const engineInitialised = useRef(false)
-  const { start: startAnalyser, stop: stopAnalyser } = useAudioAnalyser()
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const engineInitialised = useRef(false);
 
-  const currentTrack = usePlayerStore(state => state.currentTrack)
-  const isPlaying = usePlayerStore(state => state.isPlaying)
-  const setIsPlaying = usePlayerStore(state => state.setIsPlaying)
-  const setIsLoading = usePlayerStore(state => state.setIsLoading)
-  const setProgress = usePlayerStore(state => state.setProgress)
-  const setDuration = usePlayerStore(state => state.setDuration)
-  const nextTrack = usePlayerStore(state => state.nextTrack)
+  const {
+    currentTrack,
+    isPlaying,
+    setCurrentTime,
+    pause,
+    nextTrack,
+    updateLocalTrackDuration,
+  } = usePlayerStore();
 
-  const ensureEngineInitialised = useCallback(async () => {
-    if (engineInitialised.current) return
-    if (!audioRef.current) return
-    audioEngine.init(audioRef.current)
-    await audioEngine.resume()
-    engineInitialised.current = true
-  }, [])
+  // ── Audio engine initialisation ──────────────────────────────────────────
 
-  // React to track changes
-  useEffect(() => {
-    const audio = audioRef.current
-    // Deezer uses `preview` not `preview_url`
-    if (!audio || !currentTrack?.preview) return
-
-    audio.src = currentTrack.preview
-    audio.load()
-
-    if (isPlaying) {
-      ensureEngineInitialised().then(() => {
-        audio.play().catch(err => {
-          console.warn('Autoplay prevented:', err)
-          setIsPlaying(false)
-        })
-      })
+  const ensureEngine = () => {
+    if (!engineInitialised.current && audioRef.current) {
+      audioEngine.init(audioRef.current);
+      engineInitialised.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack?.id])
+    audioEngine.resume();
+  };
 
-  // React to play/pause
+  // ── Sync track source ────────────────────────────────────────────────────
+
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !currentTrack?.preview) return
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!currentTrack) {
+      audio.src = '';
+      return;
+    }
+
+    // .preview is the canonical audio URL for both Deezer and local tracks
+    if (audio.src !== currentTrack.preview) {
+      audio.src = currentTrack.preview;
+      audio.load();
+    }
+  }, [currentTrack?.preview]);
+
+  // ── Sync play/pause ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
 
     if (isPlaying) {
-      ensureEngineInitialised().then(async () => {
-        try {
-          await audio.play()
-          startAnalyser()
-        } catch (err) {
-          console.warn('Play failed:', err)
-          setIsPlaying(false)
-        }
-      })
+      ensureEngine();
+      audio.play().catch(() => {
+        // Autoplay blocked — flip store back to paused
+        pause();
+      });
     } else {
-      audio.pause()
-      stopAnalyser()
+      audio.pause();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying])
+  }, [isPlaying, currentTrack?.preview]);
 
-  // Audio element events
+  // ── Event listeners ──────────────────────────────────────────────────────
+
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    const onLoadStart = () => setIsLoading(true)
-    const onCanPlay = () => {
-      setIsLoading(false)
-      setDuration(audio.duration || 30)
-    }
     const onTimeUpdate = () => {
-      const dur = audio.duration || 30
-      setProgress(audio.currentTime / dur)
-    }
-    const onEnded = () => {
-      stopAnalyser()
-      const next = nextTrack()
-      if (!next) {
-        setIsPlaying(false)
-        setProgress(0)
-      }
-    }
-    const onError = () => {
-      setIsLoading(false)
-      setIsPlaying(false)
-    }
+      setCurrentTime(audio.currentTime);
+    };
 
-    audio.addEventListener('loadstart', onLoadStart)
-    audio.addEventListener('canplay', onCanPlay)
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('error', onError)
+    const onLoadedMetadata = () => {
+      // For local tracks whose duration was placeholder 0, update it now
+      if (currentTrack?.source === 'local' && currentTrack.duration === 0) {
+        updateLocalTrackDuration(currentTrack.id as string, audio.duration);
+      }
+    };
+
+    const onEnded = () => {
+      nextTrack();
+    };
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
 
     return () => {
-      audio.removeEventListener('loadstart', onLoadStart)
-      audio.removeEventListener('canplay', onCanPlay)
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('error', onError)
-    }
-  }, [setIsLoading, setDuration, setProgress, setIsPlaying, nextTrack, stopAnalyser])
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [currentTrack?.id]);
 
-  return <audio ref={audioRef} crossOrigin="anonymous" preload="none" style={{ display: 'none' }} />
+  return (
+    <audio
+      ref={audioRef}
+      preload="auto"
+      crossOrigin="anonymous"   // Required for Web Audio API CORS
+      style={{ display: 'none' }}
+      aria-hidden="true"
+    />
+  );
 }

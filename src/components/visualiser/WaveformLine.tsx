@@ -1,98 +1,189 @@
-/**
- * WaveformLine.tsx
- *
- * Scrolling time-domain waveform visualiser.
- * Uses getByteTimeDomainData — values are 0–255 where 128 = silence.
- *
- * Renders as a continuous line that draws left to right across the canvas.
- * Looks like an oscilloscope trace. Distinct from the frequency bars —
- * this shows the actual waveform shape of the audio signal.
- */
+import { useEffect, useRef } from 'react';
+import { audioEngine } from '../../audio/AudioEngine';
+import { usePlayerStore } from '../../stores/playerStore';
+import { isLocalTrack } from '../../types/track';
 
-import { useRef, useEffect, useCallback } from 'react'
-import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
+// ─── Colours ──────────────────────────────────────────────────────────────────
 
-interface WaveformLineProps {
-  width?: number
-  height?: number
-  lineColor?: string
-  lineWidth?: number
-  className?: string
+const GREEN = '#1db954';
+const GREEN_PLAYED = 'rgba(29, 185, 84, 0.9)';
+const GREEN_UNPLAYED = 'rgba(29, 185, 84, 0.28)';
+const PLAYHEAD = 'rgba(255, 255, 255, 0.9)';
+const PLAYHEAD_GLOW = 'rgba(255, 255, 255, 0.2)';
+
+// ─── Drawing routines ─────────────────────────────────────────────────────────
+
+function drawLiveOscilloscope(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  const data = audioEngine.getWaveformData();
+  ctx.clearRect(0, 0, width, height);
+
+  ctx.beginPath();
+  ctx.strokeStyle = GREEN;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+
+  const sliceWidth = width / data.length;
+  let x = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const v = data[i] / 128.0; // 0–2
+    const y = (v / 2) * height;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    x += sliceWidth;
+  }
+
+  ctx.lineTo(width, height / 2);
+  ctx.stroke();
 }
 
-export function WaveformLine({
-  width = 800,
-  height = 100,
-  lineColor = '#1db954',
-  lineWidth = 2,
-  className,
-}: WaveformLineProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+function drawStaticWaveform(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  waveform: Float32Array,
+  progress: number // 0–1
+) {
+  ctx.clearRect(0, 0, width, height);
 
-  const drawWaveform = useCallback(
-    (data: Uint8Array) => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
+  const centerY = height / 2;
+  const barWidth = width / waveform.length;
+  const playheadX = progress * width;
 
-      const { width: w, height: h } = canvas
-      ctx.clearRect(0, 0, w, h)
+  // ── Bars ──
+  for (let i = 0; i < waveform.length; i++) {
+    const x = i * barWidth;
+    const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
+    const isPlayed = x <= playheadX;
 
-      // Subtle centre line
-      ctx.strokeStyle = `${lineColor}22`
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(0, h / 2)
-      ctx.lineTo(w, h / 2)
-      ctx.stroke()
+    ctx.fillStyle = isPlayed ? GREEN_PLAYED : GREEN_UNPLAYED;
 
-      // Waveform line
-      ctx.lineWidth = lineWidth
-      ctx.strokeStyle = lineColor
-      ctx.shadowColor = lineColor
-      ctx.shadowBlur = 6
-      ctx.beginPath()
+    // Mirror above and below centre
+    ctx.fillRect(x, centerY - barHeight, Math.max(1, barWidth - 0.8), barHeight);
+    ctx.fillRect(x, centerY, Math.max(1, barWidth - 0.8), barHeight);
+  }
 
-      const sliceWidth = w / data.length
+  // ── Playhead ──
+  if (progress > 0) {
+    // Glow
+    ctx.beginPath();
+    ctx.strokeStyle = PLAYHEAD_GLOW;
+    ctx.lineWidth = 5;
+    ctx.moveTo(playheadX, 0);
+    ctx.lineTo(playheadX, height);
+    ctx.stroke();
 
-      for (let i = 0; i < data.length; i++) {
-        // data[i] is 0–255; 128 = zero crossing (silence)
-        const v = data[i] / 128 - 1 // normalise to -1 → +1
-        const y = (v * h) / 2 + h / 2 // map to canvas y
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = PLAYHEAD;
+    ctx.lineWidth = 1.5;
+    ctx.moveTo(playheadX, 0);
+    ctx.lineTo(playheadX, height);
+    ctx.stroke();
 
-        if (i === 0) {
-          ctx.moveTo(0, y)
-        } else {
-          ctx.lineTo(i * sliceWidth, y)
-        }
-      }
+    // Pip at top and bottom
+    ctx.fillStyle = PLAYHEAD;
+    ctx.beginPath();
+    ctx.arc(playheadX, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(playheadX, height, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
-      ctx.lineTo(w, h / 2)
-      ctx.stroke()
+// ─── Component ────────────────────────────────────────────────────────────────
 
-      // Reset shadow so it doesn't bleed onto other canvas draws
-      ctx.shadowBlur = 0
-    },
-    [lineColor, lineWidth]
-  )
+interface WaveformLineProps {
+  height?: number;
+}
 
-  const { start, stop } = useAudioAnalyser({
-    onWaveformData: drawWaveform,
-  })
+export function WaveformLine({ height = 48 }: WaveformLineProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>();
+  const sizeRef = useRef({ width: 300, height });
+
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
+
+  // ── Resize observer — keeps canvas in sync with flex container width ──
 
   useEffect(() => {
-    start()
-    return () => stop()
-  }, [start, stop])
+    const wrapper = wrapperRef.current;
+    const canvas = canvasRef.current;
+    if (!wrapper || !canvas) return;
+
+    const dpr = window.devicePixelRatio ?? 1;
+    const ctx = canvas.getContext('2d')!;
+
+    const applySize = (w: number) => {
+      sizeRef.current = { width: w, height };
+      canvas.width = w * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 300;
+      if (Math.abs(w - sizeRef.current.width) > 1) applySize(w);
+    });
+
+    ro.observe(wrapper);
+    applySize(wrapper.getBoundingClientRect().width || 300);
+
+    return () => ro.disconnect();
+  }, [height]);
+
+  // ── rAF draw loop ──
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+
+    function draw() {
+      const { width, height: h } = sizeRef.current;
+      const { currentTrack, currentTime } = usePlayerStore.getState();
+      const localTrack =
+        currentTrack !== null && isLocalTrack(currentTrack) ? currentTrack : null;
+      const wf = localTrack?.waveform;
+      const dur = currentTrack?.duration ?? 0;
+
+      ctx.clearRect(0, 0, width, h);
+
+      if (wf && wf.length > 0) {
+        const progress = dur > 0 ? Math.min(1, currentTime / dur) : 0;
+        drawStaticWaveform(ctx, width, h, wf, progress);
+      } else {
+        drawLiveOscilloscope(ctx, width, h);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    return () => {
+      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className={className}
-      style={{ display: 'block' }}
-    />
-  )
+    <div ref={wrapperRef} style={{ width: '100%', height }}>
+      <canvas
+        ref={canvasRef}
+        aria-label={
+          isLocal ? 'Static waveform — pre-computed from local file' : 'Live audio waveform'
+        }
+        style={{ display: 'block' }}
+      />
+    </div>
+  );
 }
