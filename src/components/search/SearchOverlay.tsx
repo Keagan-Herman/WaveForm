@@ -106,7 +106,8 @@ export function SearchOverlay({
   }, [focusedIndex])
 
   useEffect(() => {
-    setFocusedIndex(-1)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFocusedIndex(prev => (prev === -1 ? prev : -1))
   }, [query, filteredTrackIds])
 
   return (

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import butterchurn from 'butterchurn'
+import butterchurn, { type Visualizer } from 'butterchurn'
 import butterchurnPresets from 'butterchurn-presets'
 import { audioEngine } from '@/audio/AudioEngine'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -12,7 +12,11 @@ interface ButterchurnVisualiserProps {
 export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const visualizerRef = useRef<any>(null)
+  const visualizerRef = useRef<{
+    visualizer: Visualizer
+    presets: string[]
+    allPresets: Record<string, unknown>
+  } | null>(null)
   const hasInitialisedRef = useRef(false)
   const frameIdRef = useRef<number>()
   const { width, height } = useResize(containerRef)
@@ -33,11 +37,11 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
 
     hasInitialisedRef.current = true
 
-    let visualizer: any
+    let visualizer: Visualizer
     try {
       // Handle ESM default import variations
-      const createVisualizer =
-        (butterchurn as any).default?.createVisualizer || butterchurn.createVisualizer
+      // @ts-expect-error - butterchurn types and ESM interop are messy
+      const createVisualizer = butterchurn.default?.createVisualizer || butterchurn.createVisualizer
 
       if (typeof createVisualizer !== 'function') {
         throw new Error('butterchurn.createVisualizer is not a function')

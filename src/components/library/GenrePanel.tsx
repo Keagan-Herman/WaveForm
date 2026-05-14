@@ -55,7 +55,8 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: Ge
   )
 
   useEffect(() => {
-    setActiveGenre(null)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveGenre(prev => (prev === null ? prev : null))
     onFilteredTracksChange?.(null)
   }, [tracks, onFilteredTracksChange])
 

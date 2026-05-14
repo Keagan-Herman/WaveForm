@@ -25,7 +25,8 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
 
   useEffect(() => {
     let mounted = true
-    setIsLoading(true)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(prev => (prev === true ? prev : true))
 
     async function loadData() {
       try {

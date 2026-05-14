@@ -1,5 +1,5 @@
 declare module 'butterchurn' {
-  interface VisualizerOptions {
+  export interface VisualizerOptions {
     width: number
     height: number
     pixelRatio?: number
@@ -8,12 +8,18 @@ declare module 'butterchurn' {
     meshHeight?: number
   }
 
-  interface Visualizer {
+  export interface Visualizer {
     connectAudio(audioNode: AnalyserNode): void
-    loadPreset(preset: any, blendTime: number): void
+    loadPreset(preset: unknown, blendTime: number): void
     render(): void
     setRendererSize(width: number, height: number): void
   }
+
+  export function createVisualizer(
+    audioContext: AudioContext,
+    canvas: HTMLCanvasElement,
+    options: VisualizerOptions
+  ): Visualizer
 
   const butterchurn: {
     createVisualizer(
@@ -28,7 +34,7 @@ declare module 'butterchurn' {
 
 declare module 'butterchurn-presets' {
   const presets: {
-    getPresets(): { [key: string]: any }
+    getPresets(): Record<string, unknown>
   }
   export default presets
 }

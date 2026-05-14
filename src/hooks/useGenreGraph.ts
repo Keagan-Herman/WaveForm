@@ -31,7 +31,8 @@ export function useGenreGraph(tracks: DeezerTrack[]) {
 
   useEffect(() => {
     if (tracks.length === 0) {
-      setGraphData(EMPTY_GRAPH)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGraphData(prev => (prev === EMPTY_GRAPH ? prev : EMPTY_GRAPH))
       return
     }
 
@@ -72,7 +73,7 @@ export function useGenreGraph(tracks: DeezerTrack[]) {
         setGraphData(graph)
       } catch (err) {
         console.warn('Genre graph fetch failed:', err)
-        setGraphData(EMPTY_GRAPH)
+        setGraphData(prev => (prev === EMPTY_GRAPH ? prev : EMPTY_GRAPH))
       } finally {
         if (!abortRef.current) setIsLoading(false)
       }

@@ -142,26 +142,29 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const colorMixRef = useRef(0)
 
-  const freqData = useMemo(() => new Uint8Array(128), [])
-  const freqTexture = useMemo(() => {
-    const tex = new THREE.DataTexture(freqData, 128, 1, THREE.RedFormat)
-    tex.needsUpdate = true
-    return tex
-  }, [freqData])
+  const freqDataRef = useRef(new Uint8Array(128))
+  const freqTextureRef = useRef<THREE.DataTexture | null>(null)
+
+  /* eslint-disable react-hooks/rules-of-hooks, react-hooks/refs */
+  if (!freqTextureRef.current) {
+    freqTextureRef.current = new THREE.DataTexture(freqDataRef.current, 128, 1, THREE.RedFormat)
+    freqTextureRef.current.needsUpdate = true
+  }
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
       uBass: { value: 0 },
       uBeat: { value: 0 },
-      uFreq: { value: freqTexture },
+      uFreq: { value: freqTextureRef.current! },
       uColor1: { value: new THREE.Color(accent.palette.primary) },
       uColor2: { value: new THREE.Color(accent.palette.secondary) },
       uColor3: { value: new THREE.Color(accent.palette.accent) },
       uColorMix: { value: 0 },
     }),
-    [accent, freqTexture]
+    [accent.palette.primary, accent.palette.secondary, accent.palette.accent]
   )
+  /* eslint-enable react-hooks/rules-of-hooks, react-hooks/refs */
 
   useEffect(() => {
     if (materialRef.current) {
@@ -182,10 +185,10 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
     // Inertia for bass reactivity
     smoothedBass.current += (bassPower - smoothedBass.current) * 0.12
 
-    if (materialRef.current) {
+    if (materialRef.current && freqTextureRef.current) {
       // Sub-sample frequency data for smoother texture
-      freqData.set(data.subarray(0, 128))
-      freqTexture.needsUpdate = true
+      freqDataRef.current.set(data.subarray(0, 128))
+      freqTextureRef.current.needsUpdate = true
 
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = smoothedBass.current
