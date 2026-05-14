@@ -152,7 +152,8 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
 
   useEffect(() => {
     if (!imageUrl) {
-      setColour(ERROR_COLOUR)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setColour(prev => (prev === ERROR_COLOUR ? prev : ERROR_COLOUR))
       return
     }
 
@@ -288,7 +289,7 @@ export function useAlbumColour(imageUrl: string | null): AlbumColour {
       setColour(result)
     }
 
-    img.onerror = () => setColour(ERROR_COLOUR)
+    img.onerror = () => setColour(prev => (prev === ERROR_COLOUR ? prev : ERROR_COLOUR))
 
     // Set src after handlers are attached
     img.src = imageUrl

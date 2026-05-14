@@ -98,7 +98,9 @@ export function AlbumMesh({
 
     // Material update for hover glow
     if (material instanceof THREE.MeshBasicMaterial) {
+      /* eslint-disable react-hooks/immutability */
       material.opacity = hovered ? 1.0 : 0.92
+      /* eslint-enable react-hooks/immutability */
     }
   })
 

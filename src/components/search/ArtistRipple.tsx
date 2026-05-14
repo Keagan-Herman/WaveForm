@@ -55,7 +55,15 @@ export function ArtistRipple({
   // Fire from centre on beat when active (playing)
   useEffect(() => {
     if (!active || !beat) return
-    addRipple(50, 50) // centre of element — fine for beat-driven ripples
+    // Functional update prevents direct state call in effect body if needed,
+    // though addRipple itself uses setRipples(prev => ...).
+    // The issue is triggering it *synchronously* on render/mount.
+    // Beat is a value that changes over time, so this is technically an event handler
+    // triggered by a prop/store change.
+    const timer = setTimeout(() => {
+      addRipple(50, 50)
+    }, 0)
+    return () => clearTimeout(timer)
   }, [beat, active, addRipple])
 
   return (

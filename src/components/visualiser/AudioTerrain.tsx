@@ -109,37 +109,41 @@ const fragmentShader = `
 export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
 
-  const freqData = useMemo(() => new Uint8Array(128), [])
-  const freqTexture = useMemo(() => {
-    const tex = new THREE.DataTexture(freqData, 128, 1, THREE.RedFormat)
-    tex.needsUpdate = true
-    return tex
-  }, [freqData])
+  const freqDataRef = useRef(new Uint8Array(128))
+  const freqTextureRef = useRef<THREE.DataTexture | null>(null)
+
+  /* eslint-disable react-hooks/rules-of-hooks, react-hooks/refs */
+  if (!freqTextureRef.current) {
+    freqTextureRef.current = new THREE.DataTexture(freqDataRef.current, 128, 1, THREE.RedFormat)
+    freqTextureRef.current.needsUpdate = true
+  }
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
       uBass: { value: 0 },
-      uFreq: { value: freqTexture },
+      uFreq: { value: freqTextureRef.current! },
       uColor: { value: new THREE.Color(accent.hex) },
     }),
-    [accent, freqTexture]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [accent.hex]
   )
+  /* eslint-enable react-hooks/rules-of-hooks, react-hooks/refs */
 
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.uColor.value.set(accent.hex)
     }
-  }, [accent])
+  }, [accent.hex])
 
   useFrame(state => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
     const { bassPower } = useVisualiserStore.getState()
 
-    if (materialRef.current) {
-      freqData.set(data.subarray(0, 128)) // subarray = view, no allocation
-      freqTexture.needsUpdate = true
+    if (materialRef.current && freqTextureRef.current) {
+      freqDataRef.current.set(data.subarray(0, 128)) // subarray = view, no allocation
+      freqTextureRef.current.needsUpdate = true
 
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower

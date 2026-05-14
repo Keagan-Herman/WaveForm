@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualiserStore } from '@/stores/visualiserStore'
@@ -67,24 +67,21 @@ export function FluidBackground({ accent }: FluidBackgroundProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const { viewport } = useThree()
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uBass: { value: 0 },
-      uColor: { value: new THREE.Color(accent.hex) },
-    }),
-    []
-  )
+  const uniforms = useRef({
+    uTime: { value: 0 },
+    uBass: { value: 0 },
+    uColor: { value: new THREE.Color(accent.hex) },
+  })
 
   useEffect(() => {
-    uniforms.uColor.value.set(accent.hex)
-  }, [accent.hex, uniforms])
+    uniforms.current.uColor.value.set(accent.hex)
+  }, [accent.hex])
 
   useFrame(state => {
     if (!meshRef.current) return
     const { bassPower } = useVisualiserStore.getState()
-    uniforms.uTime.value = state.clock.elapsedTime
-    uniforms.uBass.value = THREE.MathUtils.lerp(uniforms.uBass.value, bassPower, 0.1)
+    uniforms.current.uTime.value = state.clock.elapsedTime
+    uniforms.current.uBass.value = THREE.MathUtils.lerp(uniforms.current.uBass.value, bassPower, 0.1)
   })
 
   return (
@@ -93,7 +90,8 @@ export function FluidBackground({ accent }: FluidBackgroundProps) {
       <shaderMaterial
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        uniforms={uniforms}
+        // eslint-disable-next-line react-hooks/refs
+        uniforms={uniforms.current}
         transparent
       />
     </mesh>

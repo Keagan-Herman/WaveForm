@@ -66,10 +66,15 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
 
   // Keep callback in a ref to avoid stale closures in D3 event handlers
   const onSelectRef = useRef(onSelectGenre)
-  onSelectRef.current = onSelectGenre
-
   const activeGenreRef = useRef(activeGenre)
-  activeGenreRef.current = activeGenre
+
+  useEffect(() => {
+    onSelectRef.current = onSelectGenre
+  }, [onSelectGenre])
+
+  useEffect(() => {
+    activeGenreRef.current = activeGenre
+  }, [activeGenre])
 
   // ── Initialise simulation once on mount ───────────────────────────────
   useEffect(() => {

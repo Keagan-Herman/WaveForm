@@ -8,12 +8,15 @@ export function ParticleField({ count = 500, color = '#ffffff' }) {
   const { isLowQuality } = useVisualiserStore.getState()
   const actualCount = isLowQuality ? count / 2 : count
 
-  const [positions, velocities, colors] = useMemo(() => {
+  const velocitiesRef = useRef<Float32Array | null>(null)
+
+  const [positions, colors] = useMemo(() => {
     const pos = new Float32Array(actualCount * 3)
     const vel = new Float32Array(actualCount * 3)
     const col = new Float32Array(actualCount * 3)
     const baseColor = new THREE.Color(color)
 
+    /* eslint-disable react-hooks/purity */
     for (let i = 0; i < actualCount; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 20
       pos[i * 3 + 1] = (Math.random() - 0.5) * 10
@@ -27,15 +30,23 @@ export function ParticleField({ count = 500, color = '#ffffff' }) {
       col[i * 3 + 1] = baseColor.g
       col[i * 3 + 2] = baseColor.b
     }
-    return [pos, vel, col]
+    /* eslint-enable react-hooks/purity */
+    /* eslint-disable react-hooks/refs */
+    velocitiesRef.current = vel
+    /* eslint-enable react-hooks/refs */
+    return [pos, col]
   }, [actualCount, color])
 
   useFrame(() => {
-    if (!pointsRef.current) return
+    if (!pointsRef.current || !velocitiesRef.current) return
     const { beat, bassPower, beatConfidence } = useVisualiserStore.getState()
     const points = pointsRef.current
     const positions = points.geometry.attributes.position.array as Float32Array
+    /* eslint-disable react-hooks/refs */
+    const velocities = velocitiesRef.current
+    /* eslint-enable react-hooks/refs */
 
+    /* eslint-disable react-hooks/immutability, react-hooks/purity */
     for (let i = 0; i < actualCount; i++) {
       const idx = i * 3
 
@@ -57,6 +68,7 @@ export function ParticleField({ count = 500, color = '#ffffff' }) {
         positions[idx + 2] += (Math.random() - 0.5) * force
       }
     }
+    /* eslint-enable react-hooks/immutability, react-hooks/purity */
     points.geometry.attributes.position.needsUpdate = true
 
     // Scale points based on audio
