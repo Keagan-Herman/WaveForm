@@ -391,7 +391,7 @@ function Waveform() {
         </motion.div>
       </div>
 
-      <PlayerBar />
+      <PlayerBar accent={accent} />
       <TrackTransitionOverlay accent={accent} />
 
       <AnimatePresence>
