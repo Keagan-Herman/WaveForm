@@ -14,3 +14,7 @@
 - **Unified Accessors:** Created `getTrackCover`, `getTrackArtist`, and `getTrackAlbum` to abstract away the `DeezerTrack | LocalTrack` union. Components should never check `source === 'local'` just to find an image.
 - **Waveform Interaction:** Added click-to-seek on the static waveform (`WaveformLine`). The waveform color now shifts from white (beat pulse) to accent (album-matched) based on playback progress.
 - **Visual Feedback:** `LocalFileLoader` provides explicit state transitions (Idle -> Processing -> Success) with a persistent count badge.
+
+## 2026-05-28 - [Dynamic Theming for Playback Controls]
+**Learning:** Hardcoded brand colors in playback controls (like the Spotify green play button) create a visual mismatch in a dynamically themed UI. Propagating the extracted album palette to the player bar ensures the most prominent interaction element feels integrated with the current track. Adding keyboard shortcut hints to titles improves discoverability for power users.
+**Action:** Ensure all primary interaction points (play buttons, uploaders, progress bars) consume the global theme and provide explicit keyboard shortcut hints.

@@ -4,6 +4,7 @@ import { usePlayerStore } from '../../stores/playerStore';
 import { computeWaveform } from '../../hooks/useWaveformPrecompute';
 import { LocalTrack } from '../../types/track';
 import { buildLocalTrack, isAudioFile } from '../../hooks/useLocalFileMetadata';
+import type { AlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ async function processFiles(files: File[]): Promise<LocalTrack[]> {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function LocalFileLoader() {
+export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
@@ -151,9 +152,7 @@ export function LocalFileLoader() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         animate={{
-          borderColor: isDragOver
-            ? 'rgba(29, 185, 84, 0.8)'
-            : 'rgba(255,255,255,0.0)',
+          borderColor: isDragOver ? `${accent.hex}cc` : 'rgba(255,255,255,0.0)',
         }}
         style={{
           position: 'relative',
@@ -164,9 +163,7 @@ export function LocalFileLoader() {
           height: 36,
           borderRadius: 8,
           border: '1px solid transparent',
-          background: isDragOver
-            ? 'rgba(29, 185, 84, 0.12)'
-            : 'rgba(255,255,255,0.06)',
+          background: isDragOver ? `${accent.hex}1f` : 'rgba(255,255,255,0.06)',
           cursor: 'pointer',
           flexShrink: 0,
           transition: 'background 0.2s',
@@ -183,8 +180,8 @@ export function LocalFileLoader() {
               style={{
                 width: 16,
                 height: 16,
-                border: '2px solid rgba(29, 185, 84, 0.3)',
-                borderTopColor: '#1db954',
+                border: `2px solid ${accent.hex}4d`,
+                borderTopColor: accent.hex,
                 borderRadius: '50%',
                 animation: 'spin 0.7s linear infinite',
               }}
@@ -202,7 +199,7 @@ export function LocalFileLoader() {
               <polyline
                 points="3,8 6.5,11.5 13,4.5"
                 fill="none"
-                stroke="#1db954"
+                stroke={accent.hex}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -275,8 +272,8 @@ export function LocalFileLoader() {
                 minWidth: 16,
                 height: 16,
                 borderRadius: 8,
-                background: '#1db954',
-                color: '#050e05',
+                background: accent.hex,
+                color: 'var(--bg-color, #050e05)',
                 fontSize: 9,
                 fontWeight: 700,
                 fontFamily: 'monospace',

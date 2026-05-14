@@ -4,6 +4,7 @@ import { usePlayerStore } from '../../stores/playerStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
 import { getTrackCover, getTrackArtist, isLocalTrack } from '../../types/track';
+import type { AlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -58,13 +59,23 @@ interface ControlBtnProps {
   children: React.ReactNode;
   label: string;
   large?: boolean;
+  accentColor?: string;
+  title?: string;
 }
 
-function ControlBtn({ onClick, children, label, large = false }: ControlBtnProps) {
+function ControlBtn({
+  onClick,
+  children,
+  label,
+  large = false,
+  accentColor = '#1db954',
+  title,
+}: ControlBtnProps) {
   return (
     <motion.button
       onClick={onClick}
       aria-label={label}
+      title={title}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       style={{
@@ -75,8 +86,8 @@ function ControlBtn({ onClick, children, label, large = false }: ControlBtnProps
         height: large ? 40 : 32,
         borderRadius: '50%',
         border: 'none',
-        background: large ? '#1db954' : 'transparent',
-        color: large ? '#050e05' : 'rgba(255,255,255,0.75)',
+        background: large ? accentColor : 'transparent',
+        color: large ? 'var(--bg-color, #050e05)' : 'rgba(255,255,255,0.75)',
         cursor: 'pointer',
         flexShrink: 0,
         transition: 'background 0.15s, color 0.15s',
@@ -89,7 +100,7 @@ function ControlBtn({ onClick, children, label, large = false }: ControlBtnProps
 
 // ─── PlayerBar ────────────────────────────────────────────────────────────────
 
-export function PlayerBar() {
+export function PlayerBar({ accent }: { accent: AlbumColour }) {
   const {
     currentTrack,
     isPlaying,
@@ -119,7 +130,7 @@ export function PlayerBar() {
         background: 'rgba(5, 10, 5, 0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(29, 185, 84, 0.12)',
+        borderTop: `1px solid ${accent.hex}1f`,
         display: 'flex',
         alignItems: 'center',
         gap: 16,
@@ -229,8 +240,8 @@ export function PlayerBar() {
                       style={{
                         fontSize: 9,
                         fontFamily: 'monospace',
-                        background: 'rgba(29, 185, 84, 0.15)',
-                        color: '#1db954',
+                        background: `${accent.hex}26`,
+                        color: accent.hex,
                         padding: '1px 4px',
                         borderRadius: 3,
                         letterSpacing: '0.05em',
@@ -273,13 +284,29 @@ export function PlayerBar() {
           flexShrink: 0,
         }}
       >
-        <ControlBtn onClick={prevTrack} label="Previous track">
+        <ControlBtn
+          onClick={prevTrack}
+          label="Previous track"
+          title="Previous track (←)"
+          accentColor={accent.hex}
+        >
           <IconPrev />
         </ControlBtn>
-        <ControlBtn onClick={togglePlay} label={isPlaying ? 'Pause' : 'Play'} large>
+        <ControlBtn
+          onClick={togglePlay}
+          label={isPlaying ? 'Pause' : 'Play'}
+          title="Play/Pause (Space)"
+          large
+          accentColor={accent.hex}
+        >
           {isPlaying ? <IconPause /> : <IconPlay />}
         </ControlBtn>
-        <ControlBtn onClick={nextTrack} label="Next track">
+        <ControlBtn
+          onClick={nextTrack}
+          label="Next track"
+          title="Next track (→)"
+          accentColor={accent.hex}
+        >
           <IconNext />
         </ControlBtn>
       </div>
@@ -333,7 +360,7 @@ export function PlayerBar() {
           flexShrink: 0,
         }}
       >
-        <LocalFileLoader />
+        <LocalFileLoader accent={accent} />
       </div>
     </motion.div>
   );
