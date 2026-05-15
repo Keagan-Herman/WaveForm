@@ -170,15 +170,22 @@ export const TrackRow = React.memo(
               color: isActive ? accentColour : '#f0f0f0',
               transition: 'color 0.5s ease',
             }}
+            title={track.title}
           >
             {track.title}
           </p>
-          <p style={styles.artist} onClick={handleArtistClick}>
+          <p
+            style={styles.artist}
+            onClick={handleArtistClick}
+            title={getTrackArtist(track)}
+          >
             {getTrackArtist(track)}
           </p>
         </div>
 
-        <p style={styles.album}>{getTrackAlbum(track)}</p>
+        <p style={styles.album} title={getTrackAlbum(track)}>
+          {getTrackAlbum(track)}
+        </p>
 
         <span style={styles.duration}>{formatDuration(track.duration)}</span>
       </button>
