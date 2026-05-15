@@ -19,14 +19,12 @@ export function PreviewPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const engineInitialised = useRef(false);
 
-  const {
-    currentTrack,
-    isPlaying,
-    setCurrentTime,
-    pause,
-    nextTrack,
-    updateLocalTrackDuration,
-  } = usePlayerStore();
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const setCurrentTime = usePlayerStore((s) => s.setCurrentTime);
+  const pause = usePlayerStore((s) => s.pause);
+  const nextTrack = usePlayerStore((s) => s.nextTrack);
+  const updateLocalTrackDuration = usePlayerStore((s) => s.updateLocalTrackDuration);
 
   // ── Audio engine initialisation ──────────────────────────────────────────
 
@@ -54,7 +52,7 @@ export function PreviewPlayer() {
       audio.src = currentTrack.preview;
       audio.load();
     }
-  }, [currentTrack?.preview]);
+  }, [currentTrack]);
 
   // ── Sync play/pause ──────────────────────────────────────────────────────
 
@@ -71,7 +69,7 @@ export function PreviewPlayer() {
     } else {
       audio.pause();
     }
-  }, [isPlaying, currentTrack?.preview]);
+  }, [isPlaying, currentTrack, pause]);
 
   // ── Event listeners ──────────────────────────────────────────────────────
 
@@ -103,7 +101,7 @@ export function PreviewPlayer() {
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [currentTrack?.id]);
+  }, [currentTrack, setCurrentTime, updateLocalTrackDuration, nextTrack]);
 
   return (
     <audio

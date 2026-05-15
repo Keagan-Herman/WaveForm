@@ -98,19 +98,67 @@ function ControlBtn({
   );
 }
 
+// ─── Progress sub-component ───────────────────────────────────────────────────
+
+/**
+ * PlaybackProgress — isolated component for the high-frequency time display.
+ * Subscribes specifically to currentTime and duration to prevent the entire
+ * PlayerBar from re-rendering on every progress update.
+ */
+function PlaybackProgress() {
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        minWidth: 0,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          fontFamily: 'monospace',
+          color: 'rgba(232, 245, 232, 0.4)',
+          flexShrink: 0,
+          width: 32,
+          textAlign: 'right',
+        }}
+      >
+        {formatTime(currentTime)}
+      </span>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <WaveformLine height={36} />
+      </div>
+
+      <span
+        style={{
+          fontSize: 11,
+          fontFamily: 'monospace',
+          color: 'rgba(232, 245, 232, 0.4)',
+          flexShrink: 0,
+          width: 32,
+        }}
+      >
+        {duration > 0 ? formatTime(duration) : '--:--'}
+      </span>
+    </div>
+  );
+}
+
 // ─── PlayerBar ────────────────────────────────────────────────────────────────
 
 export function PlayerBar({ accent }: { accent: AlbumColour }) {
-  const {
-    currentTrack,
-    isPlaying,
-    currentTime,
-    togglePlay,
-    nextTrack,
-    prevTrack,
-  } = usePlayerStore();
-
-  const duration = currentTrack?.duration ?? 0;
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const togglePlay = usePlayerStore((s) => s.togglePlay);
+  const nextTrack = usePlayerStore((s) => s.nextTrack);
+  const prevTrack = usePlayerStore((s) => s.prevTrack);
 
   const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
@@ -314,44 +362,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
       </div>
 
       {/* ── Waveform + time ── */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          minWidth: 0,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: 'rgba(232, 245, 232, 0.4)',
-            flexShrink: 0,
-            width: 32,
-            textAlign: 'right',
-          }}
-        >
-          {formatTime(currentTime)}
-        </span>
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <WaveformLine height={36} />
-        </div>
-
-        <span
-          style={{
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: 'rgba(232, 245, 232, 0.4)',
-            flexShrink: 0,
-            width: 32,
-          }}
-        >
-          {duration > 0 ? formatTime(duration) : '--:--'}
-        </span>
-      </div>
+      <PlaybackProgress />
 
       {/* ── Right controls: upload button ── */}
       <div
