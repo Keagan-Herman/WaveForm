@@ -112,19 +112,35 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
         </div>
 
         <div style={styles.titleBlock}>
-          <p style={styles.albumName}>{getTrackAlbum(currentTrack)}</p>
-          <p style={styles.trackName}>{currentTrack.title}</p>
+          <p style={styles.albumName} title={getTrackAlbum(currentTrack)}>
+            {getTrackAlbum(currentTrack)}
+          </p>
+          <p style={styles.trackName} title={currentTrack.title}>
+            {currentTrack.title}
+          </p>
           <ArtistRipple active={isPlaying} color={accent}>
-            <p
-              style={{ ...styles.artistName, color: accent, cursor: 'pointer' }}
+            <button
+              style={{
+                ...styles.artistName,
+                color: accent,
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                textAlign: 'left',
+                width: '100%',
+                padding: 0,
+                fontFamily: 'inherit',
+              }}
               onClick={() => {
                 if (isDeezerTrack(currentTrack)) {
                   useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)
                 }
               }}
+              aria-label={`View artist: ${getTrackArtist(currentTrack)}`}
+              title={getTrackArtist(currentTrack)}
             >
               {getTrackArtist(currentTrack)}
-            </p>
+            </button>
           </ArtistRipple>
         </div>
       </div>

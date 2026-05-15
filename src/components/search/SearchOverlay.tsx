@@ -84,7 +84,12 @@ export function SearchOverlay({
           if (isInputFocused) inputRef.current?.blur()
         } else if (e.key === 'ArrowUp' || (!isInputFocused && e.key.toLowerCase() === 'k')) {
           e.preventDefault()
-          setFocusedIndex(prev => Math.max(prev - 1, 0))
+          if (focusedIndex === 0) {
+            setFocusedIndex(-1)
+            inputRef.current?.focus()
+          } else {
+            setFocusedIndex(prev => Math.max(prev - 1, 0))
+          }
           if (isInputFocused) inputRef.current?.blur()
         } else if (e.key === 'Enter' && focusedIndex !== -1) {
           e.preventDefault()

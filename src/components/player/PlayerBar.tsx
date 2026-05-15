@@ -217,6 +217,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                     lineHeight: 1.3,
                     fontFamily: 'inherit',
                   }}
+                  title={currentTrack.title}
                 >
                   {currentTrack.title}
                 </p>
@@ -234,6 +235,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                     gap: 4,
                     fontFamily: 'inherit',
                   }}
+                  title={trackArtist}
                 >
                   {isLocal && (
                     <span
