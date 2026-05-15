@@ -65,6 +65,7 @@ export function AlbumMesh({
     [texture]
   )
 
+  /* eslint-disable react-hooks/immutability */
   useFrame(state => {
     const mesh = meshRef.current
     if (!mesh) return
@@ -98,11 +99,10 @@ export function AlbumMesh({
 
     // Material update for hover glow
     if (material instanceof THREE.MeshBasicMaterial) {
-      /* eslint-disable react-hooks/immutability */
       material.opacity = hovered ? 1.0 : 0.92
-      /* eslint-enable react-hooks/immutability */
     }
   })
+  /* eslint-enable react-hooks/immutability */
 
   return (
     <mesh

@@ -128,12 +128,10 @@ function Scene({ layout, accent }: { layout: AlbumLayout[]; accent?: AlbumColour
 
 export function AlbumGravityField({
   tracks,
-  width: _initialWidth = 560,
-  height: _initialHeight = 340,
   accent,
 }: AlbumGravityFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { width: _, height: __ } = useResize(containerRef)
+  useResize(containerRef)
   const isLowQuality = useVisualiserStore(state => state.isLowQuality)
   const layout = useMemo(() => buildLayout(tracks, isLowQuality), [tracks, isLowQuality])
 

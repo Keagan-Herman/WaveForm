@@ -102,7 +102,7 @@ export function Spectrogram({
       ctx.fillStyle = fillStyle
       ctx.fillRect(w - 1, i * colHeight, 1, colHeight + 0.5)
     }
-  }, [])
+  }, [effectiveHeight, effectiveWidth])
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
 

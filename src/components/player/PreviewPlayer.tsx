@@ -54,7 +54,7 @@ export function PreviewPlayer() {
       audio.src = currentTrack.preview;
       audio.load();
     }
-  }, [currentTrack?.preview]);
+  }, [currentTrack]);
 
   // ── Sync play/pause ──────────────────────────────────────────────────────
 
@@ -71,7 +71,8 @@ export function PreviewPlayer() {
     } else {
       audio.pause();
     }
-  }, [isPlaying, currentTrack?.preview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, currentTrack?.preview, pause]);
 
   // ── Event listeners ──────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ export function PreviewPlayer() {
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [currentTrack?.id]);
+  }, [currentTrack, setCurrentTime, updateLocalTrackDuration, nextTrack]);
 
   return (
     <audio

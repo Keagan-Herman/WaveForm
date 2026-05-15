@@ -197,7 +197,7 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
     return () => {
       if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [themeColours]);
 
   return (
     <div

@@ -81,7 +81,7 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
     return () => {
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current)
     }
-  }, [isPlaying])
+  }, [isPlaying, onFailure])
 
   useEffect(() => {
     if (visualizerRef.current && width && height) {
