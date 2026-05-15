@@ -55,8 +55,11 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [isDragOver, setIsDragOver] = useState(false);
-  const { registerLocalTrack, addToQueue, setTrack, currentTrack, queue } =
-    usePlayerStore();
+  const registerLocalTrack = usePlayerStore((s) => s.registerLocalTrack);
+  const addToQueue = usePlayerStore((s) => s.addToQueue);
+  const setTrack = usePlayerStore((s) => s.setTrack);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const queue = usePlayerStore((s) => s.queue);
 
   const dispatchTracks = useCallback(
     (tracks: LocalTrack[]) => {

@@ -95,7 +95,9 @@ function GenrePanelQuadrant({
           />
         ) : (
           <div style={styles.stateWrap}>
-            <p style={styles.stateIcon}>◈</p>
+            <p style={styles.stateIcon} aria-hidden="true">
+              ◈
+            </p>
             <p style={styles.stateDesc}>Search for tracks to see genre relationships</p>
           </div>
         )}
@@ -196,8 +198,12 @@ function Waveform() {
   }, [currentTrack, isPlaying])
 
   useEffect(() => {
-    if (!hasIntroPlayed) {
-      const timer = setTimeout(() => {
+    const played = sessionStorage.getItem('waveform_intro_played')
+    if (played) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHasIntroPlayed(true)
+    } else {
+      setTimeout(() => {
         setHasIntroPlayed(true)
         sessionStorage.setItem('waveform_intro_played', 'true')
       }, 1200)
@@ -233,7 +239,8 @@ function Waveform() {
       opacity: 1,
       x: 0,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any,
     },
   }
 
@@ -242,7 +249,8 @@ function Waveform() {
     visible: {
       opacity: 0.85,
       letterSpacing: '0.35em',
-      transition: { duration: 1.5, ease: 'easeOut' },
+      transition: { duration: 1.5, ease: 'easeOut' } as any,
+      /* eslint-enable @typescript-eslint/no-explicit-any */
     },
   }
 
