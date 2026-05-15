@@ -33,12 +33,54 @@ function formatRank(rank: number): string {
   return 'Niche'
 }
 
+/**
+ * NowPlayingProgress — isolated component for the high-frequency time/scrubber display.
+ * Subscribes specifically to currentTime and duration to prevent the entire
+ * NowPlaying component from re-rendering on every progress update.
+ */
+function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat: boolean; isPlaying: boolean }) {
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
+  const progress = duration > 0 ? currentTime / duration : 0;
+
+  const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
+  const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
+
+  return (
+    <div style={styles.scrubberWrap}>
+      <div style={styles.scrubberTrack}>
+        <div
+          style={{
+            ...styles.scrubberFill,
+            width: `${progress * 100}%`,
+            background: beat ? '#fff' : accent,
+            boxShadow: beat ? `0 0 10px ${accent}` : 'none',
+            transition: beat
+              ? 'background 0.05s, box-shadow 0.05s'
+              : 'background 0.3s, width 0.1s linear',
+          }}
+        />
+        <div
+          style={{
+            ...styles.playhead,
+            left: `${progress * 100}%`,
+            background: accent,
+            boxShadow: `0 0 8px ${accent}`,
+            opacity: isPlaying ? 1 : 0,
+          }}
+        />
+      </div>
+      <div style={styles.scrubberLabels}>
+        <span style={styles.timeLabel}>{elapsedStr}</span>
+        <span style={{ ...styles.timeLabel, opacity: 0.3 }}>{durationStr}</span>
+      </div>
+    </div>
+  );
+}
+
 export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
-  const currentTime = usePlayerStore(state => state.currentTime)
-  const duration = currentTrack?.duration ?? 0
-  const progress = duration > 0 ? currentTime / duration : 0
 
   const beat = useVisualiserStore(state => state.beat)
   const bpm = useVisualiserStore(state => state.bpm)
@@ -77,8 +119,8 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
       ? new Date(currentTrack.album.release_date).getFullYear()
       : null
 
+  const duration = currentTrack?.duration ?? 0;
   const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
-  const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
 
   return (
     <motion.div
@@ -130,34 +172,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
       </div>
 
       {/* Scrubber */}
-      <div style={styles.scrubberWrap}>
-        <div style={styles.scrubberTrack}>
-          <div
-            style={{
-              ...styles.scrubberFill,
-              width: `${progress * 100}%`,
-              background: beat ? '#fff' : accent,
-              boxShadow: beat ? `0 0 10px ${accent}` : 'none',
-              transition: beat
-                ? 'background 0.05s, box-shadow 0.05s'
-                : 'background 0.3s, width 0.1s linear',
-            }}
-          />
-          <div
-            style={{
-              ...styles.playhead,
-              left: `${progress * 100}%`,
-              background: accent,
-              boxShadow: `0 0 8px ${accent}`,
-              opacity: isPlaying ? 1 : 0,
-            }}
-          />
-        </div>
-        <div style={styles.scrubberLabels}>
-          <span style={styles.timeLabel}>{elapsedStr}</span>
-          <span style={{ ...styles.timeLabel, opacity: 0.3 }}>{durationStr}</span>
-        </div>
-      </div>
+      <NowPlayingProgress accent={accent} beat={beat} isPlaying={isPlaying} />
 
       {/* Meta grid */}
       <div style={styles.metaGrid}>
