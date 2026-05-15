@@ -42,11 +42,8 @@ export function ParticleField({ count = 500, color = '#ffffff' }) {
     const { beat, bassPower, beatConfidence } = useVisualiserStore.getState()
     const points = pointsRef.current
     const positions = points.geometry.attributes.position.array as Float32Array
-    /* eslint-disable react-hooks/refs */
     const velocities = velocitiesRef.current
-    /* eslint-enable react-hooks/refs */
 
-    /* eslint-disable react-hooks/immutability, react-hooks/purity */
     for (let i = 0; i < actualCount; i++) {
       const idx = i * 3
 
@@ -68,7 +65,6 @@ export function ParticleField({ count = 500, color = '#ffffff' }) {
         positions[idx + 2] += (Math.random() - 0.5) * force
       }
     }
-    /* eslint-enable react-hooks/immutability, react-hooks/purity */
     points.geometry.attributes.position.needsUpdate = true
 
     // Scale points based on audio

@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
@@ -173,7 +173,10 @@ function Waveform() {
 
   const [searchTracks, setSearchTracks] = useState<DeezerTrack[]>([])
   const [filteredTrackIds, setFilteredTrackIds] = useState<string[] | null>(null)
-  const [hasIntroPlayed, setHasIntroPlayed] = useState(false)
+  const [hasIntroPlayed, setHasIntroPlayed] = useState(() => {
+    if (typeof sessionStorage === 'undefined') return false
+    return !!sessionStorage.getItem('waveform_intro_played')
+  })
   const accent = useAppAccent()
 
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
@@ -204,8 +207,9 @@ function Waveform() {
         setHasIntroPlayed(true)
         sessionStorage.setItem('waveform_intro_played', 'true')
       }, 1200)
+      return () => clearTimeout(timer)
     }
-  }, [])
+  }, [hasIntroPlayed])
 
   // Inject CSS variables for global skinning
   useEffect(() => {
@@ -225,7 +229,7 @@ function Waveform() {
     setFilteredTrackIds(ids)
   }, [])
 
-  const quadrantVariants = {
+  const quadrantVariants: Variants = {
     hidden: (custom: string) => ({
       opacity: 0,
       x: custom.includes('left') ? -60 : 60,
@@ -240,7 +244,7 @@ function Waveform() {
     },
   }
 
-  const logoVariants = {
+  const logoVariants: Variants = {
     hidden: { opacity: 0, letterSpacing: '0.1em' },
     visible: {
       opacity: 0.85,

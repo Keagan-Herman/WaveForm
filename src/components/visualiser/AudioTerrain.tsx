@@ -112,7 +112,7 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const freqDataRef = useRef(new Uint8Array(128))
   const freqTextureRef = useRef<THREE.DataTexture | null>(null)
 
-  /* eslint-disable react-hooks/rules-of-hooks, react-hooks/refs */
+  /* eslint-disable react-hooks/refs */
   if (!freqTextureRef.current) {
     freqTextureRef.current = new THREE.DataTexture(freqDataRef.current, 128, 1, THREE.RedFormat)
     freqTextureRef.current.needsUpdate = true
@@ -125,10 +125,9 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
       uFreq: { value: freqTextureRef.current! },
       uColor: { value: new THREE.Color(accent.hex) },
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [accent.hex]
   )
-  /* eslint-enable react-hooks/rules-of-hooks, react-hooks/refs */
+  /* eslint-enable react-hooks/refs */
 
   useEffect(() => {
     if (materialRef.current) {
