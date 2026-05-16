@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePlayerStore } from '../../stores/playerStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
-import { getTrackCover, getTrackArtist, isLocalTrack } from '../../types/track';
+import { getTrackCover, getTrackArtist, isLocalTrack, isDeezerTrack } from '../../types/track';
 import type { AlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -198,25 +198,26 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         }}
       >
         {/* Album art */}
-        <AnimatePresence mode="popLayout">
-          {trackCover ? (
-            <motion.img
-              key={trackCover}
-              src={trackCover}
-              alt="Album art"
-              width={44}
-              height={44}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              style={{
-                borderRadius: 4,
-                objectFit: 'cover',
-                flexShrink: 0,
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            />
-          ) : (
+        <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+          <AnimatePresence mode="popLayout">
+            {trackCover ? (
+              <motion.img
+                key={trackCover}
+                src={trackCover}
+                alt="Album art"
+                width={44}
+                height={44}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                style={{
+                  borderRadius: 4,
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              />
+            ) : (
             <motion.div
               key="placeholder"
               initial={{ opacity: 0 }}
@@ -240,7 +241,35 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
               </svg>
             </motion.div>
           )}
-        </AnimatePresence>
+          </AnimatePresence>
+
+          {currentTrack && isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 1,
+                right: 1,
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                border: '1px solid',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                background: 'rgba(0,0,0,0.7)',
+                color: accent.hex,
+                borderColor: `${accent.hex}66`,
+                zIndex: 1,
+              }}
+              aria-label="Explicit content"
+              title="Explicit content"
+            >
+              E
+            </div>
+          )}
+        </div>
 
         {/* Title + artist */}
         <div style={{ overflow: 'hidden', flex: 1 }}>
@@ -288,7 +317,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                   {isLocal && (
                     <span
                       style={{
-                        fontSize: 9,
+                        fontSize: '0.65rem',
                         fontFamily: 'monospace',
                         background: `${accent.hex}26`,
                         color: accent.hex,
