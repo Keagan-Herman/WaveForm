@@ -198,17 +198,14 @@ function Waveform() {
   }, [currentTrack, isPlaying])
 
   useEffect(() => {
-    const played = sessionStorage.getItem('waveform_intro_played')
-    if (played) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hasIntroPlayed) return
+
+    const timer = setTimeout(() => {
       setHasIntroPlayed(true)
-    } else {
-      setTimeout(() => {
-        setHasIntroPlayed(true)
-        sessionStorage.setItem('waveform_intro_played', 'true')
-      }, 1200)
-      return () => clearTimeout(timer)
-    }
+      sessionStorage.setItem('waveform_intro_played', 'true')
+    }, 1200)
+
+    return () => clearTimeout(timer)
   }, [hasIntroPlayed])
 
   // Inject CSS variables for global skinning

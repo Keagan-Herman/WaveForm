@@ -13,7 +13,7 @@ import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
-import { getTrackCover, getTrackArtist } from '@/types/track'
+import { getTrackCover, getTrackArtist, isDeezerTrack } from '@/types/track'
 
 interface FullscreenOverlayProps {
   accent: AlbumColour
@@ -130,7 +130,35 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 animate={{ opacity: 1, x: 0 }}
                 style={styles.nowPlaying}
               >
-                <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
+                <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
+                  <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
+                  {isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 2,
+                        right: 2,
+                        width: 12,
+                        height: 12,
+                        borderRadius: 2,
+                        border: '1px solid',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        background: 'rgba(0,0,0,0.6)',
+                        color: accent.hex,
+                        borderColor: `${accent.hex}66`,
+                        zIndex: 1,
+                      }}
+                      aria-label="Explicit content"
+                      title="Explicit content"
+                    >
+                      E
+                    </div>
+                  )}
+                </div>
                 <div style={styles.nowPlayingInfo}>
                   <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
                   <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
