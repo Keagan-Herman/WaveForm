@@ -18,10 +18,12 @@ export default defineConfig({
             '@react-three/fiber',
             '@react-three/drei',
         ],
-        esbuildOptions: {
+        rolldownOptions: {
             // Force CJS modules to be treated correctly
-            define: {
-                'process.env.NODE_ENV': '"development"',
+            transform: {
+                define: {
+                    'process.env.NODE_ENV': '"development"',
+                },
             },
         },
     },
