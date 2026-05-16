@@ -203,7 +203,7 @@ function Waveform() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasIntroPlayed(true)
     } else {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setHasIntroPlayed(true)
         sessionStorage.setItem('waveform_intro_played', 'true')
       }, 1200)
