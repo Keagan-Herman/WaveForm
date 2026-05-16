@@ -13,7 +13,7 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useUIStore } from '@/stores/uiStore'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
-import { getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
+import { getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack, isLocalTrack } from '@/types/track'
 
 interface NowPlayingProps {
   accent?: AlbumColour
@@ -147,6 +147,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
             <div
               style={{ ...styles.explicitBadge, color: accent, borderColor: `${accent}55` }}
               aria-label="Explicit content"
+              title="Explicit content"
             >
               E
             </div>
@@ -172,6 +173,9 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
                 width: '100%',
                 padding: 0,
                 fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
               onClick={() => {
                 if (isDeezerTrack(currentTrack)) {
@@ -181,6 +185,22 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
               aria-label={`View artist: ${getTrackArtist(currentTrack)}`}
               title={getTrackArtist(currentTrack)}
             >
+              {isLocalTrack(currentTrack) && (
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    fontFamily: 'monospace',
+                    background: `${accent}26`,
+                    color: accent,
+                    padding: '1px 4px',
+                    borderRadius: 3,
+                    letterSpacing: '0.05em',
+                    flexShrink: 0,
+                  }}
+                >
+                  LOCAL
+                </span>
+              )}
               {getTrackArtist(currentTrack)}
             </button>
           </ArtistRipple>

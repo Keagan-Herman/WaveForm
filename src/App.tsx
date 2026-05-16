@@ -198,9 +198,9 @@ function Waveform() {
   }, [currentTrack, isPlaying])
 
   useEffect(() => {
-    const played = sessionStorage.getItem('waveform_intro_played')
-    if (played) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hasIntroPlayed) return
+
+    const timer = setTimeout(() => {
       setHasIntroPlayed(true)
     } else {
       const timer = setTimeout(() => {
