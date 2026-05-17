@@ -202,13 +202,9 @@ function Waveform() {
 
     const timer = setTimeout(() => {
       setHasIntroPlayed(true)
-    } else {
-      const timer = setTimeout(() => {
-        setHasIntroPlayed(true)
-        sessionStorage.setItem('waveform_intro_played', 'true')
-      }, 1200)
-      return () => clearTimeout(timer)
-    }
+      sessionStorage.setItem('waveform_intro_played', 'true')
+    }, 1200)
+    return () => clearTimeout(timer)
   }, [hasIntroPlayed])
 
   // Inject CSS variables for global skinning
