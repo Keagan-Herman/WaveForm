@@ -134,7 +134,12 @@ export function SearchOverlay({
         />
         {isLoading && <span style={{ ...styles.loadingPip, background: accentColour }} />}
         {query && !isLoading && (
-          <button style={styles.clearBtn} onClick={() => setQuery('')} aria-label="Clear">
+          <button
+            style={styles.clearBtn}
+            onClick={() => setQuery('')}
+            aria-label="Clear"
+            title="Clear search (Esc)"
+          >
             ✕
           </button>
         )}
@@ -290,7 +295,7 @@ const styles: Record<string, React.CSSProperties> = {
   clearBtn: {
     background: 'none',
     border: 'none',
-    color: 'rgba(240,240,240,0.35)',
+    color: 'rgba(240,240,240,0.45)',
     cursor: 'pointer',
     fontSize: '0.7rem',
     padding: '0.2rem',

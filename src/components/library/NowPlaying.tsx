@@ -46,9 +46,24 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
   const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
   const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
 
+  const handleSeek = (e: React.MouseEvent) => {
+    if (duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const fraction = Math.max(0, Math.min(1, x / rect.width));
+    const audio = document.getElementById('preview-audio') as HTMLAudioElement;
+    if (audio) {
+      audio.currentTime = fraction * duration;
+    }
+  };
+
   return (
     <div style={styles.scrubberWrap}>
-      <div style={styles.scrubberTrack}>
+      <div
+        style={{ ...styles.scrubberTrack, cursor: 'pointer' }}
+        onClick={handleSeek}
+        title="Click to seek"
+      >
         <div
           style={{
             ...styles.scrubberFill,
@@ -72,7 +87,7 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
       </div>
       <div style={styles.scrubberLabels}>
         <span style={styles.timeLabel}>{elapsedStr}</span>
-        <span style={{ ...styles.timeLabel, opacity: 0.3 }}>{durationStr}</span>
+        <span style={{ ...styles.timeLabel, opacity: 0.45 }}>{durationStr}</span>
       </div>
     </div>
   );

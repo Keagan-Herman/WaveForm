@@ -215,7 +215,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: { fontSize: '0.7rem', opacity: 0.35 },
+  index: { fontSize: '0.7rem', opacity: 0.45 },
   playingIndicator: { fontSize: '0.7rem' },
   artWrap: {
     position: 'relative',

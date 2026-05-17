@@ -18,3 +18,7 @@
 ## 2026-05-28 - [Dynamic Theming for Playback Controls]
 **Learning:** Hardcoded brand colors in playback controls (like the Spotify green play button) create a visual mismatch in a dynamically themed UI. Propagating the extracted album palette to the player bar ensures the most prominent interaction element feels integrated with the current track. Adding keyboard shortcut hints to titles improves discoverability for power users.
 **Action:** Ensure all primary interaction points (play buttons, uploaders, progress bars) consume the global theme and provide explicit keyboard shortcut hints.
+
+## 2026-06-05 - [Secondary Text Contrast in Dark Themes]
+**Learning:** In a dark-themed application (especially one with dynamic background glows), secondary metadata like track indices or duration labels with 0.3-0.35 opacity often fall below acceptable contrast ratios. Increasing this to at least 0.45-0.5 significantly improves legibility without compromising the visual hierarchy.
+**Action:** Audit secondary UI elements and ensure they maintain a minimum opacity of 0.45 against the dark background to satisfy accessibility guidelines.
