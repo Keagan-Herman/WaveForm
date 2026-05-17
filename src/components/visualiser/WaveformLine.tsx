@@ -204,6 +204,7 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
       ref={wrapperRef}
       onClick={handleSeek}
       style={{ width: '100%', height, cursor: 'pointer' }}
+      title="Click to seek"
     >
       <canvas
         ref={canvasRef}
