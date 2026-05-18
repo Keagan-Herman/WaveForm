@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { audioEngine } from '../../audio/AudioEngine';
 import { usePlayerStore } from '../../stores/playerStore';
 import { isLocalTrack } from '../../types/track';
@@ -50,21 +50,28 @@ function drawStaticWaveform(
 ) {
   ctx.clearRect(0, 0, width, height);
 
+  const len = waveform.length;
   const centerY = height / 2;
-  const barWidth = width / waveform.length;
+  const unitWidth = width / len;
+  const drawWidth = Math.max(1, unitWidth - 0.8);
   const playheadX = progress * width;
 
-  // ── Bars ──
-  for (let i = 0; i < waveform.length; i++) {
-    const x = i * barWidth;
+  // Split point for played/unplayed colours
+  const playedCount = Math.floor(progress * len);
+
+  // ── Played Bars ──
+  ctx.fillStyle = colours.played;
+  for (let i = 0; i < playedCount; i++) {
     const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
-    const isPlayed = x <= playheadX;
+    // Single fillRect covers both top and bottom (mirrored)
+    ctx.fillRect(i * unitWidth, centerY - barHeight, drawWidth, barHeight * 2);
+  }
 
-    ctx.fillStyle = isPlayed ? colours.played : colours.unplayed;
-
-    // Mirror above and below centre
-    ctx.fillRect(x, centerY - barHeight, Math.max(1, barWidth - 0.8), barHeight);
-    ctx.fillRect(x, centerY, Math.max(1, barWidth - 0.8), barHeight);
+  // ── Unplayed Bars ──
+  ctx.fillStyle = colours.unplayed;
+  for (let i = playedCount; i < len; i++) {
+    const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
+    ctx.fillRect(i * unitWidth, centerY - barHeight, drawWidth, barHeight * 2);
   }
 
   // ── Playhead ──
@@ -102,11 +109,19 @@ interface WaveformLineProps {
   height?: number;
 }
 
-export function WaveformLine({ height = 48 }: WaveformLineProps) {
+export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>();
   const sizeRef = useRef({ width: 300, height });
+  const lastRenderRef = useRef({
+    progress: -1,
+    width: -1,
+    height: -1,
+    trackId: '',
+    isPlaying: false,
+    accent: ''
+  });
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
@@ -174,20 +189,44 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
 
     function draw() {
       const { width, height: h } = sizeRef.current;
-      const { currentTrack, currentTime } = usePlayerStore.getState();
+      const { currentTrack, currentTime, isPlaying } = usePlayerStore.getState();
       const localTrack =
         currentTrack !== null && isLocalTrack(currentTrack) ? currentTrack : null;
       const wf = localTrack?.waveform;
       const dur = currentTrack?.duration ?? 0;
+      const progress = dur > 0 ? Math.min(1, currentTime / dur) : 0;
+
+      const trackId = currentTrack?.id ? String(currentTrack.id) : '';
+      const last = lastRenderRef.current;
+
+      // Skip draw if nothing has changed
+      if (
+        last.progress === progress &&
+        last.width === width &&
+        last.height === h &&
+        last.trackId === trackId &&
+        last.isPlaying === isPlaying &&
+        last.accent === themeColours.played &&
+        wf // Only skip for static waveforms; live oscilloscope always needs update
+      ) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
 
       ctx.clearRect(0, 0, width, h);
 
       if (wf && wf.length > 0) {
-        const progress = dur > 0 ? Math.min(1, currentTime / dur) : 0;
         drawStaticWaveform(ctx, width, h, wf, progress, themeColours);
       } else {
         drawLiveOscilloscope(ctx, width, h, themeColours.live);
       }
+
+      last.progress = progress;
+      last.width = width;
+      last.height = h;
+      last.trackId = trackId;
+      last.isPlaying = isPlaying;
+      last.accent = themeColours.played;
 
       rafRef.current = requestAnimationFrame(draw);
     }
@@ -215,4 +254,4 @@ export function WaveformLine({ height = 48 }: WaveformLineProps) {
       />
     </div>
   );
-}
+});
