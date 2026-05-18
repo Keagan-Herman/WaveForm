@@ -259,6 +259,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    cursor: 'pointer',
   },
   album: {
     fontSize: '0.7rem',
