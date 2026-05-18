@@ -22,3 +22,7 @@
 ## 2026-06-05 - [Secondary Text Contrast in Dark Themes]
 **Learning:** In a dark-themed application (especially one with dynamic background glows), secondary metadata like track indices or duration labels with 0.3-0.35 opacity often fall below acceptable contrast ratios. Increasing this to at least 0.45-0.5 significantly improves legibility without compromising the visual hierarchy.
 **Action:** Audit secondary UI elements and ensure they maintain a minimum opacity of 0.45 against the dark background to satisfy accessibility guidelines.
+
+## 2026-06-12 - [Focus Management in Dynamic Panels]
+**Learning:** For components that have a loading state (like ArtistPanel), auto-focus logic must depend on the loading completion rather than just the mount event to ensure the target element exists in the DOM. Focus restoration is a critical "invisible" UX feature that prevents keyboard users from losing their place when a modal or panel closes.
+**Action:** Always link auto-focus effects to the 'data ready' state and implement focus restoration using a ref to document.activeElement on mount.

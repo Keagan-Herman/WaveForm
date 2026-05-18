@@ -68,8 +68,12 @@ export function SearchOverlay({
         inputRef.current?.focus()
       }
       if (e.key === 'Escape') {
-        inputRef.current?.blur()
-        setFocusedIndex(-1)
+        if (query) {
+          setQuery('')
+        } else {
+          inputRef.current?.blur()
+          setFocusedIndex(-1)
+        }
       }
 
       if (
@@ -99,7 +103,7 @@ export function SearchOverlay({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [visibleTracks, focusedIndex, handleSelectTrack])
+  }, [visibleTracks, focusedIndex, handleSelectTrack, query])
 
   useEffect(() => {
     if (focusedIndex !== -1) {

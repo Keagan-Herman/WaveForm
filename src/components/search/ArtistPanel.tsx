@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState, useRef, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import { getArtist, getArtistTopTracks, type DeezerArtist } from '@/lib/deezerApi'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -12,9 +12,11 @@ interface ArtistPanelProps {
 }
 
 export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProps) {
+  const previousFocus = useRef<HTMLElement | null>(null)
   const [artist, setArtist] = useState<DeezerArtist | null>(null)
   const [tracks, setTracks] = useState<DeezerTrack[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
 
   const setTrack = usePlayerStore(state => state.setTrack)
   const play = usePlayerStore(state => state.play)
@@ -22,6 +24,13 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   const clearQueue = usePlayerStore(state => state.clearQueue)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
+
+  useEffect(() => {
+    previousFocus.current = document.activeElement as HTMLElement
+    return () => {
+      previousFocus.current?.focus()
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -52,6 +61,20 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
     }
   }, [artistId])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!isLoading) {
+      closeBtnRef.current?.focus()
+    }
+  }, [isLoading])
+
   const handleSelectTrack = (track: Track) => {
     clearQueue()
     tracks.forEach(t => addToQueue(t as unknown as Track))
@@ -80,7 +103,13 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
 
       <div style={styles.content}>
         <header style={styles.header}>
-          <button onClick={onClose} style={{ ...styles.closeBtn, color: accentColour }}>
+          <button
+            ref={closeBtnRef}
+            onClick={onClose}
+            style={{ ...styles.closeBtn, color: accentColour }}
+            aria-label="Close artist panel"
+            title="Close (Esc)"
+          >
             ✕ Close
           </button>
         </header>
