@@ -182,7 +182,7 @@ function Waveform() {
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const isLowQuality = useVisualiserStore(state => state.isLowQuality)
-  const toggleLowQuality = useVisualiserStore(state => state.toggleLowQuality)
+  const setQuality = useVisualiserStore(state => state.setQuality)
 
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -298,7 +298,7 @@ function Waveform() {
             </button>
           )}
           <button
-            onClick={toggleLowQuality}
+            onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
             style={{
               ...styles.headerBtn,
               borderColor: `${accent.hex}44`,

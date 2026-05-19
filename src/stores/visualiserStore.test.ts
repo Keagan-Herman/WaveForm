@@ -11,6 +11,22 @@ describe('visualiserStore', () => {
       visualLayer: 'Ambient',
       isFullscreen: false,
       isLowQuality: false,
+      quality: 'Medium',
+      autoCycle: false,
+      isRecording: false,
+      showSettings: false,
+      orbOpacity: 1,
+      terrainOpacity: 1,
+      particlesOpacity: 1,
+      presetsOpacity: 0,
+      albumGravityOpacity: 1,
+      bloomEnabled: true,
+      bloomIntensity: 1.5,
+      godRaysEnabled: true,
+      chromaticAberrationEnabled: false,
+      vignetteEnabled: true,
+      filmGrainEnabled: true,
+      dofEnabled: false,
     })
   })
 
