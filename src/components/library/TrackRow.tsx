@@ -135,6 +135,10 @@ export const TrackRow = React.memo(
                 ▶
               </span>
             )
+          ) : isHovered || isFocused ? (
+            <span style={{ ...styles.playingIndicator, opacity: 0.5 }} aria-hidden="true">
+              ▶
+            </span>
           ) : (
             <span style={styles.index}>{index + 1}</span>
           )}
@@ -215,7 +219,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     width: 20,
   },
-  index: { fontSize: '0.7rem', opacity: 0.45 },
+  index: { fontSize: '0.7rem', opacity: 0.5 },
   playingIndicator: { fontSize: '0.7rem' },
   artWrap: {
     position: 'relative',
@@ -263,7 +267,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   album: {
     fontSize: '0.7rem',
-    opacity: 0.3,
+    opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -271,7 +275,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   duration: {
     fontSize: '0.7rem',
-    opacity: 0.4,
+    opacity: 0.5,
     flexShrink: 0,
     fontVariantNumeric: 'tabular-nums',
   },

@@ -17,17 +17,17 @@ const mockTrack: DeezerTrack = {
   explicit_lyrics: false,
 }
 
-const mockAccent: AlbumColour = {
+const mockAccent = {
   h: 141,
   s: 73,
   l: 42,
   hex: '#1db954',
   palette: {
-    background: '#0a120d',
-    surface: '#0f1a13',
+    background: '#050e05',
+    surface: '#081208',
     primary: '#1db954',
-    secondary: '#25e869',
-    accent: '#b91d82',
+    secondary: '#1db954',
+    accent: '#1db954',
     text: '#f0f0f0',
     textDim: 'rgba(255,255,255,0.5)',
     border: 'rgba(29, 185, 84, 0.2)',
