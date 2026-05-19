@@ -1,0 +1,10 @@
+
+> waveform@0.0.0 dev /app
+> vite --port 3000
+
+Port 3000 is in use, trying another one...
+
+  VITE v8.0.11  ready in 316 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose

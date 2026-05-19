@@ -7,9 +7,11 @@ import { useResize } from '@/hooks/useResize'
 
 interface ButterchurnVisualiserProps {
   onFailure?: () => void
+  onCanvasReady?: (canvas: HTMLCanvasElement) => void
+  opacity?: number
 }
 
-export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps) {
+export function ButterchurnVisualiser({ onFailure, onCanvasReady, opacity = 1 }: ButterchurnVisualiserProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const visualizerRef = useRef<{
@@ -61,27 +63,30 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
 
     const presets = butterchurnPresets.getPresets()
     const keys = Object.keys(presets)
-    const bestOfKeys = keys.filter(
-      k =>
-        k.toLowerCase().includes('flexi') ||
-        k.toLowerCase().includes('milk') ||
-        k.toLowerCase().includes('yin')
-    )
-    const finalKeys = bestOfKeys.length > 0 ? bestOfKeys : keys
 
-    visualizer.loadPreset(presets[finalKeys[0]], 0)
-    visualizerRef.current = { visualizer, presets: finalKeys, allPresets: presets }
+    // Sort keys to have "better" ones first or randomized
+    const shuffledKeys = keys.sort(() => Math.random() - 0.5)
+
+    visualizer.loadPreset(presets[shuffledKeys[0]], 0)
+    visualizerRef.current = { visualizer, presets: shuffledKeys, allPresets: presets }
 
     const render = () => {
-      visualizer.render()
+      // Optimization: Only render if opacity is non-zero
+      if (opacity > 0) {
+        visualizer.render()
+      }
       frameIdRef.current = requestAnimationFrame(render)
     }
     render()
 
+    if (onCanvasReady && canvas) {
+      onCanvasReady(canvas)
+    }
+
     return () => {
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current)
     }
-  }, [isPlaying, onFailure])
+  }, [isPlaying, onFailure, onCanvasReady, opacity])
 
   useEffect(() => {
     if (visualizerRef.current && width && height) {
@@ -90,15 +95,27 @@ export function ButterchurnVisualiser({ onFailure }: ButterchurnVisualiserProps)
   }, [width, height])
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'p' && visualizerRef.current) {
+    const cycle = () => {
+      if (visualizerRef.current) {
         const { visualizer, presets, allPresets } = visualizerRef.current
         currentPresetIndex.current = (currentPresetIndex.current + 1) % presets.length
-        visualizer.loadPreset(allPresets[presets[currentPresetIndex.current]], 2.0)
+        // 5.7 second blend for "mashup" feel
+        visualizer.loadPreset(allPresets[presets[currentPresetIndex.current]], 5.7)
       }
     }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'p') cycle()
+    }
+
+    // Auto-cycle presets every 20 seconds
+    const interval = setInterval(cycle, 20000)
+
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      clearInterval(interval)
+    }
   }, [])
 
   return (

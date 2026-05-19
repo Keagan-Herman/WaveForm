@@ -25,11 +25,12 @@ Waveform is a browser-based music player and visualiser built on the Deezer publ
 ## ⚡ Features
 
 ### 🎨 The Visual Experience
-- **GLSL Audio-Reactive Orb**: A subdivided icosahedron driven by custom vertex shaders. Displacement mapping uses a combination of Perlin noise and live frequency data.
-- **Butterchurn (MilkDrop)**: Integration of GPU-accelerated WebGL2 presets from the legendary Winamp MilkDrop engine.
-- **3D Album Gravity Field**: A React Three Fiber scene where album covers pulse and orbit based on detected beats.
-- **Reactive Audio Terrain**: A 128x128 segment plane that morphs into a living "ocean" of music using GPU displacement.
-- **Genre Force Graph**: A D3.js force-directed map of musical relationships. Nodes cluster by genre; click to filter the library.
+- **Post-Processing Stack**: A cinematic "Visualizer Master Scene" powered by Three.js `EffectComposer`. Features real-time Bloom (bass-pulsing), Chromatic Aberration, Vignette, Film Grain, and Depth of Field.
+- **Dynamic Layering & Blending**: Advanced multi-layer scene composition (Background, Midground, Foreground) with automated 30s cross-fades between visualizers.
+- **Enhanced GLSL Orb**: A subdivided icosahedron that "cracks" and emits light rays upon bass peaks, with an inner glowing core for depth.
+- **Beat-Driven Particles**: GPU-accelerated particle field that triggers high-velocity "explosions" on beat detections, with density scaling based on performance profiles.
+- **Butterchurn (MilkDrop)**: Integration of GPU-accelerated WebGL2 presets with enhanced 5.7s blending and automated preset cycling.
+- **Reactive Audio Terrain**: A reflective 3D ocean that morphs with frequency data, featuring real-time light reflections and audio-reactive brightness.
 - **Album-Reactive Theming**: The entire UI dynamically samples the current album art to generate a harmonized color palette.
 
 ### 🎧 The Audio Engine
@@ -83,6 +84,8 @@ Simple volume-thresholding beat detection is unreliable for complex tracks.
 | `←` / `→` | Previous / Next track |
 | `F` | Toggle Fullscreen |
 | `V` | Cycle Visual Layer |
+| `S` | Toggle Visual Settings |
+| `R` | Start/Stop Recording |
 | `J` / `K` | Navigate Search Results |
 | `/` | Focus Search |
 | `P` | Cycle Butterchurn Presets |

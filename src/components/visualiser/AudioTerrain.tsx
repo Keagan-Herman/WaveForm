@@ -5,6 +5,22 @@ import { audioEngine } from '@/audio/AudioEngine'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
+const CONFIG = {
+  GEOMETRY: {
+    SIZE: 20,
+    DETAIL: 64,
+  },
+  ANIMATION: {
+    NOISE_SCALE: 0.1,
+    NOISE_SPEED: 0.1,
+    BASS_MULT: 1.5,
+    FREQ_MULT: 1.0,
+  },
+  COLOR: {
+    MIX_MULT: 0.2,
+  }
+}
+
 const vertexShader = `
   varying vec2 vUv;
   varying float vElevation;
@@ -82,9 +98,13 @@ const vertexShader = `
     vUv = uv;
     
     float freq = texture2D(uFreq, vec2(uv.x, 0.5)).r;
-    float noise = snoise(vec3(position.x * 0.1, position.y * 0.1 + uTime * 0.1, uTime * 0.1));
+    float noise = snoise(vec3(
+      position.x * ${CONFIG.ANIMATION.NOISE_SCALE.toFixed(1)},
+      position.y * ${CONFIG.ANIMATION.NOISE_SCALE.toFixed(1)} + uTime * ${CONFIG.ANIMATION.NOISE_SPEED.toFixed(1)},
+      uTime * ${CONFIG.ANIMATION.NOISE_SPEED.toFixed(1)}
+    ));
     
-    float elevation = (noise * 1.5 * uBass) + (freq * 1.0);
+    float elevation = (noise * ${CONFIG.ANIMATION.BASS_MULT.toFixed(1)} * uBass) + (freq * ${CONFIG.ANIMATION.FREQ_MULT.toFixed(1)});
     vElevation = elevation;
     
     vec3 newPosition = position;
@@ -98,16 +118,18 @@ const fragmentShader = `
   varying vec2 vUv;
   varying float vElevation;
   uniform vec3 uColor;
+  uniform float uOpacity;
 
   void main() {
-    float mixFactor = clamp(vElevation * 0.2, 0.0, 1.0);
+    float mixFactor = clamp(vElevation * ${CONFIG.COLOR.MIX_MULT.toFixed(1)}, 0.0, 1.0);
     vec3 color = mix(uColor * 0.3, uColor, mixFactor);
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, uOpacity);
   }
 `
 
 export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
+  const terrainOpacity = useVisualiserStore(state => state.terrainOpacity)
 
   const freqDataRef = useRef(new Uint8Array(128))
   const freqTextureRef = useRef<THREE.DataTexture | null>(null)
@@ -124,6 +146,7 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
       uBass: { value: 0 },
       uFreq: { value: freqTextureRef.current! },
       uColor: { value: new THREE.Color(accent.hex) },
+      uOpacity: { value: 1.0 },
     }),
     [accent.hex]
   )
@@ -146,20 +169,34 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
 
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower
+      materialRef.current.uniforms.uOpacity.value = terrainOpacity
     }
   })
 
   return (
     <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
-      {/* geometry and material must be children of mesh, not group */}
+      {/* Terrain Mesh */}
       <mesh>
-        <planeGeometry args={[20, 20, 64, 64]} />
+        <planeGeometry args={[CONFIG.GEOMETRY.SIZE, CONFIG.GEOMETRY.SIZE, CONFIG.GEOMETRY.DETAIL, CONFIG.GEOMETRY.DETAIL]} />
         <shaderMaterial
           ref={materialRef}
           vertexShader={vertexShader}
           fragmentShader={fragmentShader}
           uniforms={uniforms}
+          transparent
           wireframe
+        />
+      </mesh>
+
+      {/* Reflective Floor */}
+      <mesh position={[0, 0, -0.1]} receiveShadow>
+        <planeGeometry args={[100, 100]} />
+        <meshStandardMaterial
+          color={accent.palette.background}
+          metalness={0.9}
+          roughness={0.1}
+          transparent
+          opacity={terrainOpacity * 0.5}
         />
       </mesh>
     </group>

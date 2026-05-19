@@ -52,8 +52,12 @@ const fragmentShader = `
     float n = snoise(uv * 3.0 + uTime * 0.2) * 0.5 + 0.5;
     float d = snoise(uv * 10.0 - uTime * 0.5 + uBass * 2.0) * 0.5 + 0.5;
 
-    vec3 color = mix(uColor * 0.2, uColor, n * d);
-    color += uBass * 0.1 * uColor;
+    // Darken it to look like a nebula and not blow out the scene
+    vec3 baseColor = uColor * 0.05; // Much darker base
+    vec3 accentColor = uColor * 0.15;
+
+    vec3 color = mix(baseColor, accentColor, n * d);
+    color += uBass * 0.05 * uColor;
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -85,7 +89,7 @@ export function FluidBackground({ accent }: FluidBackgroundProps) {
   })
 
   return (
-    <mesh ref={meshRef} scale={[viewport.width, viewport.height, 1]}>
+    <mesh ref={meshRef} scale={[viewport.width * 2, viewport.height * 2, 1]} position={[0, 0, -10]}>
       <planeGeometry args={[1, 1]} />
       <shaderMaterial
         vertexShader={vertexShader}

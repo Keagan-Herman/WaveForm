@@ -1,13 +1,40 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, forwardRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { audioEngine } from '@/audio/AudioEngine'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
+// Configuration constants
+const CONFIG = {
+  GEOMETRY: {
+    SHELL_RADIUS: 2,
+    SHELL_DETAIL: 20,
+    CORE_RADIUS: 0.8,
+    POINTS_RADIUS: 1.5,
+  },
+  ANIMATION: {
+    BASS_SMOOTHING: 0.12,
+    BEAT_SMOOTHING: 0.15,
+    CRACK_SMOOTHING: 0.1,
+    ROTATION_SMOOTHING: 0.1,
+    COLOR_CYCLE_SPEED: 0.15,
+    BASE_ROT_Y: 0.004,
+    BASE_ROT_Z: 0.002,
+    BASS_ROT_Y_MULT: 0.008,
+    BASS_ROT_Z_MULT: 0.006,
+  },
+  SHADERS: {
+    DISPLACEMENT_MULT: 0.12,
+    CRACK_THRESHOLD: 0.8,
+  }
+}
+
 const vertexShader = `
   varying vec2 vUv;
   varying float vDisplacement;
+  varying vec3 vPosition;
+  varying vec3 vNormal;
   uniform float uTime;
   uniform float uBass;
   uniform float uBeat;
@@ -102,6 +129,9 @@ const vertexShader = `
     
     vec3 newPosition = position + normal * displacement;
 
+    vPosition = newPosition;
+    vNormal = normal;
+
     // Add some non-spherical expansion — more fluid
     newPosition.x += sin(uTime * 1.2 + position.y * 0.5) * uBass * 0.2;
     newPosition.z += cos(uTime * 1.2 + position.x * 0.5) * uBass * 0.2;
@@ -113,14 +143,18 @@ const vertexShader = `
 const fragmentShader = `
   varying vec2 vUv;
   varying float vDisplacement;
+  varying vec3 vPosition;
+  varying vec3 vNormal;
   uniform vec3 uColor1;
   uniform vec3 uColor2;
   uniform vec3 uColor3;
   uniform float uColorMix;
   uniform float uTime;
+  uniform float uOpacity;
+  uniform float uCrack;
 
   void main() {
-    float intensity = vDisplacement * 0.12;
+    float intensity = vDisplacement * ${CONFIG.SHADERS.DISPLACEMENT_MULT.toFixed(2)};
 
     // Color cycling logic
     vec3 color;
@@ -133,19 +167,30 @@ const fragmentShader = `
     }
 
     color += vec3(intensity * 0.4, intensity * 0.2, intensity * 0.6);
-    gl_FragColor = vec4(color, 0.85);
+
+    // Crack effect
+    float crackPattern = sin(vUv.x * 50.0) * cos(vUv.y * 50.0);
+    if (uCrack > 0.5 && crackPattern > 0.8) {
+      color += vec3(1.0, 0.8, 0.5) * uCrack;
+      discard; // Create literal holes
+    }
+
+    gl_FragColor = vec4(color, uOpacity);
   }
 `
 
-export function AudioOrb({ accent }: { accent: AlbumColour }) {
-  const meshRef = useRef<THREE.Mesh>(null)
+export const AudioOrb = forwardRef<THREE.Group, { accent: AlbumColour }>(({ accent }, ref) => {
+  const meshRef = useRef<THREE.Group>(null)
+  const shellRef = useRef<THREE.Mesh>(null)
+  const coreRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
+  const pointsMatRef = useRef<THREE.PointsMaterial>(null)
   const colorMixRef = useRef(0)
+  const orbOpacity = useVisualiserStore(state => state.orbOpacity)
 
   const freqDataRef = useRef(new Uint8Array(128))
   const freqTextureRef = useRef<THREE.DataTexture | null>(null)
 
-  /* eslint-disable react-hooks/refs */
   if (!freqTextureRef.current) {
     freqTextureRef.current = new THREE.DataTexture(freqDataRef.current, 128, 1, THREE.RedFormat)
     freqTextureRef.current.needsUpdate = true
@@ -161,10 +206,11 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
       uColor2: { value: new THREE.Color(accent.palette.secondary) },
       uColor3: { value: new THREE.Color(accent.palette.accent) },
       uColorMix: { value: 0 },
+      uOpacity: { value: 1.0 },
+      uCrack: { value: 0 },
     }),
     [accent.palette.primary, accent.palette.secondary, accent.palette.accent]
   )
-  /* eslint-enable react-hooks/refs */
 
   useEffect(() => {
     if (materialRef.current) {
@@ -183,7 +229,7 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
     const { bassPower, beat } = useVisualiserStore.getState()
 
     // Inertia for bass reactivity
-    smoothedBass.current += (bassPower - smoothedBass.current) * 0.12
+    smoothedBass.current += (bassPower - smoothedBass.current) * CONFIG.ANIMATION.BASS_SMOOTHING
 
     if (materialRef.current && freqTextureRef.current) {
       // Sub-sample frequency data for smoother texture
@@ -192,42 +238,88 @@ export function AudioOrb({ accent }: { accent: AlbumColour }) {
 
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = smoothedBass.current
+      materialRef.current.uniforms.uOpacity.value = orbOpacity
 
       // Smoothly pulse uBeat with inertia
       const targetBeat = beat ? 1.0 : 0.0
       materialRef.current.uniforms.uBeat.value +=
-        (targetBeat - materialRef.current.uniforms.uBeat.value) * 0.15
+        (targetBeat - materialRef.current.uniforms.uBeat.value) * CONFIG.ANIMATION.BEAT_SMOOTHING
+
+      // Crack effect on drops/bass peaks
+      const crackTarget = smoothedBass.current > 0.8 ? 1.0 : 0.0
+      materialRef.current.uniforms.uCrack.value += (crackTarget - materialRef.current.uniforms.uCrack.value) * CONFIG.ANIMATION.CRACK_SMOOTHING
 
       // Cycle colors more gracefully
       colorMixRef.current =
-        (colorMixRef.current + delta * (0.15 + smoothedBass.current * 0.3)) % 3.0
+        (colorMixRef.current + delta * (CONFIG.ANIMATION.COLOR_CYCLE_SPEED + smoothedBass.current * 0.3)) % 3.0
       materialRef.current.uniforms.uColorMix.value = colorMixRef.current
     }
 
     if (meshRef.current) {
       // Rotation with inertia
-      const targetRotY = 0.004 + smoothedBass.current * 0.008
-      const targetRotZ = 0.002 + smoothedBass.current * 0.006
+      const targetRotY = CONFIG.ANIMATION.BASE_ROT_Y + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Y_MULT
+      const targetRotZ = CONFIG.ANIMATION.BASE_ROT_Z + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Z_MULT
 
-      smoothedRotation.current.y += (targetRotY - smoothedRotation.current.y) * 0.1
-      smoothedRotation.current.z += (targetRotZ - smoothedRotation.current.z) * 0.1
+      smoothedRotation.current.y += (targetRotY - smoothedRotation.current.y) * CONFIG.ANIMATION.ROTATION_SMOOTHING
+      smoothedRotation.current.z += (targetRotZ - smoothedRotation.current.z) * CONFIG.ANIMATION.ROTATION_SMOOTHING
 
       meshRef.current.rotation.y += smoothedRotation.current.y
       meshRef.current.rotation.z += smoothedRotation.current.z
+
+      // Update the forwarded ref as well
+      if (ref) {
+        if (typeof ref === 'function') ref(meshRef.current)
+        else (ref as React.MutableRefObject<THREE.Group>).current = meshRef.current
+      }
+    }
+
+    if (coreRef.current) {
+      const s = 1.0 + smoothedBass.current * 0.5
+      coreRef.current.scale.set(s, s, s)
+    }
+
+    if (pointsMatRef.current) {
+      pointsMatRef.current.opacity = orbOpacity * smoothedBass.current
     }
   })
 
   return (
-    <mesh ref={meshRef}>
-      <icosahedronGeometry args={[2, 20]} />
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        transparent
-        wireframe
-      />
-    </mesh>
+    <group ref={meshRef}>
+      {/* Outer Shell */}
+      <mesh ref={shellRef}>
+        <icosahedronGeometry args={[CONFIG.GEOMETRY.SHELL_RADIUS, CONFIG.GEOMETRY.SHELL_DETAIL]} />
+        <shaderMaterial
+          ref={materialRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={uniforms}
+          transparent
+          wireframe
+        />
+      </mesh>
+
+      {/* Inner Core */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 32, 32]} />
+        <meshBasicMaterial
+          color={accent.palette.accent}
+          transparent
+          opacity={orbOpacity * 0.8}
+        />
+      </mesh>
+
+      {/* Volumetric light rays (simulated with points) */}
+      <points>
+        <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, 64, 64]} />
+        <pointsMaterial
+          ref={pointsMatRef}
+          color={accent.palette.accent}
+          size={0.05}
+          transparent
+          opacity={0}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+    </group>
   )
-}
+})

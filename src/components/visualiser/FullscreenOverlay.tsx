@@ -1,8 +1,13 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Bloom, EffectComposer } from '@react-three/postprocessing'
+import * as THREE from 'three'
+import { Bloom, EffectComposer, ChromaticAberration, Vignette, Noise, DepthOfField, GodRays } from '@react-three/postprocessing'
+import { Environment } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
+import { useSceneManager } from '@/hooks/useSceneManager'
+import { VisualSettings } from './VisualSettings'
+import { CanvasRecorder } from '@/lib/CanvasRecorder'
 import { FluidBackground } from './FluidBackground'
 import { RadialVisualiser } from './RadialVisualiser'
 import { AlbumMesh } from '../library/AlbumMesh'
@@ -10,6 +15,7 @@ import { ParticleField } from '../library/ParticleField'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
 import { ButterchurnVisualiser } from './ButterchurnVisualiser'
+import { ButterchurnTexture } from './ButterchurnTexture'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
@@ -21,9 +27,35 @@ interface FullscreenOverlayProps {
   tracks: DeezerTrack[]
 }
 
-function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: DeezerTrack[] }) {
-  const visualLayer = useVisualiserStore(state => state.visualLayer)
-  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
+function FullscreenScene({
+  accent,
+  tracks,
+  butterchurnCanvas
+}: {
+  accent: AlbumColour;
+  tracks: DeezerTrack[];
+  butterchurnCanvas: HTMLCanvasElement | null
+}) {
+  const quality = useVisualiserStore(state => state.quality)
+  const [orb, setOrb] = React.useState<THREE.Group | null>(null)
+
+  // Layer Opacities
+  const orbOpacity = useVisualiserStore(state => state.orbOpacity)
+  const terrainOpacity = useVisualiserStore(state => state.terrainOpacity)
+  const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
+  const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
+  const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
+
+  // FX state
+  const bloomEnabled = useVisualiserStore(state => state.bloomEnabled)
+  const bloomIntensity = useVisualiserStore(state => state.bloomIntensity)
+  const godRaysEnabled = useVisualiserStore(state => state.godRaysEnabled)
+  const chromaticAberrationEnabled = useVisualiserStore(state => state.chromaticAberrationEnabled)
+  const vignetteEnabled = useVisualiserStore(state => state.vignetteEnabled)
+  const filmGrainEnabled = useVisualiserStore(state => state.filmGrainEnabled)
+  const dofEnabled = useVisualiserStore(state => state.dofEnabled)
+
+  const bassPower = useVisualiserStore(state => state.bassPower)
 
   const albumLayout = useMemo(() => {
     const seen = new Set<number>()
@@ -58,17 +90,54 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} intensity={1} />
 
-      <ParticleField color={accent.hex} />
+      <Environment preset="night" />
 
-      {visualLayer === 'Energy' && <AudioOrb accent={accent} />}
-      {visualLayer === 'Ambient' && <AudioTerrain accent={accent} />}
+      {butterchurnCanvas && <ButterchurnTexture canvas={butterchurnCanvas} opacity={presetsOpacity} />}
 
-      {visualLayer === 'Ambient' &&
+      {particlesOpacity > 0 && <ParticleField color={accent.hex} />}
+
+      {orbOpacity > 0 && <AudioOrb ref={setOrb} accent={accent} />}
+      {terrainOpacity > 0 && <AudioTerrain accent={accent} />}
+
+      {albumGravityOpacity > 0 &&
         albumLayout.map(album => <AlbumMesh key={album.albumId} {...album} />)}
 
-      {!isLowQuality && (
-        <EffectComposer>
-          <Bloom luminanceThreshold={0.1} intensity={1.5} />
+      {quality !== 'Low' && (
+        <EffectComposer multisampling={quality === 'Epic' ? 8 : 0}>
+          {bloomEnabled ? (
+            <Bloom
+              luminanceThreshold={0.1}
+              intensity={bloomIntensity * (1 + bassPower * 0.5)}
+            />
+          ) : <></>}
+          {godRaysEnabled && orb ? (
+            <GodRays
+              sun={orb as unknown as THREE.Mesh}
+              samples={quality === 'Epic' ? 60 : 20}
+              density={0.96}
+              decay={0.9}
+              weight={0.3}
+              exposure={0.6}
+              clampMax={1.0}
+            />
+          ) : <></>}
+          {chromaticAberrationEnabled ? (
+            <ChromaticAberration
+              offset={new THREE.Vector2(0.002 * bassPower, 0.002 * bassPower)}
+              radialModulation={false}
+              modulationOffset={0}
+            />
+          ) : <></>}
+          {vignetteEnabled ? <Vignette eskil={false} offset={0.5} darkness={0.5} /> : <></>}
+          {filmGrainEnabled ? <Noise opacity={0.05} /> : <></>}
+          {dofEnabled ? (
+            <DepthOfField
+              focusDistance={0}
+              focalLength={0.02}
+              bokehScale={2}
+              height={480}
+            />
+          ) : <></>}
         </EffectComposer>
       )}
     </>
@@ -76,12 +145,45 @@ function FullscreenScene({ accent, tracks }: { accent: AlbumColour; tracks: Deez
 }
 
 export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
+  useSceneManager()
   const isFullscreen = useVisualiserStore(state => state.isFullscreen)
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const setVisualLayer = useVisualiserStore(state => state.setVisualLayer)
+  const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
+  const [butterchurnCanvas, setButterchurnCanvas] = React.useState<HTMLCanvasElement | null>(null)
+  const setShowSettings = useVisualiserStore(state => state.setShowSettings)
+  const isRecording = useVisualiserStore(state => state.isRecording)
+  const setIsRecording = useVisualiserStore(state => state.setIsRecording)
 
   const currentTrack = usePlayerStore(state => state.currentTrack)
+
+  const recorderRef = useRef<CanvasRecorder | null>(null)
+
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      recorderRef.current?.stop()
+      setIsRecording(false)
+    } else {
+      // Specifically target the Three.js canvas which now contains all layers
+      const canvas = document.querySelector('canvas[data-engine="three.js r170"]') || document.querySelector('canvas')
+      if (canvas instanceof HTMLCanvasElement) {
+        recorderRef.current = new CanvasRecorder(canvas)
+        recorderRef.current.start()
+        setIsRecording(true)
+      }
+    }
+  }, [isRecording, setIsRecording])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isFullscreen) return
+      if (e.key.toLowerCase() === 's') setShowSettings(!useVisualiserStore.getState().showSettings)
+      if (e.key.toLowerCase() === 'r') toggleRecording()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen, setShowSettings, toggleRecording])
 
   // AnimatePresence must wrap the conditional — early return here would
   // prevent the exit animation from firing when isFullscreen goes false.
@@ -96,16 +198,35 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
           style={styles.overlay}
         >
           <div style={styles.canvasWrap}>
-            {visualLayer === 'Presets' ? (
-              <ButterchurnVisualiser onFailure={() => setVisualLayer('Minimal')} />
-            ) : (
-              <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
-                <FullscreenScene accent={accent} tracks={tracks} />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                visibility: 'hidden',
+                pointerEvents: 'none',
+              }}
+            >
+              <ButterchurnVisualiser
+                onFailure={() => setVisualLayer('Minimal')}
+                onCanvasReady={setButterchurnCanvas}
+                opacity={presetsOpacity}
+              />
+            </div>
+
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <Canvas camera={{ position: [0, 0, 8], fov: 60 }} gl={{ preserveDrawingBuffer: true }}>
+                <FullscreenScene
+                  accent={accent}
+                  tracks={tracks}
+                  butterchurnCanvas={butterchurnCanvas}
+                />
               </Canvas>
-            )}
+            </div>
           </div>
 
           <div style={styles.uiLayer}>
+            <VisualSettings />
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={visualLayer}
@@ -169,12 +290,30 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             )}
 
             <div style={styles.controls}>
-              <button
-                onClick={toggleFullscreen}
-                style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
-              >
-                Exit Fullscreen (F)
-              </button>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button
+                  onClick={toggleFullscreen}
+                  style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
+                >
+                  Exit Fullscreen (F)
+                </button>
+                <button
+                  onClick={() => setShowSettings(!useVisualiserStore.getState().showSettings)}
+                  style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
+                >
+                  Settings (S)
+                </button>
+                <button
+                  onClick={toggleRecording}
+                  style={{
+                    ...styles.button,
+                    borderColor: isRecording ? '#ff4444' : accent.hex,
+                    color: isRecording ? '#ff4444' : accent.hex
+                  }}
+                >
+                  {isRecording ? 'Stop Recording (R)' : 'Record (R)'}
+                </button>
+              </div>
               <div style={styles.info}>
                 <span style={styles.layerLabel}>Press 'V' to cycle layers</span>
               </div>

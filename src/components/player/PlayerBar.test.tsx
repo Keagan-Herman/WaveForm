@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { PlayerBar } from './PlayerBar'
 import { usePlayerStore } from '../../stores/playerStore'
 import { DeezerTrack } from '../../lib/deezerApi'
-import { AlbumColour } from '../../hooks/useAlbumColour'
 
 const mockTrack: DeezerTrack = {
   id: 1,
