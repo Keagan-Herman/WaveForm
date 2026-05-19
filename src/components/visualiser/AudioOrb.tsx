@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect, forwardRef } from 'react'
+import { useRef, useMemo, useEffect, forwardRef, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { audioEngine } from '@/audio/AudioEngine'
@@ -179,13 +179,23 @@ const fragmentShader = `
   }
 `
 
-export const AudioOrb = forwardRef<THREE.Group, { accent: AlbumColour }>(({ accent }, ref) => {
+export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accent }, ref) => {
   const meshRef = useRef<THREE.Group>(null)
   const shellRef = useRef<THREE.Mesh>(null)
   const coreRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const pointsMatRef = useRef<THREE.PointsMaterial>(null)
   const colorMixRef = useRef(0)
+
+  const combinedRef = useCallback((node: THREE.Mesh | null) => {
+    if (shellRef.current !== node) {
+      (shellRef as React.MutableRefObject<THREE.Mesh | null>).current = node;
+    }
+    if (ref) {
+      if (typeof ref === 'function') ref(node);
+      else (ref as React.MutableRefObject<THREE.Mesh | null>).current = node;
+    }
+  }, [ref]);
   const orbOpacity = useVisualiserStore(state => state.orbOpacity)
 
   const freqDataRef = useRef(new Uint8Array(128))
@@ -265,12 +275,6 @@ export const AudioOrb = forwardRef<THREE.Group, { accent: AlbumColour }>(({ acce
 
       meshRef.current.rotation.y += smoothedRotation.current.y
       meshRef.current.rotation.z += smoothedRotation.current.z
-
-      // Update the forwarded ref as well
-      if (ref) {
-        if (typeof ref === 'function') ref(meshRef.current)
-        else (ref as React.MutableRefObject<THREE.Group>).current = meshRef.current
-      }
     }
 
     if (coreRef.current) {
@@ -286,7 +290,7 @@ export const AudioOrb = forwardRef<THREE.Group, { accent: AlbumColour }>(({ acce
   return (
     <group ref={meshRef}>
       {/* Outer Shell */}
-      <mesh ref={shellRef}>
+      <mesh ref={combinedRef}>
         <icosahedronGeometry args={[CONFIG.GEOMETRY.SHELL_RADIUS, CONFIG.GEOMETRY.SHELL_DETAIL]} />
         <shaderMaterial
           ref={materialRef}
