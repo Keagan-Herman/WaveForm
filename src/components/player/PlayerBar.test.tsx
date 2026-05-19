@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PlayerBar } from './PlayerBar'
 import { usePlayerStore } from '../../stores/playerStore'
@@ -17,10 +17,20 @@ const mockTrack: DeezerTrack = {
 }
 
 const mockAccent = {
+  h: 141,
+  s: 73,
+  l: 42,
   hex: '#1db954',
-  rgb: [29, 185, 84],
-  hsl: [141, 73, 42],
-  isDark: true,
+  palette: {
+    background: '#050e05',
+    surface: '#081208',
+    primary: '#1db954',
+    secondary: '#1db954',
+    accent: '#1db954',
+    text: '#f0f0f0',
+    textDim: 'rgba(255,255,255,0.5)',
+    border: 'rgba(29, 185, 84, 0.2)',
+  },
 }
 
 describe('PlayerBar', () => {

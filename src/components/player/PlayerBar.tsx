@@ -301,7 +301,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                 <p
                   style={{
                     fontSize: 11,
-                    color: 'rgba(232, 245, 232, 0.45)',
+                    color: 'rgba(232, 245, 232, 0.5)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
