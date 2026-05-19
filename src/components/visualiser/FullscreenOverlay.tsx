@@ -113,11 +113,11 @@ function FullscreenScene({
           {godRaysEnabled && orb ? (
             <GodRays
               sun={orb}
-              samples={quality === 'Epic' ? 60 : 20}
+              samples={quality === 'Epic' ? 32 : 16}
               density={0.96}
               decay={0.9}
               weight={0.3}
-              exposure={0.6}
+              exposure={0.4}
               clampMax={1.0}
             />
           ) : <></>}
