@@ -37,7 +37,7 @@ function FullscreenScene({
   butterchurnCanvas: HTMLCanvasElement | null
 }) {
   const quality = useVisualiserStore(state => state.quality)
-  const [orb, setOrb] = React.useState<THREE.Group | null>(null)
+  const [orb, setOrb] = React.useState<THREE.Mesh | null>(null)
 
   // Layer Opacities
   const orbOpacity = useVisualiserStore(state => state.orbOpacity)
@@ -112,7 +112,7 @@ function FullscreenScene({
           ) : <></>}
           {godRaysEnabled && orb ? (
             <GodRays
-              sun={orb as unknown as THREE.Mesh}
+              sun={orb}
               samples={quality === 'Epic' ? 60 : 20}
               density={0.96}
               decay={0.9}
