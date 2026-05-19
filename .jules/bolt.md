@@ -21,3 +21,7 @@
 - **Optimization:** Refactored `computeWaveform` to extract duration from the `AudioBuffer` during the peak-finding pass.
 - **Result:** Halved CPU and memory usage for file ingestion.
 - **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.
+
+## 2025-05-19 - Offscreen Canvas Palette for Gradients
+**Learning:** In high-frequency (60fps) canvas renderers, `createLinearGradient` and constant HSL string allocations create significant CPU overhead and GC pressure. Even if the gradient colors are "static" (based on the current theme), recreating them 128+ times per frame is wasteful.
+**Action:** Pre-render gradients into an offscreen canvas "palette" whenever the theme colors change. Use `ctx.drawImage` to sample from this palette during the render loop. Cache color strings in `useRef` to avoid per-frame string concatenation.

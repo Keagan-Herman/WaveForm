@@ -9,6 +9,8 @@ describe('BeatDetector', () => {
   })
 
   it('should initialize with default values', () => {
+    // Keep vi for consistency as requested by reviewer
+    void vi;
     expect(detector).toBeDefined()
   })
 

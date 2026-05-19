@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PlayerBar } from './PlayerBar'
 import { usePlayerStore } from '../../stores/playerStore'
-import { DeezerTrack } from '../../lib/deezerApi'
+import { DeezerTrack } from '../../types/track'
+import { AlbumColour } from '../../hooks/useAlbumColour'
 
 const mockTrack: DeezerTrack = {
   id: 1,
@@ -16,11 +17,21 @@ const mockTrack: DeezerTrack = {
   explicit_lyrics: false,
 }
 
-const mockAccent = {
+const mockAccent: AlbumColour = {
+  h: 141,
+  s: 73,
+  l: 42,
   hex: '#1db954',
-  rgb: [29, 185, 84],
-  hsl: [141, 73, 42],
-  isDark: true,
+  palette: {
+    background: '#050e05',
+    surface: '#0a1a0a',
+    primary: '#1db954',
+    secondary: '#25e065',
+    accent: '#b91db9',
+    text: '#f0f0f0',
+    textDim: 'rgba(255,255,255,0.5)',
+    border: 'rgba(29, 185, 84, 0.2)',
+  },
 }
 
 describe('PlayerBar', () => {
@@ -30,6 +41,8 @@ describe('PlayerBar', () => {
   })
 
   it('renders "Nothing playing" when no track is set', () => {
+    // Keep vi for consistency as requested by reviewer
+    void vi;
     render(<PlayerBar accent={mockAccent} />)
     expect(screen.getByText('Nothing playing')).toBeDefined()
   })
@@ -50,8 +63,6 @@ describe('PlayerBar', () => {
     expect(usePlayerStore.getState().isPlaying).toBe(true)
 
     // After state update, it should show Pause
-    // Note: In a real React app, re-render happens automatically.
-    // RTL's render keeps the component mounted and responding to store changes.
     expect(screen.getByLabelText('Pause')).toBeDefined()
 
     fireEvent.click(screen.getByLabelText('Pause'))
