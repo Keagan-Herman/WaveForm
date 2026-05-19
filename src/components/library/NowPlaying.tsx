@@ -51,18 +51,39 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const fraction = Math.max(0, Math.min(1, x / rect.width));
+    seekToFraction(fraction);
+  };
+
+  const seekToFraction = (fraction: number) => {
     const audio = document.getElementById('preview-audio') as HTMLAudioElement;
     if (audio) {
-      audio.currentTime = fraction * duration;
+      audio.currentTime = Math.max(0, Math.min(1, fraction)) * duration;
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (duration <= 0) return;
+    const step = 5; // 5 seconds step
+    if (e.key === 'ArrowRight') {
+      seekToFraction((currentTime + step) / duration);
+    } else if (e.key === 'ArrowLeft') {
+      seekToFraction((currentTime - step) / duration);
     }
   };
 
   return (
     <div style={styles.scrubberWrap}>
       <div
-        style={{ ...styles.scrubberTrack, cursor: 'pointer' }}
+        role="slider"
+        aria-label="Playback progress — click to seek"
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        aria-valuenow={currentTime}
+        tabIndex={0}
+        style={{ ...styles.scrubberTrack, cursor: 'pointer', outline: 'none' }}
         onClick={handleSeek}
-        title="Click to seek"
+        onKeyDown={handleKeyDown}
+        title="Click to seek or use arrow keys"
       >
         <div
           style={{
@@ -87,7 +108,7 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
       </div>
       <div style={styles.scrubberLabels}>
         <span style={styles.timeLabel}>{elapsedStr}</span>
-        <span style={{ ...styles.timeLabel, opacity: 0.45 }}>{durationStr}</span>
+        <span style={styles.timeLabel}>{durationStr}</span>
       </div>
     </div>
   );
@@ -296,7 +317,7 @@ const metaRowStyles: Record<string, React.CSSProperties> = {
   },
   label: {
     fontSize: '0.65rem',
-    opacity: 0.42,
+    opacity: 0.5,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
     fontFamily: 'monospace',
@@ -407,7 +428,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    opacity: 0.45,
+    opacity: 0.5,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',

@@ -140,8 +140,11 @@ export function SearchOverlay({
         {query && !isLoading && (
           <button
             style={styles.clearBtn}
-            onClick={() => setQuery('')}
-            aria-label="Clear"
+            onClick={() => {
+              setQuery('')
+              inputRef.current?.focus()
+            }}
+            aria-label="Clear search query"
             title="Clear search (Esc)"
           >
             ✕

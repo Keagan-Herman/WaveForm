@@ -143,10 +143,25 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
     const rect = wrapper.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const fraction = Math.max(0, Math.min(1, x / rect.width));
+    seekToFraction(fraction);
+  };
 
+  const seekToFraction = (fraction: number) => {
+    if (!currentTrack?.duration) return;
     const audio = document.getElementById('preview-audio') as HTMLAudioElement;
     if (audio) {
-      audio.currentTime = fraction * currentTrack.duration;
+      audio.currentTime = Math.max(0, Math.min(1, fraction)) * currentTrack.duration;
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!currentTrack?.duration) return;
+    const step = 5; // 5 seconds step
+    const { currentTime } = usePlayerStore.getState();
+    if (e.key === 'ArrowRight') {
+      seekToFraction((currentTime + step) / currentTrack.duration);
+    } else if (e.key === 'ArrowLeft') {
+      seekToFraction((currentTime - step) / currentTrack.duration);
     }
   };
 
@@ -242,13 +257,17 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
     <div
       ref={wrapperRef}
       onClick={handleSeek}
-      style={{ width: '100%', height, cursor: 'pointer' }}
-      title="Click to seek"
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      style={{ width: '100%', height, cursor: 'pointer', outline: 'none' }}
+      title="Click to seek or use arrow keys"
     >
       <canvas
         ref={canvasRef}
         aria-label={
-          isLocal ? 'Static waveform — pre-computed from local file' : 'Live audio waveform'
+          isLocal
+            ? 'Static waveform — pre-computed from local file — click to seek'
+            : 'Live audio waveform'
         }
         style={{ display: 'block' }}
       />
