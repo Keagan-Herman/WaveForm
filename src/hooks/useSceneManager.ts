@@ -63,16 +63,25 @@ export function useSceneManager() {
 
     const update = () => {
       const lerpSpeed = 0.02
+      const updates: Record<string, number> = {}
+      let hasChanges = false
 
       Object.keys(targetOpacities.current).forEach(key => {
         const target = targetOpacities.current[key]
         const current = currentOpacities.current[key]
+        const diff = target - current
 
-        if (Math.abs(target - current) > 0.001) {
-          currentOpacities.current[key] += (target - current) * lerpSpeed
-          setLayerOpacity(key, currentOpacities.current[key])
+        if (Math.abs(diff) > 0.001) {
+          currentOpacities.current[key] += diff * lerpSpeed
+          updates[key] = currentOpacities.current[key]
+          hasChanges = true
         }
       })
+
+      if (hasChanges) {
+        // Single Zustand update for all opacity changes this frame
+        Object.entries(updates).forEach(([key, val]) => setLayerOpacity(key, val))
+      }
 
       frameId = requestAnimationFrame(update)
     }
