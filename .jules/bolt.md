@@ -21,3 +21,7 @@
 - **Optimization:** Refactored `computeWaveform` to extract duration from the `AudioBuffer` during the peak-finding pass.
 - **Result:** Halved CPU and memory usage for file ingestion.
 - **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.
+
+## 2024-05-22 - Squared Distance & String Caching in Canvas Loops
+**Learning:** In 60fps canvas animations, `Math.sqrt` for distance checks and template literal interpolation for HSL strings (e.g., `hsla(${hue}, ...)`) are significant CPU and memory bottlenecks when called hundreds of times per frame.
+**Action:** Use squared distance (`dx*dx + dy*dy > thresholdSq`) to skip square root calculations. Pre-calculate all possible color strings into lookup tables once per theme change to eliminate all hot-path string allocations and reduce GC pressure.
