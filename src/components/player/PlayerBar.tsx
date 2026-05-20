@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useUIStore } from '../../stores/uiStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
 import { getTrackCover, getTrackArtist, isLocalTrack, isDeezerTrack } from '../../types/track';
@@ -123,6 +124,7 @@ function PlaybackProgress() {
         style={{
           fontSize: 11,
           fontFamily: 'monospace',
+          fontVariantNumeric: 'tabular-nums',
           color: 'rgba(232, 245, 232, 0.4)',
           flexShrink: 0,
           width: 32,
@@ -140,6 +142,7 @@ function PlaybackProgress() {
         style={{
           fontSize: 11,
           fontFamily: 'monospace',
+          fontVariantNumeric: 'tabular-nums',
           color: 'rgba(232, 245, 232, 0.4)',
           flexShrink: 0,
           width: 32,
@@ -298,7 +301,12 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                 >
                   {currentTrack.title}
                 </p>
-                <p
+                <button
+                  onClick={() => {
+                    if (isDeezerTrack(currentTrack)) {
+                      useUIStore.getState().setSelectedArtistId(currentTrack.artist.id);
+                    }
+                  }}
                   style={{
                     fontSize: 11,
                     color: 'rgba(232, 245, 232, 0.5)',
@@ -311,8 +319,17 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                     alignItems: 'center',
                     gap: 4,
                     fontFamily: 'inherit',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: isDeezerTrack(currentTrack) ? 'pointer' : 'default',
+                    textAlign: 'left',
+                    width: '100%',
                   }}
                   title={trackArtist}
+                  aria-label={
+                    isDeezerTrack(currentTrack) ? `View artist: ${trackArtist}` : trackArtist
+                  }
                 >
                   {isLocal && (
                     <span
@@ -330,8 +347,24 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                       LOCAL
                     </span>
                   )}
-                  {trackArtist}
-                </p>
+                  <span
+                    style={{
+                      transition: 'color 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isDeezerTrack(currentTrack)) {
+                        e.currentTarget.style.color = accent.hex;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (isDeezerTrack(currentTrack)) {
+                        e.currentTarget.style.color = 'rgba(232, 245, 232, 0.5)';
+                      }
+                    }}
+                  >
+                    {trackArtist}
+                  </span>
+                </button>
               </motion.div>
             ) : (
               <motion.p
