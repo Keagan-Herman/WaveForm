@@ -21,3 +21,7 @@
 - **Optimization:** Refactored `computeWaveform` to extract duration from the `AudioBuffer` during the peak-finding pass.
 - **Result:** Halved CPU and memory usage for file ingestion.
 - **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.
+
+## 2024-05-22 - Pre-rendered Palette Optimization for Canvas
+**Learning:** For canvas visualizers that shift colors based on magnitude (e.g., frequency data), calling `createLinearGradient` and interpolating HSL strings for every bar on every frame (thousands of calls per frame) is a massive performance bottleneck due to CPU overhead and string allocation/GC pressure.
+**Action:** Pre-render a 256x256 "palette canvas" containing all possible gradient states once per theme change. Use `ctx.drawImage` to sample from this palette and pre-calculate HSL lookup tables for auxiliary effects (glows, caps) to eliminate all hot-path allocations.
