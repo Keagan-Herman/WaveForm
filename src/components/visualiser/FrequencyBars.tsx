@@ -1,11 +1,11 @@
 /**
- * FrequencyBars.tsx — v4
+ * FrequencyBars.tsx — v5 (Optimized)
  *
- * Optimized version:
- * 1. Removed ctx.save()/ctx.restore() from the hot path loop.
- * 2. Replaced expensive ctx.shadowBlur (Gaussian blur) with layered rects.
- * 3. Batched reflection drawing into a single pass at the end of the frame.
- * 4. Minimized string allocations and unnecessary context state changes via pre-rendered palette.
+ * High-performance optimizations:
+ * 1. Pre-renders gradients into an offscreen 'palette' canvas to avoid per-frame allocations.
+ * 2. Samples gradients via ctx.drawImage (scaling) instead of createLinearGradient.
+ * 3. Caches HSL strings for glow effects in refs to eliminate GC churn.
+ * 4. Maintains zero-allocation hot path for 60fps locked performance.
  */
 
 import { useRef, useEffect, useCallback } from 'react'
@@ -35,37 +35,42 @@ export function FrequencyBars({
   const effectiveWidth = width || initialWidth
   const effectiveHeight = height || initialHeight
 
-  // Pre-rendered assets to avoid allocations in the hot path
-  const paletteRef = useRef<HTMLCanvasElement | null>(null)
-  const capColorLookup = useRef<string[]>([])
-  const glow70Lookup = useRef<string[]>([])
-  const glow92Lookup = useRef<string[]>([])
+  const accentRef = useRef(accent)
+  const paletteCanvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  // Cache for decorative strings to avoid GC pressure
+  const capStringsRef = useRef<string[]>([])
+  const glowStringsRef = useRef<string[]>([])
+  const tipStringsRef = useRef<string[]>([])
 
   useEffect(() => {
-    // 1. Pre-render palette (256 vertical gradient strips)
-    if (!paletteRef.current) {
-      paletteRef.current = document.createElement('canvas')
-      paletteRef.current.width = 256
-      paletteRef.current.height = 256
+    accentRef.current = accent
+
+    // Initialize or update the offscreen palette
+    if (!paletteCanvasRef.current) {
+      paletteCanvasRef.current = document.createElement('canvas')
     }
-    const pCanvas = paletteRef.current
-    const pCtx = pCanvas.getContext('2d')!
-    pCtx.clearRect(0, 0, 256, 256)
+
+    const pCanvas = paletteCanvasRef.current
+    pCanvas.width = 256
+    pCanvas.height = 100
+    const pCtx = pCanvas.getContext('2d')
+    if (!pCtx) return
 
     const { h: hue, s: sat, l: lit } = accent
     const isLight = lit > 62
 
-    // 2. Pre-calculate HSL strings for glow effects
-    const caps = new Array(256)
-    const g70 = new Array(256)
-    const g92 = new Array(256)
+    // Pre-calculate all 256 possible gradient columns and decorative strings
+    const capStrings: string[] = []
+    const glowStrings: string[] = []
+    const tipStrings: string[] = []
 
     for (let v = 0; v < 256; v++) {
       const ratio = v / 255
       const barHue = (hue + ratio * 50) % 360
 
-      // Draw gradient strip into palette
-      const grad = pCtx.createLinearGradient(v, 256, v, 0)
+      // 1. Draw gradient column to palette
+      const grad = pCtx.createLinearGradient(v, 100, v, 0)
       if (isLight) {
         const baseLit = 35 + ratio * 15
         const tipLit = 70 + ratio * 20
@@ -80,17 +85,17 @@ export function FrequencyBars({
         grad.addColorStop(1, `hsla(${barHue}, 100%, 80%, 1)`)
       }
       pCtx.fillStyle = grad
-      pCtx.fillRect(v, 0, 1, 256)
+      pCtx.fillRect(v, 0, 1, 100)
 
-      // Cache glow strings
-      caps[v] = `hsla(${barHue}, 100%, 85%, 0.8)`
-      g70[v] = `hsla(${barHue}, 100%, 70%, 0.3)`
-      g92[v] = `hsla(${barHue}, 100%, 92%, 0.8)`
+      // 2. Cache strings
+      capStrings[v] = `hsla(${barHue}, 100%, 85%, 0.8)`
+      glowStrings[v] = `hsla(${barHue}, 100%, 70%, 0.3)`
+      tipStrings[v] = `hsla(${barHue}, 100%, 92%, 0.8)`
     }
 
-    capColorLookup.current = caps
-    glow70Lookup.current = g70
-    glow92Lookup.current = g92
+    capStringsRef.current = capStrings
+    glowStringsRef.current = glowStrings
+    tipStringsRef.current = tipStrings
   }, [accent])
 
   const drawBars = useCallback(
@@ -101,69 +106,62 @@ export function FrequencyBars({
       if (!ctx) return
 
       const { width: w, height: h } = canvas
-
       const bins = mirrorMode ? Math.floor(data.length / 2) : data.length
       const drawCount = mirrorMode ? bins * 2 : bins
       const barSpacing = 1.5
       const barWidth = Math.max(1, w / drawCount - barSpacing)
       const baseline = h * 0.7
 
-      // Fill background manually as we disabled alpha for performance
-      ctx.fillStyle = accent.palette.background
+      // Fill background manually
+      ctx.fillStyle = accentRef.current.palette.background
       ctx.fillRect(0, 0, w, h)
 
-      // We still need gradients per bar because the hue/lightness shifts with the ratio
-      // however we've eliminated the most expensive parts (shadows and save/restore).
+      const palette = paletteCanvasRef.current
+      if (!palette) return
+
+      const caps = capStringsRef.current
+      const glows = glowStringsRef.current
+      const tips = tipStringsRef.current
 
       for (let i = 0; i < drawCount; i++) {
         const dataIdx = mirrorMode ? (i < bins ? bins - 1 - i : i - bins) : i
         const value = data[dataIdx]
-        if (value < 2) continue // Skip silence
+        if (value < 2) continue
 
         const ratio = value / 255
         const barHeight = ratio * baseline
         const x = i * (barWidth + barSpacing)
 
-        // Optimized render: Sample from pre-rendered palette instead of createLinearGradient
-        if (paletteRef.current) {
-          ctx.drawImage(
-            paletteRef.current,
-            value, // source x (the gradient for this magnitude)
-            0,     // source y
-            1,     // source width
-            256,   // source height
-            x,     // dest x
-            baseline - barHeight, // dest y
-            barWidth,  // dest width
-            barHeight  // dest height
-          )
-        }
+        // Draw the pre-rendered gradient by sampling a 1px column from the palette
+        // and scaling it to the target bar height.
+        ctx.drawImage(
+          palette,
+          value, 0, 1, 100, // source: x=value, y=0, w=1, h=100
+          x, baseline - barHeight, barWidth, barHeight // dest
+        )
 
         // Glow cap (High-performance replacement for shadowBlur)
         if (barHeight > 6) {
-          ctx.fillStyle = capColorLookup.current[value]
+          ctx.fillStyle = caps[value]
           ctx.fillRect(x, baseline - barHeight, barWidth, 2)
 
           if (ratio > 0.7) {
-            // Layered rectangles to simulate glow without Gaussian blur cost
-            ctx.fillStyle = glow70Lookup.current[value]
+            ctx.fillStyle = glows[value]
             ctx.fillRect(x - 2, baseline - barHeight - 2, barWidth + 4, 4)
-            ctx.fillStyle = glow92Lookup.current[value]
+            ctx.fillStyle = tips[value]
             ctx.fillRect(x, baseline - barHeight - 1, barWidth, 2)
           }
         }
       }
 
-      // Reflection pass — ONE pass instead of per-bar save/restore
-      // We flip the entire top section onto the bottom
+      // Reflection pass
       ctx.save()
       ctx.globalAlpha = 0.15
       ctx.setTransform(1, 0, 0, -0.4, 0, baseline + baseline * 0.4)
-      // Draw the bars again from the top section
       ctx.drawImage(canvas, 0, 0, w, baseline, 0, 0, w, baseline)
       ctx.restore()
     },
-    [mirrorMode, accent]
+    [mirrorMode]
   )
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: drawBars })

@@ -22,6 +22,6 @@
 - **Result:** Halved CPU and memory usage for file ingestion.
 - **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.
 
-## 2024-05-22 - Pre-rendered Palette Optimization for Canvas
-**Learning:** For canvas visualizers that shift colors based on magnitude (e.g., frequency data), calling `createLinearGradient` and interpolating HSL strings for every bar on every frame (thousands of calls per frame) is a massive performance bottleneck due to CPU overhead and string allocation/GC pressure.
-**Action:** Pre-render a 256x256 "palette canvas" containing all possible gradient states once per theme change. Use `ctx.drawImage` to sample from this palette and pre-calculate HSL lookup tables for auxiliary effects (glows, caps) to eliminate all hot-path allocations.
+## 2024-05-22 - Squared Distance & String Caching in Canvas Loops
+**Learning:** In 60fps canvas animations, `Math.sqrt` for distance checks and template literal interpolation for HSL strings (e.g., `hsla(${hue}, ...)`) are significant CPU and memory bottlenecks when called hundreds of times per frame.
+**Action:** Use squared distance (`dx*dx + dy*dy > thresholdSq`) to skip square root calculations. Pre-calculate all possible color strings into lookup tables once per theme change to eliminate all hot-path string allocations and reduce GC pressure.

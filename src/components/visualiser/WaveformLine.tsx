@@ -259,7 +259,7 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
       onClick={handleSeek}
       onKeyDown={handleKeyDown}
       tabIndex={0}
-      style={{ width: '100%', height, cursor: 'pointer', outline: 'none' }}
+      style={{ width: '100%', height, cursor: 'pointer' }}
       title="Click to seek or use arrow keys"
     >
       <canvas
