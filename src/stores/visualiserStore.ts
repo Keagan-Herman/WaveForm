@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
 export type QualityLevel = 'Low' | 'Medium' | 'Epic'
@@ -72,69 +73,79 @@ interface VisualiserStore {
   isLowQuality: boolean
 }
 
-export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
-  beat: false,
-  bassPower: 0,
-  beatConfidence: 0,
-  bpm: 0,
+export const useVisualiserStore = create<VisualiserStore>()(
+  persist(
+    (set, get) => ({
+      beat: false,
+      bassPower: 0,
+      beatConfidence: 0,
+      bpm: 0,
 
-  visualLayer: 'Ambient',
-  isFullscreen: false,
-  quality: 'Medium',
-  autoCycle: false,
-  isRecording: false,
-  showSettings: false,
-  isLowQuality: false,
+      visualLayer: 'Ambient',
+      isFullscreen: false,
+      quality: 'Medium',
+      autoCycle: false,
+      isRecording: false,
+      showSettings: false,
+      isLowQuality: false,
 
-  orbOpacity: 1,
-  terrainOpacity: 1,
-  particlesOpacity: 1,
-  presetsOpacity: 0,
-  albumGravityOpacity: 1,
+      orbOpacity: 1,
+      terrainOpacity: 1,
+      particlesOpacity: 1,
+      presetsOpacity: 0,
+      albumGravityOpacity: 1,
 
-  bloomEnabled: true,
-  bloomIntensity: 1.5,
-  godRaysEnabled: true,
-  chromaticAberrationEnabled: false,
-  vignetteEnabled: true,
-  filmGrainEnabled: true,
-  dofEnabled: false,
+      bloomEnabled: true,
+      bloomIntensity: 1.5,
+      godRaysEnabled: false,
+      chromaticAberrationEnabled: false,
+      vignetteEnabled: true,
+      filmGrainEnabled: true,
+      dofEnabled: false,
 
-  setBeat: beat => set({ beat }),
-  setBassPower: bassPower => set({ bassPower }),
-  setBeatConfidence: beatConfidence => set({ beatConfidence }),
-  setBpm: bpm => set({ bpm }),
-  setAudioData: data => set(data),
+      setBeat: beat => set({ beat }),
+      setBassPower: bassPower => set({ bassPower }),
+      setBeatConfidence: beatConfidence => set({ beatConfidence }),
+      setBpm: bpm => set({ bpm }),
+      setAudioData: data => set(data),
 
-  setVisualLayer: visualLayer => {
-    // Legacy support: when switching layers, we might want to reset opacities
-    // or keep them. For now, let's just update the label.
-    set({ visualLayer })
-  },
-  cycleVisualLayer: () => {
-    const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
-    const current = get().visualLayer
-    const nextIndex = (layers.indexOf(current) + 1) % layers.length
-    set({ visualLayer: layers[nextIndex] })
-  },
+      setVisualLayer: visualLayer => {
+        // Legacy support: when switching layers, we might want to reset opacities
+        // or keep them. For now, let's just update the label.
+        set({ visualLayer })
+      },
+      cycleVisualLayer: () => {
+        const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
+        const current = get().visualLayer
+        const nextIndex = (layers.indexOf(current) + 1) % layers.length
+        set({ visualLayer: layers[nextIndex] })
+      },
 
-  setIsFullscreen: isFullscreen => set({ isFullscreen }),
-  toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
+      setIsFullscreen: isFullscreen => set({ isFullscreen }),
+      toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
 
-  setQuality: quality => set({ quality, isLowQuality: quality === 'Low' }),
-  setAutoCycle: autoCycle => set({ autoCycle }),
-  setIsRecording: isRecording => set({ isRecording }),
-  setShowSettings: showSettings => set({ showSettings }),
+      setQuality: quality => set({ quality, isLowQuality: quality === 'Low' }),
+      setAutoCycle: autoCycle => set({ autoCycle }),
+      setIsRecording: isRecording => set({ isRecording }),
+      setShowSettings: showSettings => set({ showSettings }),
 
-  setLayerOpacity: (layer, opacity) => {
-    const key = `${layer}Opacity` as keyof VisualiserStore
-    set({ [key]: opacity } as unknown as Partial<VisualiserStore>)
-  },
+      setLayerOpacity: (layer, opacity) => {
+        const key = `${layer}Opacity` as keyof VisualiserStore
+        set({ [key]: opacity } as unknown as Partial<VisualiserStore>)
+      },
 
-  setFxEnabled: (fx, enabled) => {
-    const key = `${fx}Enabled` as keyof VisualiserStore
-    set({ [key]: enabled } as unknown as Partial<VisualiserStore>)
-  },
+      setFxEnabled: (fx, enabled) => {
+        const key = `${fx}Enabled` as keyof VisualiserStore
+        set({ [key]: enabled } as unknown as Partial<VisualiserStore>)
+      },
 
-  setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
-}))
+      setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
+    }),
+    {
+      name: 'visualiser-settings',
+      partialize: state => ({
+        godRaysEnabled: state.godRaysEnabled,
+      }),
+    }
+  )
+)
