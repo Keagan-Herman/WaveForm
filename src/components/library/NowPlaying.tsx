@@ -80,7 +80,7 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
         aria-valuemax={duration}
         aria-valuenow={currentTime}
         tabIndex={0}
-        style={{ ...styles.scrubberTrack, cursor: 'pointer', outline: 'none' }}
+        style={{ ...styles.scrubberTrack, cursor: 'pointer' }}
         onClick={handleSeek}
         onKeyDown={handleKeyDown}
         title="Click to seek or use arrow keys"
