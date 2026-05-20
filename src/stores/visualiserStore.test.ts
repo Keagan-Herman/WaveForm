@@ -22,7 +22,7 @@ describe('visualiserStore', () => {
       albumGravityOpacity: 1,
       bloomEnabled: true,
       bloomIntensity: 1.5,
-      godRaysEnabled: true,
+      godRaysEnabled: false,
       chromaticAberrationEnabled: false,
       vignetteEnabled: true,
       filmGrainEnabled: true,
@@ -68,5 +68,20 @@ describe('visualiserStore', () => {
     expect(useVisualiserStore.getState().isFullscreen).toBe(false)
     useVisualiserStore.getState().toggleFullscreen()
     expect(useVisualiserStore.getState().isFullscreen).toBe(true)
+  })
+
+  it('should persist godRaysEnabled', async () => {
+    // Initial state
+    expect(useVisualiserStore.getState().godRaysEnabled).toBe(false)
+
+    // Update state
+    useVisualiserStore.getState().setFxEnabled('godRays', true)
+    expect(useVisualiserStore.getState().godRaysEnabled).toBe(true)
+
+    // Verify localStorage
+    const stored = localStorage.getItem('visualiser-settings')
+    expect(stored).not.toBeNull()
+    const parsed = JSON.parse(stored!)
+    expect(parsed.state.godRaysEnabled).toBe(true)
   })
 })
