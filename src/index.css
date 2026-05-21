@@ -44,9 +44,17 @@ body {
   }
 }
 
-/* Custom scrollbar — search results panel */
+/* Focus ring — visible for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--accent-color, rgba(29, 185, 84, 0.6));
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+/* Slim, refined scrollbars for a premium feel */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -54,17 +62,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Focus ring — visible for keyboard navigation */
-:focus-visible {
-  outline: 2px solid var(--accent-color, rgba(29, 185, 84, 0.6));
-  outline-offset: 2px;
-  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.15);
 }
