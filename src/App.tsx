@@ -239,8 +239,7 @@ function Waveform() {
       opacity: 1,
       x: 0,
       y: 0,
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
@@ -254,9 +253,8 @@ function Waveform() {
     hidden: { opacity: 0, letterSpacing: '0.1em' },
     visible: {
       opacity: 0.85,
-      letterSpacing: '0.35em',
-      transition: { duration: 1.5, ease: 'easeOut' } as any,
-      /* eslint-enable @typescript-eslint/no-explicit-any */
+      letterSpacing: '0.4em',
+      transition: { duration: 1.5, ease: 'easeOut' },
     },
   }
 
@@ -522,7 +520,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: HEADER_H,
     padding: '0 1.25rem',
     borderBottom: '1px solid rgba(255,255,255,0.07)',
-    backdropFilter: 'blur(16px)',
+    backdropFilter: 'blur(24px)',
     flexShrink: 0,
     zIndex: 20,
     display: 'flex',
@@ -536,7 +534,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.35em',
     textTransform: 'uppercase',
     opacity: 0.85,
-    fontWeight: 500,
+    fontWeight: 600,
     flexShrink: 0,
   },
   headerMid: {

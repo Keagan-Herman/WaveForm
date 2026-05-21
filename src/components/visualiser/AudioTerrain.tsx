@@ -158,6 +158,12 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
     }
   }, [accent.hex])
 
+  useEffect(() => {
+    return () => {
+      freqTextureRef.current?.dispose()
+    }
+  }, [])
+
   useFrame(state => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
