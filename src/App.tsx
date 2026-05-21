@@ -1,10 +1,5 @@
 /**
- * App.tsx — full AlbumColour propagation
- *
- * All visualiser components now receive the full AlbumColour object
- * instead of just accentHue or accentColour string.
- * This gives each component the lightness and saturation context
- * it needs to render correctly for any album type.
+ * App.tsx — full AlbumColour propagation + Mobile Optimization
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
@@ -31,6 +26,7 @@ import { QuadrantErrorBoundary } from '@/components/ui/QuadrantErrorBoundary'
 import { useUIStore } from '@/stores/uiStore'
 import { ArtistPanel } from '@/components/search/ArtistPanel'
 import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
+import { MobileNav } from '@/components/ui/MobileNav'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -187,6 +183,7 @@ function Waveform() {
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const selectedArtistId = useUIStore(state => state.selectedArtistId)
+  const activeTab = useUIStore(state => state.activeTab)
 
   useEffect(() => {
     if (!currentTrack) {
@@ -221,6 +218,13 @@ function Waveform() {
     root.style.setProperty('--border-color', palette.border)
   }, [accent])
 
+  // Initialize quality on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setQuality('Low')
+    }
+  }, [isMobile, setQuality])
+
   const handleFilteredTracksChange = useCallback((ids: string[] | null) => {
     setFilteredTrackIds(ids)
   }, [])
@@ -238,6 +242,12 @@ function Waveform() {
       /* eslint-disable @typescript-eslint/no-explicit-any */
       transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any,
     },
+  }
+
+  const mobileTabVariants: Variants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
   }
 
   const logoVariants: Variants = {
@@ -271,131 +281,200 @@ function Waveform() {
             title={`Album colour: ${accent.hex}`}
           />
         </div>
-        <div style={styles.headerSub}>
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
-          <button
-            onClick={toggleFullscreen}
-            style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
-          >
-            Fullscreen
-          </button>
-          {filteredTrackIds && (
+        {!isMobile && (
+          <div style={styles.headerSub}>
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
+            <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
             <button
-              onClick={() => setFilteredTrackIds(null)}
+              onClick={toggleFullscreen}
+              style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
+            >
+              Fullscreen
+            </button>
+            {filteredTrackIds && (
+              <button
+                onClick={() => setFilteredTrackIds(null)}
+                style={{
+                  ...styles.headerBtn,
+                  borderColor: `${accent.hex}aa`,
+                  background: `${accent.hex}22`,
+                  color: '#fff',
+                }}
+              >
+                Clear Filter ✕
+              </button>
+            )}
+            <button
+              onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
               style={{
                 ...styles.headerBtn,
-                borderColor: `${accent.hex}aa`,
-                background: `${accent.hex}22`,
-                color: '#fff',
+                borderColor: `${accent.hex}44`,
+                color: isLowQuality ? '#ff4444' : accent.hex,
               }}
             >
-              Clear Filter ✕
+              {isLowQuality ? 'HQ Off' : 'HQ On'}
             </button>
-          )}
-          <button
-            onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
-            style={{
-              ...styles.headerBtn,
-              borderColor: `${accent.hex}44`,
-              color: isLowQuality ? '#ff4444' : accent.hex,
-            }}
-          >
-            {isLowQuality ? 'HQ Off' : 'HQ On'}
-          </button>
-        </div>
+          </div>
+        )}
       </header>
 
-      <div
-        style={{
-          ...styles.grid,
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gridTemplateRows: isMobile ? 'repeat(4, auto)' : '1fr 1fr',
-          overflowY: isMobile ? 'auto' : 'hidden',
-        }}
-      >
-        {/* Top-left: library */}
-        <motion.div
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
-          animate="visible"
-          custom="top-left"
-          variants={quadrantVariants}
-          style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}
-        >
-          <div style={styles.quadLabel}>Library</div>
-          <QuadrantErrorBoundary label="Library" accent={accent.hex}>
-            <SearchOverlay
-              onResultsChange={setSearchTracks}
-              filteredTrackIds={filteredTrackIds}
-              accentColour={accent.hex}
-            />
-          </QuadrantErrorBoundary>
-        </motion.div>
-
-        {/* Top-right: visualisers or Hero Scene */}
-        <motion.div
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
-          animate="visible"
-          custom="top-right"
-          variants={quadrantVariants}
-          style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}
-        >
-          <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
-          <QuadrantErrorBoundary
-            label={isPlaying ? 'Hero Scene' : 'Visualisers'}
-            accent={accent.hex}
-          >
-            {isPlaying ? (
-              <div style={styles.heroSceneWrap}>
-                <AlbumGravityField tracks={searchTracks} width={680} height={340} accent={accent} />
-                <div style={styles.heroOverlay}>
-                  <RadialVisualiser width={300} height={300} accent={accent} />
+      {isMobile ? (
+        <div style={styles.mobileContent}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={mobileTabVariants}
+              transition={{ duration: 0.2 }}
+              style={styles.mobileQuadrantWrap}
+            >
+              {activeTab === 'library' && (
+                <div style={styles.quadrant}>
+                  <div style={styles.quadLabel}>Library</div>
+                  <QuadrantErrorBoundary label="Library" accent={accent.hex}>
+                    <SearchOverlay
+                      onResultsChange={setSearchTracks}
+                      filteredTrackIds={filteredTrackIds}
+                      accentColour={accent.hex}
+                    />
+                  </QuadrantErrorBoundary>
                 </div>
-              </div>
-            ) : (
-              <VisualisersPanel accent={accent} />
-            )}
-          </QuadrantErrorBoundary>
-        </motion.div>
-
-        {/* Bottom-left: now playing */}
-        <motion.div
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
-          animate="visible"
-          custom="bottom-left"
-          variants={quadrantVariants}
-          style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}
-        >
-          <div style={styles.quadLabel}>Now Playing</div>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
-              <NowPlaying accent={accent} />
+              )}
+              {activeTab === 'visualisers' && (
+                <div style={styles.quadrant}>
+                  <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
+                  <QuadrantErrorBoundary
+                    label={isPlaying ? 'Hero Scene' : 'Visualisers'}
+                    accent={accent.hex}
+                  >
+                    {isPlaying ? (
+                      <div style={styles.heroSceneWrap}>
+                        <AlbumGravityField
+                          tracks={searchTracks}
+                          width={width || 375}
+                          height={400}
+                          accent={accent}
+                        />
+                        <div style={styles.heroOverlay}>
+                          <RadialVisualiser width={260} height={260} accent={accent} />
+                        </div>
+                      </div>
+                    ) : (
+                      <VisualisersPanel accent={accent} />
+                    )}
+                  </QuadrantErrorBoundary>
+                </div>
+              )}
+              {activeTab === 'nowplaying' && (
+                <div style={styles.quadrant}>
+                  <div style={styles.quadLabel}>Now Playing</div>
+                  <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
+                    <NowPlaying accent={accent} />
+                  </QuadrantErrorBoundary>
+                </div>
+              )}
+              {activeTab === 'genremap' && (
+                <div style={styles.quadrant}>
+                  <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
+                    <GenrePanelQuadrant
+                      tracks={searchTracks}
+                      onFilteredTracksChange={handleFilteredTracksChange}
+                      accent={accent}
+                    />
+                  </QuadrantErrorBoundary>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      ) : (
+        <div style={styles.grid}>
+          {/* Top-left: library */}
+          <motion.div
+            initial={hasIntroPlayed ? 'visible' : 'hidden'}
+            animate="visible"
+            custom="top-left"
+            variants={quadrantVariants}
+            style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}
+          >
+            <div style={styles.quadLabel}>Library</div>
+            <QuadrantErrorBoundary label="Library" accent={accent.hex}>
+              <SearchOverlay
+                onResultsChange={setSearchTracks}
+                filteredTrackIds={filteredTrackIds}
+                accentColour={accent.hex}
+              />
             </QuadrantErrorBoundary>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Bottom-right: genre map */}
-        <motion.div
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
-          animate="visible"
-          custom="bottom-right"
-          variants={quadrantVariants}
-          style={styles.quadrant}
-        >
-          <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
-            <GenrePanelQuadrant
-              tracks={searchTracks}
-              onFilteredTracksChange={handleFilteredTracksChange}
-              accent={accent}
-            />
-          </QuadrantErrorBoundary>
-        </motion.div>
-      </div>
+          {/* Top-right: visualisers or Hero Scene */}
+          <motion.div
+            initial={hasIntroPlayed ? 'visible' : 'hidden'}
+            animate="visible"
+            custom="top-right"
+            variants={quadrantVariants}
+            style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}
+          >
+            <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
+            <QuadrantErrorBoundary
+              label={isPlaying ? 'Hero Scene' : 'Visualisers'}
+              accent={accent.hex}
+            >
+              {isPlaying ? (
+                <div style={styles.heroSceneWrap}>
+                  <AlbumGravityField tracks={searchTracks} width={680} height={340} accent={accent} />
+                  <div style={styles.heroOverlay}>
+                    <RadialVisualiser width={300} height={300} accent={accent} />
+                  </div>
+                </div>
+              ) : (
+                <VisualisersPanel accent={accent} />
+              )}
+            </QuadrantErrorBoundary>
+          </motion.div>
 
+          {/* Bottom-left: now playing */}
+          <motion.div
+            initial={hasIntroPlayed ? 'visible' : 'hidden'}
+            animate="visible"
+            custom="bottom-left"
+            variants={quadrantVariants}
+            style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}
+          >
+            <div style={styles.quadLabel}>Now Playing</div>
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
+                <NowPlaying accent={accent} />
+              </QuadrantErrorBoundary>
+            </div>
+          </motion.div>
+
+          {/* Bottom-right: genre map */}
+          <motion.div
+            initial={hasIntroPlayed ? 'visible' : 'hidden'}
+            animate="visible"
+            custom="bottom-right"
+            variants={quadrantVariants}
+            style={styles.quadrant}
+          >
+            <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
+              <GenrePanelQuadrant
+                tracks={searchTracks}
+                onFilteredTracksChange={handleFilteredTracksChange}
+                accent={accent}
+              />
+            </QuadrantErrorBoundary>
+          </motion.div>
+        </div>
+      )}
+
+      {isMobile && <MobileNav accent={accent} />}
       <PlayerBar accent={accent} />
       <TrackTransitionOverlay accent={accent} />
 
@@ -425,7 +504,8 @@ export default function App() {
 // ─── Styles ────────────────────────────────────────────────────────────────
 
 const HEADER_H = 46
-const PLAYER_H = 70
+const PLAYER_H = 72
+const NAV_H = 60
 
 const styles: Record<string, React.CSSProperties> = {
   root: {
@@ -440,7 +520,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   header: {
     height: HEADER_H,
-    padding: '0 1.75rem',
+    padding: '0 1.25rem',
     borderBottom: '1px solid rgba(255,255,255,0.07)',
     backdropFilter: 'blur(16px)',
     flexShrink: 0,
@@ -452,7 +532,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'border-color 1s ease',
   },
   logo: {
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     letterSpacing: '0.35em',
     textTransform: 'uppercase',
     opacity: 0.85,
@@ -508,11 +588,24 @@ const styles: Record<string, React.CSSProperties> = {
     height: `calc(100vh - ${HEADER_H}px - ${PLAYER_H}px)`,
     overflow: 'hidden',
   },
+  mobileContent: {
+    flex: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    height: `calc(100vh - ${HEADER_H}px - ${PLAYER_H}px - ${NAV_H}px)`,
+  },
+  mobileQuadrantWrap: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+  },
   quadrant: {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
     position: 'relative',
+    height: '100%',
   },
   borderRight: { borderRight: '1px solid rgba(255,255,255,0.07)' },
   borderBottom: { borderBottom: '1px solid rgba(255,255,255,0.07)' },

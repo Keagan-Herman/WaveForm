@@ -5,6 +5,7 @@ import { useUIStore } from '../../stores/uiStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
 import { getTrackCover, getTrackArtist, isLocalTrack, isDeezerTrack } from '../../types/track';
+import { useResize } from '../../hooks/useResize';
 import type { AlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -157,6 +158,7 @@ function PlaybackProgress() {
 // ─── PlayerBar ────────────────────────────────────────────────────────────────
 
 export function PlayerBar({ accent }: { accent: AlbumColour }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
@@ -167,8 +169,12 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
   const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
 
+  const { width } = useResize(containerRef);
+  const isMobile = (width || window.innerWidth) < 700;
+
   return (
     <motion.div
+      ref={containerRef}
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 28 }}
@@ -184,8 +190,9 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         borderTop: `1px solid ${accent.hex}1f`,
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
-        padding: '0 20px',
+        justifyContent: 'space-between',
+        gap: isMobile ? 8 : 16,
+        padding: isMobile ? '0 12px' : '0 20px',
         zIndex: 200,
       }}
     >
@@ -195,87 +202,90 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          width: 220,
-          flexShrink: 0,
+          width: isMobile ? 'auto' : 220,
+          flexShrink: isMobile ? 1 : 0,
           overflow: 'hidden',
+          minWidth: 0,
         }}
       >
         {/* Album art */}
-        <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
-          <AnimatePresence mode="popLayout">
-            {trackCover ? (
-              <motion.img
-                key={trackCover}
-                src={trackCover}
-                alt="Album art"
-                width={44}
-                height={44}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                style={{
-                  borderRadius: 4,
-                  objectFit: 'cover',
-                  flexShrink: 0,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
-              />
-            ) : (
-            <motion.div
-              key="placeholder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
-                <circle cx="8" cy="8" r="2" fill="rgba(255,255,255,0.2)" />
-              </svg>
-            </motion.div>
-          )}
-          </AnimatePresence>
+        {!isMobile && (
+          <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+            <AnimatePresence mode="popLayout">
+              {trackCover ? (
+                <motion.img
+                  key={trackCover}
+                  src={trackCover}
+                  alt="Album art"
+                  width={44}
+                  height={44}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  style={{
+                    borderRadius: 4,
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                />
+              ) : (
+                <motion.div
+                  key="placeholder"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 4,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                    <circle cx="8" cy="8" r="2" fill="rgba(255,255,255,0.2)" />
+                  </svg>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {currentTrack && isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 1,
-                right: 1,
-                width: 10,
-                height: 10,
-                borderRadius: 2,
-                border: '1px solid',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                background: 'rgba(0,0,0,0.7)',
-                color: accent.hex,
-                borderColor: `${accent.hex}66`,
-                zIndex: 1,
-              }}
-              aria-label="Explicit content"
-              title="Explicit content"
-            >
-              E
-            </div>
-          )}
-        </div>
+            {currentTrack && isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 1,
+                  right: 1,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  background: 'rgba(0,0,0,0.7)',
+                  color: accent.hex,
+                  borderColor: `${accent.hex}66`,
+                  zIndex: 1,
+                }}
+                aria-label="Explicit content"
+                title="Explicit content"
+              >
+                E
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Title + artist */}
-        <div style={{ overflow: 'hidden', flex: 1 }}>
+        <div style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
           <AnimatePresence mode="popLayout">
             {currentTrack ? (
               <motion.div
@@ -287,7 +297,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
               >
                 <p
                   style={{
-                    fontSize: 13,
+                    fontSize: isMobile ? 12 : 13,
                     fontWeight: 600,
                     color: '#e8f5e8',
                     whiteSpace: 'nowrap',
@@ -308,7 +318,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                     }
                   }}
                   style={{
-                    fontSize: 11,
+                    fontSize: isMobile ? 10 : 11,
                     color: 'rgba(232, 245, 232, 0.5)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -334,22 +344,24 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                   {isLocal && (
                     <span
                       style={{
-                        fontSize: '0.65rem',
+                        fontSize: '0.6rem',
                         fontFamily: 'monospace',
                         background: `${accent.hex}26`,
                         color: accent.hex,
-                        padding: '1px 4px',
-                        borderRadius: 3,
+                        padding: '1px 3px',
+                        borderRadius: 2,
                         letterSpacing: '0.05em',
                         flexShrink: 0,
                       }}
                     >
-                      LOCAL
+                      L
                     </span>
                   )}
                   <span
                     style={{
                       transition: 'color 0.2s ease',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                     onMouseEnter={(e) => {
                       if (isDeezerTrack(currentTrack)) {
@@ -392,7 +404,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
+          gap: isMobile ? 2 : 4,
           flexShrink: 0,
         }}
       >
@@ -424,19 +436,21 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
       </div>
 
       {/* ── Waveform + time ── */}
-      <PlaybackProgress />
+      {!isMobile && <PlaybackProgress />}
 
       {/* ── Right controls: upload button ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexShrink: 0,
-        }}
-      >
-        <LocalFileLoader accent={accent} />
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
+          <LocalFileLoader accent={accent} />
+        </div>
+      )}
     </motion.div>
   );
 }
