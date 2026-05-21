@@ -16,6 +16,7 @@ const fragmentShader = `
   uniform float uTime;
   uniform float uBass;
   uniform vec3 uColor;
+  uniform vec3 uSecondary;
   varying vec2 vUv;
 
   // Simplex 2D noise
@@ -53,11 +54,11 @@ const fragmentShader = `
     float d = snoise(uv * 10.0 - uTime * 0.5 + uBass * 2.0) * 0.5 + 0.5;
 
     // Darken it to look like a nebula and not blow out the scene
-    vec3 baseColor = uColor * 0.05; // Much darker base
-    vec3 accentColor = uColor * 0.15;
+    vec3 baseColor = uColor * 0.03; // Much darker base
+    vec3 accentColor = mix(uColor, uSecondary, d) * 0.12;
 
-    vec3 color = mix(baseColor, accentColor, n * d);
-    color += uBass * 0.05 * uColor;
+    vec3 color = mix(baseColor, accentColor, n);
+    color += uBass * 0.04 * uSecondary;
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -75,11 +76,13 @@ export function FluidBackground({ accent }: FluidBackgroundProps) {
     uTime: { value: 0 },
     uBass: { value: 0 },
     uColor: { value: new THREE.Color(accent.hex) },
+    uSecondary: { value: new THREE.Color(accent.palette.secondary) },
   })
 
   useEffect(() => {
     uniforms.current.uColor.value.set(accent.hex)
-  }, [accent.hex])
+    uniforms.current.uSecondary.value.set(accent.palette.secondary)
+  }, [accent.hex, accent.palette.secondary])
 
   useFrame(state => {
     if (!meshRef.current) return

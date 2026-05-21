@@ -34,7 +34,13 @@ const CONFIG = {
   }
 }
 
-export function ParticleField({ color = '#ffffff' }) {
+interface ParticleFieldProps {
+  color?: string
+  accent?: string
+  secondary?: string
+}
+
+export function ParticleField({ color = '#ffffff', accent, secondary }: ParticleFieldProps) {
   const pointsRef = useRef<THREE.Points>(null)
   const { quality } = useVisualiserStore.getState()
 
@@ -49,7 +55,10 @@ export function ParticleField({ color = '#ffffff' }) {
     const pos = new Float32Array(actualCount * 3)
     const vel = new Float32Array(actualCount * 3)
     const col = new Float32Array(actualCount * 3)
+
     const baseColor = new THREE.Color(color)
+    const accentColor = accent ? new THREE.Color(accent) : baseColor
+    const secondaryColor = secondary ? new THREE.Color(secondary) : baseColor
 
     /* eslint-disable react-hooks/purity */
     for (let i = 0; i < actualCount; i++) {
@@ -61,9 +70,13 @@ export function ParticleField({ color = '#ffffff' }) {
       vel[i * 3 + 1] = (Math.random() - 0.5) * CONFIG.PHYSICS.INITIAL_VEL_MULT
       vel[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.PHYSICS.INITIAL_VEL_MULT
 
-      col[i * 3] = baseColor.r
-      col[i * 3 + 1] = baseColor.g
-      col[i * 3 + 2] = baseColor.b
+      // Distribute colors across the palette
+      const r = Math.random()
+      const targetCol = r > 0.7 ? accentColor : (r > 0.4 ? secondaryColor : baseColor)
+
+      col[i * 3] = targetCol.r
+      col[i * 3 + 1] = targetCol.g
+      col[i * 3 + 2] = targetCol.b
     }
     /* eslint-enable react-hooks/purity */
     /* eslint-disable react-hooks/refs */
@@ -71,7 +84,7 @@ export function ParticleField({ color = '#ffffff' }) {
     originalColorsRef.current = new Float32Array(col)
     /* eslint-enable react-hooks/refs */
     return [pos, col]
-  }, [actualCount, color])
+  }, [actualCount, color, accent, secondary])
 
   useFrame((state) => {
     if (!pointsRef.current || !velocitiesRef.current) return

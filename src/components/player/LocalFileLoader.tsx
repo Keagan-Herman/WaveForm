@@ -276,7 +276,7 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
                 height: 16,
                 borderRadius: 8,
                 background: accent.hex,
-                color: 'var(--bg-color, #050e05)',
+                color: 'var(--bg-color, #050505)',
                 fontSize: 9,
                 fontWeight: 700,
                 fontFamily: 'monospace',

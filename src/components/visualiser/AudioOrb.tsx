@@ -58,12 +58,18 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     }
 
     if (coreRef.current) {
-      const s = 1.0 + smoothedBass.current * 0.5
+      const { beat, beatConfidence } = useVisualiserStore.getState()
+      const s = 1.0 + (smoothedBass.current * 0.5) + (beat ? beatConfidence * 0.2 : 0)
       coreRef.current.scale.set(s, s, s)
     }
 
     if (pointsMatRef.current) {
       pointsMatRef.current.opacity = orbOpacity * smoothedBass.current * 0.3
+      // Subtle color shift on bass
+      pointsMatRef.current.color.lerp(
+        new THREE.Color(accent.palette.secondary),
+        smoothedBass.current * 0.1
+      )
     }
   })
 
@@ -73,9 +79,20 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
       <mesh ref={combinedRef}>
         <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 32, 32]} />
         <meshBasicMaterial
+          color={accent.palette.primary}
+          transparent
+          opacity={orbOpacity * 0.6}
+        />
+      </mesh>
+
+      {/* Outer Glow */}
+      <mesh scale={[1.1, 1.1, 1.1]}>
+        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 32, 32]} />
+        <meshBasicMaterial
           color={accent.palette.accent}
           transparent
-          opacity={orbOpacity * 0.4}
+          opacity={orbOpacity * 0.2}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
 
@@ -84,7 +101,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
         <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, 64, 64]} />
         <pointsMaterial
           ref={pointsMatRef}
-          color={accent.palette.accent}
+          color={accent.palette.secondary}
           size={0.05}
           transparent
           opacity={0}

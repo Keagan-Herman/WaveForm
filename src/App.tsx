@@ -439,7 +439,7 @@ const styles: Record<string, React.CSSProperties> = {
   header: {
     height: HEADER_H,
     padding: '0 1.75rem',
-    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    borderBottom: '1px solid var(--border-color)',
     backdropFilter: 'blur(24px)',
     flexShrink: 0,
     zIndex: 20,
@@ -512,8 +512,8 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     position: 'relative',
   },
-  borderRight: { borderRight: '1px solid rgba(255,255,255,0.07)' },
-  borderBottom: { borderBottom: '1px solid rgba(255,255,255,0.07)' },
+  borderRight: { borderRight: '1px solid var(--border-color)' },
+  borderBottom: { borderBottom: '1px solid var(--border-color)' },
   quadLabel: {
     fontSize: '0.65rem',
     letterSpacing: '0.22em',
