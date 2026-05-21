@@ -76,8 +76,8 @@ export class AudioEngine {
     if (!this.freqBuffer) {
       this.freqBuffer = new Uint8Array(this.analyser.frequencyBinCount)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.analyser.getByteFrequencyData(this.freqBuffer as any)
+    // @ts-expect-error - Web Audio API expects Uint8Array<ArrayBuffer>
+    this.analyser.getByteFrequencyData(this.freqBuffer)
     return this.freqBuffer
   }
 
@@ -93,8 +93,8 @@ export class AudioEngine {
     if (!this.waveBuffer) {
       this.waveBuffer = new Uint8Array(this.analyser.fftSize)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.analyser.getByteTimeDomainData(this.waveBuffer as any)
+    // @ts-expect-error - Web Audio API expects Uint8Array<ArrayBuffer>
+    this.analyser.getByteTimeDomainData(this.waveBuffer)
     return this.waveBuffer
   }
 

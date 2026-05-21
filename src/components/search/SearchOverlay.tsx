@@ -194,8 +194,19 @@ export function SearchOverlay({
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1 - i * 0.1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
+                animate={{
+                  opacity: [0.05, 0.1, 0.05],
+                  x: 0,
+                }}
+                transition={{
+                  opacity: {
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.1
+                  },
+                  x: { delay: i * 0.05 }
+                }}
                 style={styles.skeleton}
               />
             ))}
@@ -276,9 +287,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '0.7rem 0.9rem',
-    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))',
     flexShrink: 0,
     gap: '0.5rem',
+    transition: 'border-color 0.4s ease',
   },
   searchIcon: { fontSize: '1rem', opacity: 0.4, flexShrink: 0, lineHeight: 1 },
   input: {
@@ -364,7 +376,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: 48,
     borderRadius: '4px',
     background: 'rgba(255,255,255,0.05)',
-    animation: 'shimmer 1.5s ease-in-out infinite',
   },
   trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },
 }
