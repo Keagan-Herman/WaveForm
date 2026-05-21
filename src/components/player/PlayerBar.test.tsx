@@ -69,6 +69,9 @@ describe('PlayerBar', () => {
   })
 
   it('shows progress time', () => {
+    // Set a large window width to ensure it's not in mobile mode
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 })
+
     usePlayerStore.setState({ currentTrack: mockTrack, currentTime: 65 })
     render(<PlayerBar accent={mockAccent} />)
 
