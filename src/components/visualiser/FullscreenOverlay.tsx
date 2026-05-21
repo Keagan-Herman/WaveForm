@@ -94,7 +94,13 @@ function FullscreenScene({
 
       {butterchurnCanvas && <ButterchurnTexture canvas={butterchurnCanvas} opacity={presetsOpacity} />}
 
-      {particlesOpacity > 0 && <ParticleField color={accent.hex} />}
+      {particlesOpacity > 0 && (
+        <ParticleField
+          color={accent.hex}
+          accent={accent.palette.accent}
+          secondary={accent.palette.secondary}
+        />
+      )}
 
       {orbOpacity > 0 && <AudioOrb ref={setOrb} accent={accent} />}
       {terrainOpacity > 0 && <AudioTerrain accent={accent} />}
@@ -355,6 +361,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.5rem 2rem',
     borderRadius: '40px',
     backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255,255,255,0.1)',
   },
   energyVisWrap: {
     position: 'absolute',

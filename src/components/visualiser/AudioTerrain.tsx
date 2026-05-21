@@ -118,11 +118,16 @@ const fragmentShader = `
   varying vec2 vUv;
   varying float vElevation;
   uniform vec3 uColor;
+  uniform vec3 uAccent;
   uniform float uOpacity;
 
   void main() {
     float mixFactor = clamp(vElevation * ${CONFIG.COLOR.MIX_MULT.toFixed(1)}, 0.0, 1.0);
-    vec3 color = mix(uColor * 0.3, uColor, mixFactor);
+    vec3 color = mix(uColor * 0.15, uAccent, mixFactor);
+
+    // Add a pulsing glow effect on elevation
+    color += pow(mixFactor, 2.0) * 0.4 * uAccent;
+
     gl_FragColor = vec4(color, uOpacity);
   }
 `
@@ -146,17 +151,19 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
       uBass: { value: 0 },
       uFreq: { value: freqTextureRef.current! },
       uColor: { value: new THREE.Color(accent.hex) },
+      uAccent: { value: new THREE.Color(accent.palette.accent) },
       uOpacity: { value: 1.0 },
     }),
-    [accent.hex]
+    [accent.hex, accent.palette.accent]
   )
   /* eslint-enable react-hooks/refs */
 
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.uColor.value.set(accent.hex)
+      materialRef.current.uniforms.uAccent.value.set(accent.palette.accent)
     }
-  }, [accent.hex])
+  }, [accent.hex, accent.palette.accent])
 
   useEffect(() => {
     return () => {
