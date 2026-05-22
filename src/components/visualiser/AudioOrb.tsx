@@ -38,6 +38,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
   const smoothedBass = useRef(0)
   const smoothedRotation = useRef({ y: 0, z: 0 })
+  const colorRef = useRef(new THREE.Color())
 
   useFrame(() => {
     const { bassPower } = useVisualiserStore.getState()
@@ -66,8 +67,9 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     if (pointsMatRef.current) {
       pointsMatRef.current.opacity = orbOpacity * smoothedBass.current * 0.3
       // Subtle color shift on bass
+      colorRef.current.set(accent.palette.secondary)
       pointsMatRef.current.color.lerp(
-        new THREE.Color(accent.palette.secondary),
+        colorRef.current,
         smoothedBass.current * 0.1
       )
     }

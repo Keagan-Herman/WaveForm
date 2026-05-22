@@ -5,34 +5,88 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 
 const CONFIG = {
   COUNTS: {
-    Low: 800,
-    Medium: 3000,
-    Epic: 8000,
+    Low: 5000,
+    Medium: 15000,
+    Epic: 50000,
   },
   BOUNDS: {
-    X: 20,
-    Y: 10,
-    Z: 10,
-    LIMIT_X: 15,
-    LIMIT_Y: 10,
-    LIMIT_Z: 10,
-  },
-  PHYSICS: {
-    INITIAL_VEL_MULT: 0.04,
-    EXPLOSION_FORCE: 0.2,
-    FRICTION: 0.98,
-    DRIFT_FORCE: 0.001,
-    WRAP_BOUNCE: -0.9,
+    X: 40,
+    Y: 20,
+    Z: 20,
   },
   VISUALS: {
-    SIZE: 0.05,
+    SIZE: 15.0, // Base size in shader
     OPACITY_MULT: 0.6,
-    FLASH_THRESHOLD: 0.8,
-    COLOR_SMOOTHING: 0.1,
-    BASS_SCALE_MULT: 0.1,
-    BASS_ROT_MULT: 0.005,
   }
 }
+
+const vertexShader = `
+  uniform float uTime;
+  uniform float uBass;
+  uniform float uSize;
+  uniform float uPixelRatio;
+
+  attribute vec3 aVelocity;
+  attribute vec3 aOriginalPos;
+  attribute vec3 aColor;
+
+  varying vec3 vColor;
+  varying float vOpacity;
+
+  void main() {
+    vColor = aColor;
+
+    // Calculate position with physics on GPU
+    vec3 pos = aOriginalPos;
+
+    // Add audio-reactive drift
+    float driftX = sin(uTime * 0.2 + aOriginalPos.z * 0.1) * 2.0 * uBass;
+    float driftY = cos(uTime * 0.2 + aOriginalPos.x * 0.1) * 2.0 * uBass;
+    pos.x += driftX;
+    pos.y += driftY;
+
+    // Continuous movement based on velocity and time
+    pos += aVelocity * uTime * 5.0;
+
+    // Wrap positions within bounds
+    float limitX = ${CONFIG.BOUNDS.X.toFixed(1)};
+    float limitY = ${CONFIG.BOUNDS.Y.toFixed(1)};
+    float limitZ = ${CONFIG.BOUNDS.Z.toFixed(1)};
+
+    pos.x = mod(pos.x + limitX, limitX * 2.0) - limitX;
+    pos.y = mod(pos.y + limitY, limitY * 2.0) - limitY;
+    pos.z = mod(pos.z + limitZ, limitZ * 2.0) - limitZ;
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+
+    // Scale particles based on distance and uSize
+    gl_PointSize = uSize * uPixelRatio * (1.0 / -mvPosition.z);
+
+    // Boost size on bass
+    gl_PointSize *= (1.0 + uBass * 0.5);
+
+    vOpacity = clamp(1.0 / -mvPosition.z * 5.0, 0.0, 1.0);
+
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`
+
+const fragmentShader = `
+  varying vec3 vColor;
+  varying float vOpacity;
+  uniform float uOpacity;
+
+  void main() {
+    // Round particle shape
+    float dist = distance(gl_PointCoord, vec2(0.5));
+    if (dist > 0.5) discard;
+
+    // Soft edges
+    float alpha = smoothstep(0.5, 0.2, dist) * vOpacity * uOpacity;
+
+    gl_FragColor = vec4(vColor, alpha);
+  }
+`
 
 interface ParticleFieldProps {
   color?: string
@@ -42,16 +96,14 @@ interface ParticleFieldProps {
 
 export function ParticleField({ color = '#ffffff', accent, secondary }: ParticleFieldProps) {
   const pointsRef = useRef<THREE.Points>(null)
+  const materialRef = useRef<THREE.ShaderMaterial>(null)
   const { quality } = useVisualiserStore.getState()
 
   const actualCount = useMemo(() => {
     return CONFIG.COUNTS[quality as keyof typeof CONFIG.COUNTS] || CONFIG.COUNTS.Medium
   }, [quality])
 
-  const velocitiesRef = useRef<Float32Array | null>(null)
-  const originalColorsRef = useRef<Float32Array | null>(null)
-
-  const [positions, colors] = useMemo(() => {
+  const [positions, velocities, colors] = useMemo(() => {
     const pos = new Float32Array(actualCount * 3)
     const vel = new Float32Array(actualCount * 3)
     const col = new Float32Array(actualCount * 3)
@@ -60,15 +112,16 @@ export function ParticleField({ color = '#ffffff', accent, secondary }: Particle
     const accentColor = accent ? new THREE.Color(accent) : baseColor
     const secondaryColor = secondary ? new THREE.Color(secondary) : baseColor
 
-    /* eslint-disable react-hooks/purity */
     for (let i = 0; i < actualCount; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * CONFIG.BOUNDS.X
-      pos[i * 3 + 1] = (Math.random() - 0.5) * CONFIG.BOUNDS.Y
-      pos[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.BOUNDS.Z
+      // Original positions
+      pos[i * 3] = (Math.random() - 0.5) * CONFIG.BOUNDS.X * 2
+      pos[i * 3 + 1] = (Math.random() - 0.5) * CONFIG.BOUNDS.Y * 2
+      pos[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.BOUNDS.Z * 2
 
-      vel[i * 3] = (Math.random() - 0.5) * CONFIG.PHYSICS.INITIAL_VEL_MULT
-      vel[i * 3 + 1] = (Math.random() - 0.5) * CONFIG.PHYSICS.INITIAL_VEL_MULT
-      vel[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.PHYSICS.INITIAL_VEL_MULT
+      // Velocities
+      vel[i * 3] = (Math.random() - 0.5) * 0.02
+      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.02
+      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.02
 
       // Distribute colors across the palette
       const r = Math.random()
@@ -78,84 +131,27 @@ export function ParticleField({ color = '#ffffff', accent, secondary }: Particle
       col[i * 3 + 1] = targetCol.g
       col[i * 3 + 2] = targetCol.b
     }
-    /* eslint-enable react-hooks/purity */
-    /* eslint-disable react-hooks/refs */
-    velocitiesRef.current = vel
-    originalColorsRef.current = new Float32Array(col)
-    /* eslint-enable react-hooks/refs */
-    return [pos, col]
+    return [pos, vel, col]
   }, [actualCount, color, accent, secondary])
 
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uBass: { value: 0 },
+    uOpacity: { value: CONFIG.VISUALS.OPACITY_MULT },
+    uSize: { value: CONFIG.VISUALS.SIZE },
+    uPixelRatio: { value: typeof window !== 'undefined' ? window.devicePixelRatio : 1 },
+  }), [])
+
   useFrame((state) => {
-    if (!pointsRef.current || !velocitiesRef.current) return
-    const { beat, bassPower, beatConfidence } = useVisualiserStore.getState()
-    const points = pointsRef.current
-    const positionsAttr = points.geometry.attributes.position
-    const colorsAttr = points.geometry.attributes.color
-    const posArray = positionsAttr.array as Float32Array
-    const colArray = colorsAttr.array as Float32Array
-    const velocities = velocitiesRef.current
-    const originalColors = originalColorsRef.current!
-
-    const time = state.clock.elapsedTime
-
-    for (let i = 0; i < actualCount; i++) {
-      const idx = i * 3
-
-      // Apply audio-driven forces to velocity
-      if (beat) {
-        const explosionForce = CONFIG.PHYSICS.EXPLOSION_FORCE * beatConfidence
-        velocities[idx] += (Math.random() - 0.5) * explosionForce
-        velocities[idx + 1] += (Math.random() - 0.5) * explosionForce
-        velocities[idx + 2] += (Math.random() - 0.5) * explosionForce
-      }
-
-      // Air resistance / friction
-      velocities[idx] *= CONFIG.PHYSICS.FRICTION
-      velocities[idx + 1] *= CONFIG.PHYSICS.FRICTION
-      velocities[idx + 2] *= CONFIG.PHYSICS.FRICTION
-
-      // Gentle drift
-      velocities[idx] += Math.sin(time + i) * CONFIG.PHYSICS.DRIFT_FORCE
-      velocities[idx + 1] += Math.cos(time + i * 1.1) * CONFIG.PHYSICS.DRIFT_FORCE
-
-      // Update position
-      posArray[idx] += velocities[idx]
-      posArray[idx + 1] += velocities[idx + 1]
-      posArray[idx + 2] += velocities[idx + 2]
-
-      // Wrapping instead of bouncing for "endless" feel
-      if (Math.abs(posArray[idx]) > CONFIG.BOUNDS.LIMIT_X) posArray[idx] *= CONFIG.PHYSICS.WRAP_BOUNCE
-      if (Math.abs(posArray[idx + 1]) > CONFIG.BOUNDS.LIMIT_Y) posArray[idx + 1] *= CONFIG.PHYSICS.WRAP_BOUNCE
-      if (Math.abs(posArray[idx + 2]) > CONFIG.BOUNDS.LIMIT_Z) posArray[idx + 2] *= CONFIG.PHYSICS.WRAP_BOUNCE
-
-      // Reactive colors
-      if (beat && beatConfidence > CONFIG.VISUALS.FLASH_THRESHOLD) {
-        // Flash bright on strong beats
-        colArray[idx] = 1.0
-        colArray[idx + 1] = 1.0
-        colArray[idx + 2] = 1.0
-      } else {
-        // Smoothly return to original themed color
-        colArray[idx] += (originalColors[idx] - colArray[idx]) * CONFIG.VISUALS.COLOR_SMOOTHING
-        colArray[idx + 1] += (originalColors[idx + 1] - colArray[idx + 1]) * CONFIG.VISUALS.COLOR_SMOOTHING
-        colArray[idx + 2] += (originalColors[idx + 2] - colArray[idx + 2]) * CONFIG.VISUALS.COLOR_SMOOTHING
-      }
+    const { bassPower, particlesOpacity } = useVisualiserStore.getState()
+    if (materialRef.current) {
+      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime
+      materialRef.current.uniforms.uBass.value = bassPower
+      materialRef.current.uniforms.uOpacity.value = particlesOpacity * CONFIG.VISUALS.OPACITY_MULT
     }
 
-    positionsAttr.needsUpdate = true
-    colorsAttr.needsUpdate = true
-
-    // Scale and rotate field based on audio
-    points.scale.setScalar(1 + bassPower * CONFIG.VISUALS.BASS_SCALE_MULT)
-    points.rotation.y += 0.001 + bassPower * CONFIG.VISUALS.BASS_ROT_MULT
-  })
-
-  const matRef = useRef<THREE.PointsMaterial>(null)
-  useFrame(() => {
-    if (matRef.current) {
-      const { particlesOpacity } = useVisualiserStore.getState()
-      matRef.current.opacity = particlesOpacity * CONFIG.VISUALS.OPACITY_MULT
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y += 0.001 + bassPower * 0.005
     }
   })
 
@@ -169,19 +165,32 @@ export function ParticleField({ color = '#ffffff', accent, secondary }: Particle
           itemSize={3}
         />
         <bufferAttribute
-          attach="attributes-color"
+          attach="attributes-aOriginalPos"
+          count={actualCount}
+          array={positions}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-aVelocity"
+          count={actualCount}
+          array={velocities}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-aColor"
           count={actualCount}
           array={colors}
           itemSize={3}
         />
       </bufferGeometry>
-      <pointsMaterial
-        ref={matRef}
-        size={CONFIG.VISUALS.SIZE}
-        vertexColors
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
         transparent
-        opacity={CONFIG.VISUALS.OPACITY_MULT}
         blending={THREE.AdditiveBlending}
+        depthWrite={false}
       />
     </points>
   )
