@@ -191,24 +191,60 @@ export function SearchOverlay({
         {isLoading && (
           <div style={styles.skeletonWrap}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{
-                  opacity: [0.05, 0.1, 0.05],
-                  x: 0,
-                }}
-                transition={{
-                  opacity: {
-                    duration: 1.5,
+              <div key={i} style={styles.skeletonRow}>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0.05, 0.12, 0.05],
+                  }}
+                  transition={{
+                    duration: 2,
                     repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.1
-                  },
-                  x: { delay: i * 0.05 }
-                }}
-                style={styles.skeleton}
-              />
+                    ease: 'easeInOut',
+                    delay: i * 0.15,
+                  }}
+                  style={{ ...styles.skeleton, width: '28px' }}
+                />
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0.05, 0.12, 0.05],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: i * 0.15 + 0.1,
+                  }}
+                  style={{ ...styles.skeleton, width: '36px' }}
+                />
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0.05, 0.12, 0.05],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: i * 0.15 + 0.2,
+                  }}
+                  style={{ ...styles.skeleton, flex: 1 }}
+                />
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0.05, 0.12, 0.05],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: i * 0.15 + 0.3,
+                  }}
+                  style={{ ...styles.skeleton, width: '60px' }}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -286,11 +322,12 @@ const styles: Record<string, React.CSSProperties> = {
   inputWrap: {
     display: 'flex',
     alignItems: 'center',
-    padding: '0.7rem 0.9rem',
+    padding: '0.85rem 1rem',
     borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))',
     flexShrink: 0,
-    gap: '0.5rem',
-    transition: 'border-color 0.4s ease',
+    gap: '0.75rem',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    background: 'rgba(255, 255, 255, 0.01)',
   },
   searchIcon: { fontSize: '1rem', opacity: 0.4, flexShrink: 0, lineHeight: 1 },
   input: {
@@ -371,11 +408,22 @@ const styles: Record<string, React.CSSProperties> = {
   stateIcon: { fontSize: '1.75rem', opacity: 0.18, marginBottom: '0.4rem' },
   stateTitle: { fontSize: '0.82rem', opacity: 0.55 },
   stateDesc: { fontSize: '0.7rem', opacity: 0.3, lineHeight: 1.6, maxWidth: 220 },
-  skeletonWrap: { display: 'flex', flexDirection: 'column', gap: '3px', padding: '0.2rem 0' },
+  skeletonWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '0.8rem 0.4rem',
+  },
+  skeletonRow: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    height: '40px',
+  },
   skeleton: {
-    height: 48,
+    height: '100%',
     borderRadius: '4px',
-    background: 'rgba(255,255,255,0.05)',
+    background: 'rgba(255,255,255,0.06)',
   },
   trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },
 }

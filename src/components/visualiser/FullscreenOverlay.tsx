@@ -14,6 +14,7 @@ import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
+import { SceneController } from './SceneController'
 import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { ButterchurnTexture } from './ButterchurnTexture'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -56,6 +57,7 @@ function FullscreenScene({
   const dofEnabled = useVisualiserStore(state => state.dofEnabled)
 
   const bassPower = useVisualiserStore(state => state.bassPower)
+  const chromaOffset = useRef(new THREE.Vector2())
 
   const albumLayout = useMemo(() => {
     const seen = new Set<number>()
@@ -85,6 +87,7 @@ function FullscreenScene({
 
   return (
     <>
+      <SceneController />
       <color attach="background" args={[accent.palette.background]} />
       <FluidBackground accent={accent} />
       <ambientLight intensity={0.5} />
@@ -115,22 +118,54 @@ function FullscreenScene({
           >
             {([] as React.ReactElement[]).concat(
               bloomEnabled
-                ? [<Bloom key="bloom" luminanceThreshold={0.1} intensity={bloomIntensity * (1 + bassPower * 0.5)} />]
+                ? [
+                    <Bloom
+                      key="bloom"
+                      luminanceThreshold={0.1}
+                      intensity={bloomIntensity * (1 + bassPower * 0.5)}
+                    />,
+                  ]
                 : [],
               godRaysEnabled && orb
-                ? [<GodRays key="godrays" sun={orb} samples={quality === 'Epic' ? 32 : 16} density={0.96} decay={0.9} weight={0.3} exposure={0.4} clampMax={1.0} />]
+                ? [
+                    <GodRays
+                      key="godrays"
+                      sun={orb}
+                      samples={quality === 'Epic' ? 32 : 16}
+                      density={0.96}
+                      decay={0.9}
+                      weight={0.3}
+                      exposure={0.4}
+                      clampMax={1.0}
+                    />,
+                  ]
                 : [],
               chromaticAberrationEnabled
-                ? [<ChromaticAberration key="chroma" offset={new THREE.Vector2(0.002 * bassPower, 0.002 * bassPower)} radialModulation={false} modulationOffset={0} />]
+                ? [
+                    <ChromaticAberration
+                      key="chroma"
+                      /* eslint-disable react-hooks/refs */
+                      offset={chromaOffset.current.set(0.002 * bassPower, 0.002 * bassPower)}
+                      /* eslint-enable react-hooks/refs */
+                      radialModulation={false}
+                      modulationOffset={0}
+                    />,
+                  ]
                 : [],
               vignetteEnabled
                 ? [<Vignette key="vignette" eskil={false} offset={0.5} darkness={0.5} />]
                 : [],
-              filmGrainEnabled
-                ? [<Noise key="noise" opacity={0.05} />]
-                : [],
+              filmGrainEnabled ? [<Noise key="noise" opacity={0.05} />] : [],
               dofEnabled
-                ? [<DepthOfField key="dof" focusDistance={0} focalLength={0.02} bokehScale={2} height={480} />]
+                ? [
+                    <DepthOfField
+                      key="dof"
+                      focusDistance={0}
+                      focalLength={0.02}
+                      bokehScale={2}
+                      height={480}
+                    />,
+                  ]
                 : []
             )}
           </EffectComposer>

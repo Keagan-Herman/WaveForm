@@ -12,6 +12,14 @@ const vertexShader = `
   }
 `
 
+/**
+ * FluidBackground Shader:
+ * - Creates a "nebula-like" background using multiple layers of Simplex 2D Noise.
+ * - One noise layer drives large-scale color shifts, while a second high-frequency
+ *   layer is distorted by the audio bass power for reactive motion.
+ * - Colors are derived from the current album's primary and secondary palette,
+ *   heavily darkened to serve as a non-distracting backdrop.
+ */
 const fragmentShader = `
   uniform float uTime;
   uniform float uBass;

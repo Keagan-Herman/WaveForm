@@ -21,6 +21,15 @@ const CONFIG = {
   }
 }
 
+/**
+ * AudioTerrain Shader Logic:
+ *
+ * Vertex Shader:
+ * - Uses Simplex 3D Noise for base organic movement.
+ * - Samples a frequency DataTexture (uFreq) along the X-axis to drive local elevation.
+ * - Elevation = (Noise * Bass) + FrequencyData.
+ * - Displaces the Z-position of plane vertices based on the combined elevation.
+ */
 const vertexShader = `
   varying vec2 vUv;
   varying float vElevation;
@@ -94,17 +103,40 @@ const vertexShader = `
                                   dot(p2,x2), dot(p3,x3) ) );
   }
 
+  float fbm(vec3 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+    for (int i = 0; i < 4; i++) {
+      value += amplitude * snoise(p * frequency);
+      p.y += 10.0; // Shift to reduce directional artifacts
+      amplitude *= 0.5;
+      frequency *= 2.0;
+    }
+    return value;
+  }
+
   void main() {
     vUv = uv;
     
-    float freq = texture2D(uFreq, vec2(uv.x, 0.5)).r;
-    float noise = snoise(vec3(
+    // Sample frequency with a sharpening curve
+    float freqRaw = texture2D(uFreq, vec2(uv.x, 0.5)).r;
+    float freq = pow(freqRaw, 1.5) * ${CONFIG.ANIMATION.FREQ_MULT.toFixed(1)};
+
+    // Multi-octave noise for organic terrain
+    vec3 noisePos = vec3(
       position.x * ${CONFIG.ANIMATION.NOISE_SCALE.toFixed(1)},
       position.y * ${CONFIG.ANIMATION.NOISE_SCALE.toFixed(1)} + uTime * ${CONFIG.ANIMATION.NOISE_SPEED.toFixed(1)},
-      uTime * ${CONFIG.ANIMATION.NOISE_SPEED.toFixed(1)}
-    ));
+      uTime * ${CONFIG.ANIMATION.NOISE_SPEED.toFixed(2)}
+    );
+    float noise = fbm(noisePos) * ${CONFIG.ANIMATION.BASS_MULT.toFixed(1)} * uBass;
+
+    // Combine noise and frequency for complex displacement
+    // We multiply frequency by a distance-from-center mask to keep edges cleaner
+    float dist = distance(uv, vec2(0.5));
+    float mask = smoothstep(0.5, 0.2, dist);
     
-    float elevation = (noise * ${CONFIG.ANIMATION.BASS_MULT.toFixed(1)} * uBass) + (freq * ${CONFIG.ANIMATION.FREQ_MULT.toFixed(1)});
+    float elevation = noise + (freq * mask * 2.0);
     vElevation = elevation;
     
     vec3 newPosition = position;
@@ -114,6 +146,12 @@ const vertexShader = `
   }
 `
 
+/**
+ * Fragment Shader:
+ * - Mixes between a dark base color and the album's accent color based on elevation.
+ * - Adds an exponential glow effect on high peaks to emphasize intensity.
+ * - Supports global opacity for smooth scene transitions.
+ */
 const fragmentShader = `
   varying vec2 vUv;
   varying float vElevation;
@@ -122,11 +160,27 @@ const fragmentShader = `
   uniform float uOpacity;
 
   void main() {
+    // Calculate color based on elevation
     float mixFactor = clamp(vElevation * ${CONFIG.COLOR.MIX_MULT.toFixed(1)}, 0.0, 1.0);
-    vec3 color = mix(uColor * 0.15, uAccent, mixFactor);
 
-    // Add a pulsing glow effect on elevation
-    color += pow(mixFactor, 2.0) * 0.4 * uAccent;
+    // Simulate lighting by using dFdx/dFdy to find the gradient/slope
+    // This creates "shading" on the terrain without complex normal calculation
+    float dx = dFdx(vElevation);
+    float dy = dFdy(vElevation);
+    float slope = sqrt(dx*dx + dy*dy) * 10.0;
+
+    vec3 baseColor = mix(uColor * 0.05, uAccent * 0.5, mixFactor);
+    vec3 color = baseColor;
+
+    // Highlights on ridges/peaks
+    color += uAccent * slope * 0.2;
+
+    // Exponential glow on high peaks
+    color += pow(mixFactor, 3.0) * 0.8 * uAccent;
+
+    // Subtle rim lighting effect
+    float rim = 1.0 - clamp(dot(vec3(0.0, 0.0, 1.0), vec3(dx, dy, 1.0)), 0.0, 1.0);
+    color += uAccent * pow(rim, 2.0) * 0.3;
 
     gl_FragColor = vec4(color, uOpacity);
   }
