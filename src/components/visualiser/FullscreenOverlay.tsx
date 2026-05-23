@@ -266,12 +266,25 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={visualLayer}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
                 style={styles.layerIndicator}
               >
-                Mode: {visualLayer}
+                {Array.from(`MODE: ${visualLayer.toUpperCase()}`).map((char, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 + 0.2 }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
               </motion.div>
             </AnimatePresence>
 
@@ -283,8 +296,14 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
             {currentTrack && (
               <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: -60, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 30,
+                  delay: 0.1,
+                }}
                 style={styles.nowPlaying}
               >
                 <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
@@ -388,15 +407,19 @@ const styles: Record<string, React.CSSProperties> = {
   layerIndicator: {
     position: 'absolute',
     top: '4rem',
-    fontSize: '1.2rem',
+    fontSize: '1rem',
     letterSpacing: '0.4em',
     textTransform: 'uppercase',
     color: '#fff',
-    background: 'rgba(0,0,0,0.5)',
-    padding: '0.5rem 2rem',
+    background: 'rgba(0,0,0,0.4)',
+    padding: '0.75rem 2.5rem',
     borderRadius: '40px',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    display: 'flex',
+    gap: '0.1em',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
   },
   energyVisWrap: {
     position: 'absolute',
@@ -415,12 +438,14 @@ const styles: Record<string, React.CSSProperties> = {
     left: '2rem',
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    background: 'rgba(0,0,0,0.4)',
-    padding: '0.75rem',
-    borderRadius: '8px',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    gap: '1.2rem',
+    background: 'rgba(5, 5, 5, 0.4)',
+    padding: '1rem',
+    borderRadius: '12px',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
   },
   nowPlayingArt: {
     width: 48,

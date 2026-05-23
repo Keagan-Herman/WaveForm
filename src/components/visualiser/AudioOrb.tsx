@@ -60,8 +60,13 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
     if (coreRef.current) {
       const { beat, beatConfidence } = useVisualiserStore.getState()
-      const s = 1.0 + (smoothedBass.current * 0.5) + (beat ? beatConfidence * 0.2 : 0)
-      coreRef.current.scale.set(s, s, s)
+      const baseScale = 1.0 + (smoothedBass.current * 0.5)
+      const targetScale = baseScale + (beat ? beatConfidence * 0.25 : 0)
+
+      // Lerp scale for "breathing" effect
+      const currentScale = coreRef.current.scale.x
+      const nextScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.2)
+      coreRef.current.scale.set(nextScale, nextScale, nextScale)
     }
 
     if (pointsMatRef.current) {

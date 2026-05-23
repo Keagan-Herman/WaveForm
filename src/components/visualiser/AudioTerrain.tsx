@@ -136,7 +136,7 @@ const vertexShader = `
     float dist = distance(uv, vec2(0.5));
     float mask = smoothstep(0.5, 0.2, dist);
     
-    float elevation = noise + (freq * mask * 2.0);
+    float elevation = noise + (freq * mask * 2.5);
     vElevation = elevation;
     
     vec3 newPosition = position;
@@ -149,8 +149,8 @@ const vertexShader = `
 /**
  * Fragment Shader:
  * - Mixes between a dark base color and the album's accent color based on elevation.
- * - Adds an exponential glow effect on high peaks to emphasize intensity.
- * - Supports global opacity for smooth scene transitions.
+ * - Adds a sharper exponential glow effect on high peaks.
+ * - Improved rim lighting and slope-based shading.
  */
 const fragmentShader = `
   varying vec2 vUv;
@@ -163,24 +163,25 @@ const fragmentShader = `
     // Calculate color based on elevation
     float mixFactor = clamp(vElevation * ${CONFIG.COLOR.MIX_MULT.toFixed(1)}, 0.0, 1.0);
 
-    // Simulate lighting by using dFdx/dFdy to find the gradient/slope
-    // This creates "shading" on the terrain without complex normal calculation
+    // Dynamic slope calculation for lighting
     float dx = dFdx(vElevation);
     float dy = dFdy(vElevation);
-    float slope = sqrt(dx*dx + dy*dy) * 10.0;
+    float slope = sqrt(dx*dx + dy*dy) * 12.0;
 
-    vec3 baseColor = mix(uColor * 0.05, uAccent * 0.5, mixFactor);
+    // Deep space base color
+    vec3 baseColor = mix(uColor * 0.02, uAccent * 0.4, mixFactor);
     vec3 color = baseColor;
 
-    // Highlights on ridges/peaks
-    color += uAccent * slope * 0.2;
+    // Sharp highlights on ridges
+    color += uAccent * smoothstep(0.3, 1.0, slope) * 0.4;
 
-    // Exponential glow on high peaks
-    color += pow(mixFactor, 3.0) * 0.8 * uAccent;
+    // Sharper exponential glow on peaks
+    color += pow(mixFactor, 4.0) * 1.2 * uAccent;
 
-    // Subtle rim lighting effect
-    float rim = 1.0 - clamp(dot(vec3(0.0, 0.0, 1.0), vec3(dx, dy, 1.0)), 0.0, 1.0);
-    color += uAccent * pow(rim, 2.0) * 0.3;
+    // Enhanced rim lighting from front-facing normal approximation
+    vec3 normal = normalize(vec3(-dx, -dy, 1.0));
+    float rim = 1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);
+    color += uAccent * pow(rim, 3.0) * 0.6;
 
     gl_FragColor = vec4(color, uOpacity);
   }

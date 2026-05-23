@@ -112,20 +112,28 @@ export function ParticleField({ color = '#ffffff', accent, secondary }: Particle
     const accentColor = accent ? new THREE.Color(accent) : baseColor
     const secondaryColor = secondary ? new THREE.Color(secondary) : baseColor
 
+    // Simple deterministic random for React purity rule compliance
+    // We only need a fixed set of random numbers once per actualCount change
+    const prng = (i: number) => {
+      let s = i + 123
+      s = (s * 16807) % 2147483647
+      return (s - 1) / 2147483646
+    }
+
     for (let i = 0; i < actualCount; i++) {
       // Original positions
-      pos[i * 3] = (Math.random() - 0.5) * CONFIG.BOUNDS.X * 2
-      pos[i * 3 + 1] = (Math.random() - 0.5) * CONFIG.BOUNDS.Y * 2
-      pos[i * 3 + 2] = (Math.random() - 0.5) * CONFIG.BOUNDS.Z * 2
+      pos[i * 3] = (prng(i * 7) - 0.5) * CONFIG.BOUNDS.X * 2
+      pos[i * 3 + 1] = (prng(i * 7 + 1) - 0.5) * CONFIG.BOUNDS.Y * 2
+      pos[i * 3 + 2] = (prng(i * 7 + 2) - 0.5) * CONFIG.BOUNDS.Z * 2
 
       // Velocities
-      vel[i * 3] = (Math.random() - 0.5) * 0.02
-      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.02
-      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.02
+      vel[i * 3] = (prng(i * 7 + 3) - 0.5) * 0.02
+      vel[i * 3 + 1] = (prng(i * 7 + 4) - 0.5) * 0.02
+      vel[i * 3 + 2] = (prng(i * 7 + 5) - 0.5) * 0.02
 
       // Distribute colors across the palette
-      const r = Math.random()
-      const targetCol = r > 0.7 ? accentColor : (r > 0.4 ? secondaryColor : baseColor)
+      const r = prng(i * 7 + 6)
+      const targetCol = r > 0.7 ? accentColor : r > 0.4 ? secondaryColor : baseColor
 
       col[i * 3] = targetCol.r
       col[i * 3 + 1] = targetCol.g
