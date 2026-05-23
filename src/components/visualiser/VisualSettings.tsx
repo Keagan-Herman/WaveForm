@@ -66,31 +66,40 @@ export function VisualSettings() {
         <div style={styles.divider} />
 
         <div style={styles.section}>
-          <label>Effects</label>
+          <label style={styles.label}>Effects</label>
           <div style={styles.fxGrid}>
             {[
               { id: 'bloom', label: 'Bloom', val: bloomEnabled },
               { id: 'godRays', label: 'God Rays', val: godRaysEnabled },
-              { id: 'chromaticAberration', label: 'Chromatic', val: chromaticAberrationEnabled },
+              { id: 'chromaticAberration', label: 'Chroma', val: chromaticAberrationEnabled },
               { id: 'vignette', label: 'Vignette', val: vignetteEnabled },
-              { id: 'filmGrain', label: 'Film Grain', val: filmGrainEnabled },
-              { id: 'dof', label: 'Depth of Field', val: dofEnabled },
+              { id: 'filmGrain', label: 'Grain', val: filmGrainEnabled },
+              { id: 'dof', label: 'DoF', val: dofEnabled },
             ].map(fx => (
-              <label key={fx.id} style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={fx.val}
-                  onChange={e => setFxEnabled(fx.id, e.target.checked)}
-                />
-                {fx.label}
-              </label>
+              <div
+                key={fx.id}
+                style={styles.toggleRow}
+                onClick={() => setFxEnabled(fx.id, !fx.val)}
+              >
+                <span style={styles.fxLabel}>{fx.label}</span>
+                <div style={{ ...styles.toggleTrack, background: fx.val ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)' }}>
+                  <motion.div
+                    animate={{ x: fx.val ? 16 : 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    style={{ ...styles.toggleThumb, background: fx.val ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
         {bloomEnabled && (
           <div style={styles.section}>
-            <label>Bloom Intensity: {bloomIntensity.toFixed(1)}</label>
+            <div style={styles.rangeHeader}>
+              <label style={styles.label}>Bloom Intensity</label>
+              <span style={styles.rangeValue}>{bloomIntensity.toFixed(1)}</span>
+            </div>
             <input
               type="range"
               min="0"
@@ -113,17 +122,17 @@ const styles: Record<string, React.CSSProperties> = {
     right: '2rem',
     top: '2rem',
     width: '300px',
-    background: 'rgba(5, 5, 5, 0.8)',
-    backdropFilter: 'blur(32px)',
-    WebkitBackdropFilter: 'blur(32px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
-    borderRadius: '16px',
+    background: 'rgba(5, 5, 5, 0.7)',
+    backdropFilter: 'blur(40px)',
+    WebkitBackdropFilter: 'blur(40px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+    borderRadius: '24px',
     padding: '1.75rem',
     zIndex: 100,
     color: '#fff',
     pointerEvents: 'auto',
-    fontFamily: 'inherit',
+    fontFamily: 'monospace',
   },
   header: {
     display: 'flex',
@@ -163,25 +172,75 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   checkboxLabel: {
-    fontSize: '0.8rem',
+    fontSize: '0.75rem',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
+    gap: '0.75rem',
     cursor: 'pointer',
     opacity: 0.8,
+    letterSpacing: '0.05em',
   },
   fxGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '0.8rem',
+    gap: '0.5rem',
+  },
+  toggleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.6rem 0.75rem',
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'background 0.2s ease',
+  },
+  fxLabel: {
+    fontSize: '0.7rem',
+    letterSpacing: '0.05em',
+    opacity: 0.8,
+  },
+  toggleTrack: {
+    width: 32,
+    height: 16,
+    borderRadius: '10px',
+    padding: '2px',
+    position: 'relative',
+    transition: 'background 0.3s ease',
+  },
+  toggleThumb: {
+    width: 12,
+    height: 12,
+    borderRadius: '50%',
   },
   divider: {
     height: '1px',
-    background: 'rgba(255,255,255,0.1)',
-    margin: '1rem 0',
+    background: 'rgba(255,255,255,0.08)',
+    margin: '1.25rem 0',
+  },
+  label: {
+    fontSize: '0.65rem',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    opacity: 0.4,
+    marginBottom: '0.25rem',
+  },
+  rangeHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rangeValue: {
+    fontSize: '0.7rem',
+    fontVariantNumeric: 'tabular-nums',
+    opacity: 0.6,
   },
   range: {
     width: '100%',
     cursor: 'pointer',
+    accentColor: '#fff',
+    height: '4px',
+    borderRadius: '2px',
+    marginTop: '0.5rem',
   }
 }

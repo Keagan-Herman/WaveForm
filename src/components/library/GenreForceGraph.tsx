@@ -168,7 +168,10 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       })
 
     // Store drag on the svg element so the data effect can access it
-    ;(svg as SVGSVGElement & { __drag?: typeof drag }).__drag = drag
+    interface DraggableSVG extends SVGSVGElement {
+      __drag?: d3.DragBehavior<SVGCircleElement, GenreNode, GenreNode | d3.SubjectPosition>
+    }
+    ;(svg as DraggableSVG).__drag = drag
 
     return () => {
       simulation.stop()
@@ -184,11 +187,10 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     if (!svg || !simulation) return
 
     const { nodes, links } = data
-    const drag = (
-      svg as SVGSVGElement & {
-        __drag?: d3.DragBehavior<SVGCircleElement, GenreNode, GenreNode | d3.SubjectPosition>
-      }
-    ).__drag
+    interface DraggableSVG extends SVGSVGElement {
+      __drag?: d3.DragBehavior<SVGCircleElement, GenreNode, GenreNode | d3.SubjectPosition>
+    }
+    const drag = (svg as DraggableSVG).__drag
 
     const root = d3.select(svg).select('g.root')
 
@@ -207,7 +209,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     linkSel
       .enter()
       .append('line')
-      .merge(linkSel as d3.Selection<SVGLineElement, GenreLink, SVGGElement, unknown>)
+      .merge(linkSel)
       .attr('stroke', 'rgba(232,245,232,0.08)')
       .attr('stroke-width', d => Math.min((d.weight as number) * 0.8, 3))
 
