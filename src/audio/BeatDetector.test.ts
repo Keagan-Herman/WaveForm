@@ -64,6 +64,9 @@ describe('BeatDetector', () => {
     process(beat)
 
     await wait(500)
+    process(beat)
+
+    await wait(500)
     const result = process(beat)
 
     // Allow more wiggle room for real-time variations in sandbox

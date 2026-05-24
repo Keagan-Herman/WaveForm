@@ -13,9 +13,11 @@ body,
 }
 
 body {
-  background: #050e05;
-  color: #e8f5e8;
+  background: #050505;
+  color: #f0f0f0;
   overflow: hidden; /* App manages its own scroll regions */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Skeleton loading shimmer */
@@ -46,15 +48,15 @@ body {
 
 /* Focus ring — visible for keyboard navigation */
 :focus-visible {
-  outline: 2px solid var(--accent-color, rgba(29, 185, 84, 0.6));
+  outline: 2px solid var(--accent-color, #1db954);
   outline-offset: 3px;
   border-radius: inherit;
 }
 
 /* Slim, refined scrollbars for a premium feel */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -62,7 +64,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.02);
 }

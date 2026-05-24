@@ -17,6 +17,7 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
   const [tracks, setTracks] = useState<DeezerTrack[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
   const setTrack = usePlayerStore(state => state.setTrack)
   const play = usePlayerStore(state => state.play)
@@ -82,17 +83,32 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
     play()
   }
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e
+    const { innerWidth, innerHeight } = window
+    setMousePos({
+      x: (clientX / innerWidth - 0.5) * 20,
+      y: (clientY / innerHeight - 0.5) * 20,
+    })
+  }
+
   return (
     <motion.div
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      onMouseMove={handleMouseMove}
       style={styles.panel}
     >
       {/* Background Blur */}
       {artist && (
-        <div
+        <motion.div
+          animate={{
+            x: mousePos.x,
+            y: mousePos.y,
+          }}
+          transition={{ type: 'tween', ease: 'linear', duration: 0 }}
           style={{
             ...styles.bgImage,
             backgroundImage: `url(${artist.picture_big})`,
@@ -177,8 +193,9 @@ const styles: Record<string, CSSProperties> = {
   overlay: {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8))',
-    backdropFilter: 'blur(20px) saturate(1.8)',
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.9))',
+    backdropFilter: 'blur(50px) saturate(2)',
+    WebkitBackdropFilter: 'blur(50px) saturate(2)',
   },
   content: {
     position: 'relative',
