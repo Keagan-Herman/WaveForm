@@ -31,6 +31,7 @@ import { QuadrantErrorBoundary } from '@/components/ui/QuadrantErrorBoundary'
 import { useUIStore } from '@/stores/uiStore'
 import { ArtistPanel } from '@/components/search/ArtistPanel'
 import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
+import { hexToRgb } from '@/utils/color'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -221,6 +222,30 @@ function Waveform() {
     root.style.setProperty('--border-color', palette.border)
   }, [accent])
 
+  // Reactive border color based on bass power — updated imperatively to avoid root re-renders
+  useEffect(() => {
+    const root = document.documentElement
+    const rgb = hexToRgb(accent.hex)
+
+    if (!rgb) {
+      root.style.setProperty('--reactive-border', 'var(--border-color)')
+      return
+    }
+
+    const unsubscribe = useVisualiserStore.subscribe(
+      state => state.bassPower,
+      bassPower => {
+        if (!isPlaying) {
+          root.style.setProperty('--reactive-border', 'var(--border-color)')
+          return
+        }
+        const alpha = 0.1 + bassPower * 0.3
+        root.style.setProperty('--reactive-border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`)
+      }
+    )
+    return unsubscribe
+  }, [accent.hex, isPlaying])
+
   const handleFilteredTracksChange = useCallback((ids: string[] | null) => {
     setFilteredTrackIds(ids)
   }, [])
@@ -322,7 +347,12 @@ function Waveform() {
           animate="visible"
           custom="top-left"
           variants={quadrantVariants}
-          style={{ ...styles.quadrant, ...styles.borderRight, ...styles.borderBottom }}
+          style={{
+            ...styles.quadrant,
+            ...styles.borderRight,
+            ...styles.borderBottom,
+            borderColor: 'var(--reactive-border, var(--border-color))',
+          }}
         >
           <div style={styles.quadLabel}>Library</div>
           <QuadrantErrorBoundary label="Library" accent={accent.hex}>
@@ -340,7 +370,12 @@ function Waveform() {
           animate="visible"
           custom="top-right"
           variants={quadrantVariants}
-          style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}
+          style={{
+            ...styles.quadrant,
+            overflowY: 'auto',
+            ...styles.borderBottom,
+            borderColor: 'var(--reactive-border, var(--border-color))',
+          }}
         >
           <div style={styles.quadLabel}>{isPlaying ? 'Hero Scene' : 'Visualisers'}</div>
           <QuadrantErrorBoundary
@@ -366,7 +401,12 @@ function Waveform() {
           animate="visible"
           custom="bottom-left"
           variants={quadrantVariants}
-          style={{ ...styles.quadrant, ...styles.borderRight, overflow: 'hidden' }}
+          style={{
+            ...styles.quadrant,
+            ...styles.borderRight,
+            overflow: 'hidden',
+            borderColor: 'var(--reactive-border, var(--border-color))',
+          }}
         >
           <div style={styles.quadLabel}>Now Playing</div>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
@@ -382,7 +422,10 @@ function Waveform() {
           animate="visible"
           custom="bottom-right"
           variants={quadrantVariants}
-          style={styles.quadrant}
+          style={{
+            ...styles.quadrant,
+            borderColor: 'var(--reactive-border, var(--border-color))',
+          }}
         >
           <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
             <GenrePanelQuadrant

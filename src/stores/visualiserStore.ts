@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, subscribeWithSelector } from 'zustand/middleware'
 
 export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
 export type QualityLevel = 'Low' | 'Medium' | 'Epic'
@@ -74,8 +74,9 @@ interface VisualiserStore {
 }
 
 export const useVisualiserStore = create<VisualiserStore>()(
-  persist(
-    (set, get) => ({
+  subscribeWithSelector(
+    persist(
+      (set, get) => ({
       beat: false,
       bassPower: 0,
       beatConfidence: 0,
@@ -141,11 +142,12 @@ export const useVisualiserStore = create<VisualiserStore>()(
 
       setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
     }),
-    {
-      name: 'visualiser-settings',
-      partialize: state => ({
-        godRaysEnabled: state.godRaysEnabled,
-      }),
-    }
+      {
+        name: 'visualiser-settings',
+        partialize: state => ({
+          godRaysEnabled: state.godRaysEnabled,
+        }),
+      }
+    )
   )
 )

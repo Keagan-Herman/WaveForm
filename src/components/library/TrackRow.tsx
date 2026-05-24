@@ -58,12 +58,13 @@ const PlayingBars = ({ color }: { color: string }) => (
       <motion.span
         key={i}
         animate={{
-          height: ['20%', '100%', '20%'],
+          height: ['15%', '100%', '15%'],
+          opacity: [0.4, 1, 0.4],
         }}
         transition={{
           duration: delay,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: 'circInOut',
         }}
         style={{
           flex: 1,
@@ -105,7 +106,10 @@ export const TrackRow = React.memo(
     const accentBorder = `${accentColour}60`
 
     return (
-      <button
+      <motion.button
+        whileHover={{ scale: 1.01, x: 4 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         style={{
           ...styles.row,
           background: isActive
@@ -196,7 +200,7 @@ export const TrackRow = React.memo(
         </p>
 
         <span style={styles.duration}>{formatDuration(track.duration)}</span>
-      </button>
+      </motion.button>
     )
   }
 )

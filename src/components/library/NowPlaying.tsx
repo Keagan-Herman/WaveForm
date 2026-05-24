@@ -289,19 +289,20 @@ function MetaRow({
   return (
     <div style={metaRowStyles.row}>
       <span style={metaRowStyles.label}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
         {indicator !== undefined && (
           <motion.div
             animate={{
-              scale: indicator ? 1.4 : 1,
+              scale: indicator ? [1, 1.6, 1] : 1,
               opacity: indicator ? 1 : 0.4,
               backgroundColor: indicator ? '#fff' : accent,
+              boxShadow: indicator ? `0 0 10px #fff` : 'none',
             }}
-            transition={{ duration: 0.1 }}
-            style={{ width: 4, height: 4, borderRadius: '50%', background: accent }}
+            transition={{ duration: 0.2 }}
+            style={{ width: 5, height: 5, borderRadius: '50%', background: accent }}
           />
         )}
-        <span style={{ ...metaRowStyles.value, color: `${accent}dd` }}>{value}</span>
+        <span style={{ ...metaRowStyles.value, color: indicator ? '#fff' : `${accent}dd` }}>{value}</span>
       </div>
     </div>
   )
@@ -439,9 +440,11 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    letterSpacing: '-0.02em',
-    fontWeight: 600,
-    lineHeight: 1.1,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    fontWeight: 700,
+    lineHeight: 1.2,
+    margin: '0.2rem 0',
   },
   artistName: {
     fontSize: '0.85rem',

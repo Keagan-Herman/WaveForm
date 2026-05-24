@@ -26,6 +26,7 @@ export function SearchOverlay({
 }: SearchOverlayProps) {
   const [query, setQuery] = useState('')
   const [focusedIndex, setFocusedIndex] = useState(-1)
+  const [isInputFocused, setIsInputFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const { tracks, isLoading, error } = useDeezerSearch(query)
@@ -122,7 +123,12 @@ export function SearchOverlay({
   return (
     <div style={styles.panel}>
       {/* Search input */}
-      <div style={styles.inputWrap}>
+      <div
+        style={{
+          ...styles.inputWrap,
+          boxShadow: isInputFocused ? `0 0 15px ${accentColour}22` : 'none',
+        }}
+      >
         <span style={styles.searchIcon} aria-hidden="true">
           ⌕
         </span>
@@ -135,6 +141,8 @@ export function SearchOverlay({
           onChange={e => setQuery(e.target.value)}
           aria-label="Search for tracks"
           spellCheck={false}
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
         />
         {isLoading && <span style={{ ...styles.loadingPip, background: accentColour }} />}
         {query && !isLoading && (
@@ -327,7 +335,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     gap: '0.75rem',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    background: 'rgba(255, 255, 255, 0.01)',
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(10px)',
   },
   searchIcon: { fontSize: '1rem', opacity: 0.4, flexShrink: 0, lineHeight: 1 },
   input: {
@@ -395,6 +404,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflowY: 'auto',
     padding: '0.35rem',
+    background: 'rgba(0, 0, 0, 0.2)',
   },
   stateWrap: {
     display: 'flex',

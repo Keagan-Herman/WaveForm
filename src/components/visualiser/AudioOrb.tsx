@@ -41,7 +41,8 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   const colorRef = useRef(new THREE.Color())
 
   useFrame(() => {
-    const { bassPower } = useVisualiserStore.getState()
+    const { bassPower, bpm } = useVisualiserStore.getState()
+    const time = performance.now() * 0.001
 
     // Inertia for bass reactivity
     smoothedBass.current += (bassPower - smoothedBass.current) * CONFIG.ANIMATION.BASS_SMOOTHING
@@ -60,22 +61,31 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
     if (coreRef.current) {
       const { beat, beatConfidence } = useVisualiserStore.getState()
-      const baseScale = 1.0 + (smoothedBass.current * 0.5)
-      const targetScale = baseScale + (beat ? beatConfidence * 0.25 : 0)
+
+      // Organic breathing independent of beat
+      const breathing = Math.sin(time * (bpm > 0 ? (bpm / 60) * Math.PI : 2)) * 0.05
+
+      const baseScale = 1.0 + (smoothedBass.current * 0.4) + breathing
+      const targetScale = baseScale + (beat ? beatConfidence * 0.3 : 0)
 
       // Lerp scale for "breathing" effect
       const currentScale = coreRef.current.scale.x
-      const nextScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.2)
+      const nextScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.15)
       coreRef.current.scale.set(nextScale, nextScale, nextScale)
     }
 
     if (pointsMatRef.current) {
-      pointsMatRef.current.opacity = orbOpacity * smoothedBass.current * 0.3
+      pointsMatRef.current.opacity = orbOpacity * (0.1 + smoothedBass.current * 0.6)
+
+      // Reactive points scale based on bass
+      const pointsScale = 1.0 + smoothedBass.current * 0.8
+      pointsMatRef.current.size = 0.05 * pointsScale
+
       // Subtle color shift on bass
       colorRef.current.set(accent.palette.secondary)
       pointsMatRef.current.color.lerp(
         colorRef.current,
-        smoothedBass.current * 0.1
+        smoothedBass.current * 0.2
       )
     }
   })
@@ -105,7 +115,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
       {/* Volumetric light rays (simulated with points) */}
       <points>
-        <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, 64, 64]} />
+        <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, 80, 80]} />
         <pointsMaterial
           ref={pointsMatRef}
           color={accent.palette.secondary}
@@ -113,6 +123,8 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
           transparent
           opacity={0}
           blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          sizeAttenuation={true}
         />
       </points>
     </group>
