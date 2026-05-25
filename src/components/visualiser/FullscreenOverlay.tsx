@@ -266,25 +266,28 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={visualLayer}
-                initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+                initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
                 transition={{
                   duration: 0.6,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                style={styles.layerIndicator}
+                style={{ ...styles.layerIndicator, borderColor: `${accent.hex}33` }}
               >
-                {Array.from(`MODE: ${visualLayer.toUpperCase()}`).map((char, i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 + 0.2 }}
-                  >
-                    {char}
-                  </motion.span>
-                ))}
+                <div style={styles.indicatorLabel}>MODE</div>
+                <div style={styles.indicatorValue}>
+                  {Array.from(visualLayer.toUpperCase()).map((char, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 + 0.2 }}
+                    >
+                      {char}
+                    </motion.span>
+                  ))}
+                </div>
               </motion.div>
             </AnimatePresence>
 
@@ -304,9 +307,9 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   damping: 30,
                   delay: 0.1,
                 }}
-                style={styles.nowPlaying}
+                style={{ ...styles.nowPlaying, borderColor: `${accent.hex}33` }}
               >
-                <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
+                <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
                   <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
                   {isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
                     <div
@@ -340,43 +343,89 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
                     {getTrackArtist(currentTrack)}
                   </div>
+                  <div style={styles.hudMeta}>
+                    <BeatIndicator accent={accent.hex} />
+                    <span style={{ opacity: 0.4 }}>LIVE_FEED</span>
+                  </div>
                 </div>
               </motion.div>
             )}
 
             <div style={styles.controls}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <HUDButton
                   onClick={toggleFullscreen}
-                  style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
-                >
-                  Exit Fullscreen (F)
-                </button>
-                <button
+                  label="EXIT_FULLSCREEN"
+                  shortcut="F"
+                  accent={accent.hex}
+                />
+                <HUDButton
                   onClick={() => setShowSettings(!useVisualiserStore.getState().showSettings)}
-                  style={{ ...styles.button, borderColor: accent.hex, color: accent.hex }}
-                >
-                  Settings (S)
-                </button>
-                <button
+                  label="FX_SETTINGS"
+                  shortcut="S"
+                  accent={accent.hex}
+                />
+                <HUDButton
                   onClick={toggleRecording}
-                  style={{
-                    ...styles.button,
-                    borderColor: isRecording ? '#ff4444' : accent.hex,
-                    color: isRecording ? '#ff4444' : accent.hex
-                  }}
-                >
-                  {isRecording ? 'Stop Recording (R)' : 'Record (R)'}
-                </button>
+                  label={isRecording ? "STOP_RECORDING" : "START_CAPTURE"}
+                  shortcut="R"
+                  accent={isRecording ? '#ff4444' : accent.hex}
+                  isActive={isRecording}
+                />
               </div>
               <div style={styles.info}>
-                <span style={styles.layerLabel}>Press 'V' to cycle layers</span>
+                <div style={{ ...styles.layerLabel, borderColor: `${accent.hex}22` }}>
+                  CYCLE_LAYERS <span style={{ opacity: 0.5, marginLeft: '0.5rem' }}>[V]</span>
+                </div>
               </div>
             </div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
+  )
+}
+
+function BeatIndicator({ accent }: { accent: string }) {
+  const beat = useVisualiserStore(state => state.beat)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <motion.div
+        animate={{
+          scale: beat ? [1, 1.4, 1] : 1,
+          opacity: beat ? 1 : 0.3,
+          backgroundColor: beat ? '#fff' : accent,
+        }}
+        transition={{ duration: 0.15 }}
+        style={{ width: 6, height: 6, borderRadius: '50%' }}
+      />
+      <span style={{ fontSize: '0.6rem', letterSpacing: '0.1em', opacity: 0.5 }}>BEAT</span>
+    </div>
+  )
+}
+
+function HUDButton({ onClick, label, shortcut, accent, isActive }: {
+  onClick: () => void,
+  label: string,
+  shortcut: string,
+  accent: string,
+  isActive?: boolean
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      style={{
+        ...styles.hudButton,
+        borderColor: isActive ? accent : `${accent}33`,
+        color: isActive ? '#fff' : accent,
+        background: isActive ? `${accent}22` : 'rgba(0,0,0,0.4)',
+      }}
+    >
+      <span style={styles.buttonLabel}>{label}</span>
+      <span style={styles.buttonShortcut}>[{shortcut}]</span>
+    </motion.button>
   )
 }
 
@@ -388,6 +437,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#000',
     display: 'flex',
     flexDirection: 'column',
+    fontFamily: 'monospace',
   },
   canvasWrap: {
     position: 'absolute',
@@ -407,19 +457,30 @@ const styles: Record<string, React.CSSProperties> = {
   layerIndicator: {
     position: 'absolute',
     top: '4rem',
+    background: 'rgba(5, 5, 5, 0.4)',
+    padding: '0.6rem 2rem',
+    borderRadius: '4px',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    border: '1px solid',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.2rem',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+  },
+  indicatorLabel: {
+    fontSize: '0.6rem',
+    letterSpacing: '0.3em',
+    opacity: 0.3,
+    fontWeight: 600,
+  },
+  indicatorValue: {
     fontSize: '1rem',
     letterSpacing: '0.4em',
-    textTransform: 'uppercase',
     color: '#fff',
-    background: 'rgba(0,0,0,0.4)',
-    padding: '0.75rem 2.5rem',
-    borderRadius: '40px',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(255,255,255,0.08)',
     display: 'flex',
     gap: '0.1em',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
   },
   energyVisWrap: {
     position: 'absolute',
@@ -434,71 +495,94 @@ const styles: Record<string, React.CSSProperties> = {
   },
   nowPlaying: {
     position: 'absolute',
-    top: '2rem',
-    left: '2rem',
+    top: '2.5rem',
+    left: '2.5rem',
     display: 'flex',
     alignItems: 'center',
-    gap: '1.2rem',
+    gap: '1.5rem',
     background: 'rgba(5, 5, 5, 0.4)',
-    padding: '1rem',
-    borderRadius: '12px',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+    padding: '1.25rem',
+    borderRadius: '4px',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    border: '1px solid',
+    boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
   },
   nowPlayingArt: {
-    width: 48,
-    height: 48,
-    borderRadius: 4,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+    width: 56,
+    height: 56,
+    borderRadius: 2,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+    objectFit: 'cover',
   },
   nowPlayingInfo: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.1rem',
+    gap: '0.2rem',
   },
   nowPlayingTitle: {
-    fontSize: '0.9rem',
-    fontWeight: 600,
+    fontSize: '1rem',
+    fontWeight: 700,
     color: '#fff',
+    letterSpacing: '0.02em',
+    textTransform: 'uppercase',
   },
   nowPlayingArtist: {
     fontSize: '0.75rem',
-    fontFamily: 'monospace',
+    opacity: 0.7,
+    letterSpacing: '0.1em',
+  },
+  hudMeta: {
+    marginTop: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    fontSize: '0.6rem',
+    letterSpacing: '0.1em',
   },
   controls: {
     position: 'absolute',
-    bottom: '2rem',
-    left: '2rem',
-    right: '2rem',
+    bottom: '2.5rem',
+    left: '2.5rem',
+    right: '2.5rem',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     pointerEvents: 'auto',
   },
-  button: {
-    background: 'rgba(0,0,0,0.4)',
+  hudButton: {
     border: '1px solid',
-    padding: '0.5rem 1rem',
+    padding: '0.6rem 1.25rem',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '0.8rem',
-    fontFamily: 'monospace',
-    backdropFilter: 'blur(10px)',
+    fontSize: '0.75rem',
+    backdropFilter: 'blur(24px)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    transition: 'all 0.3s ease',
+    fontWeight: 600,
+  },
+  buttonLabel: {
+    letterSpacing: '0.1em',
+  },
+  buttonShortcut: {
+    opacity: 0.3,
+    fontSize: '0.65rem',
   },
   info: {
-    fontSize: '0.8rem',
-    opacity: 0.6,
-    fontFamily: 'monospace',
+    fontSize: '0.75rem',
     color: '#fff',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
   },
   layerLabel: {
-    background: 'rgba(0,0,0,0.4)',
-    padding: '0.5rem 1rem',
+    background: 'rgba(5, 5, 5, 0.4)',
+    padding: '0.6rem 1.25rem',
     borderRadius: '4px',
-    backdropFilter: 'blur(10px)',
+    backdropFilter: 'blur(32px)',
+    border: '1px solid',
+    display: 'flex',
+    alignItems: 'center',
   },
 }
