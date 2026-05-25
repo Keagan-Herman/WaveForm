@@ -93,10 +93,19 @@ export function BackgroundPulse({ accent }: BackgroundPulseProps) {
     }
 
     const gradient = `radial-gradient(
-      ellipse 90% 70% at 50% 50%,
-      hsl(${hue}, ${Math.round(centerS)}%, ${Math.round(centerL)}%) 0%,
-      hsl(${hue}, ${Math.round(edgeS)}%, ${Math.round(edgeL)}%) 55%,
-      hsl(${hue}, 4%, ${floorL}%) 100%
+      ellipse 100% 80% at 50% 50%,
+      hsla(${hue}, ${Math.round(centerS)}%, ${Math.round(centerL)}%, 0.8) 0%,
+      hsla(${hue}, ${Math.round(centerS * 0.8)}%, ${Math.round(centerL * 0.7)}%, 0.4) 30%,
+      hsla(${hue}, ${Math.round(edgeS)}%, ${Math.round(edgeL)}%, 0.2) 60%,
+      hsla(${hue}, 4%, ${floorL}%, 0) 100%
+    ), radial-gradient(
+      circle at 20% 20%,
+      hsla(${(hue + 40) % 360}, ${Math.round(centerS * 0.4)}%, ${Math.round(centerL * 0.3)}%, 0.15) 0%,
+      transparent 50%
+    ), radial-gradient(
+      circle at 80% 80%,
+      hsla(${(hue - 40 + 360) % 360}, ${Math.round(centerS * 0.4)}%, ${Math.round(centerL * 0.3)}%, 0.15) 0%,
+      transparent 50%
     )`
 
     el.style.background = gradient

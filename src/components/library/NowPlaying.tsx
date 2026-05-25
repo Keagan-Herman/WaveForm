@@ -161,9 +161,12 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   return (
     <motion.div
       key={currentTrack.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      initial={{ opacity: 0, filter: 'blur(10px)', x: -20 }}
+      animate={{ opacity: 1, filter: 'blur(0px)', x: 0 }}
+      transition={{
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}
     >
       {/* Top row: small art + primary text */}
@@ -191,12 +194,24 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
         </div>
 
         <div style={styles.titleBlock}>
-          <p style={styles.albumName} title={getTrackAlbum(currentTrack)}>
+          <motion.p
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 0.5, x: 0 }}
+            transition={{ delay: 0.2 }}
+            style={styles.albumName}
+            title={getTrackAlbum(currentTrack)}
+          >
             {getTrackAlbum(currentTrack)}
-          </p>
-          <p style={styles.trackName} title={currentTrack.title}>
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            style={styles.trackName}
+            title={currentTrack.title}
+          >
             {currentTrack.title}
-          </p>
+          </motion.p>
           <ArtistRipple active={isPlaying} color={accent}>
             <button
               style={{

@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useCallback } from 'react'
+import { useRef, forwardRef, useCallback, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualiserStore } from '@/stores/visualiserStore'
@@ -20,9 +20,63 @@ const CONFIG = {
   }
 }
 
+const coreVertexShader = `
+  varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  uniform float uTime;
+  uniform float uBass;
+
+  void main() {
+    vUv = uv;
+    vNormal = normalize(normalMatrix * normal);
+    vPosition = position;
+
+    // Subtle vertex displacement on bass
+    vec3 newPos = position + normal * sin(uTime * 2.0 + position.y * 5.0) * uBass * 0.1;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+  }
+`
+
+const coreFragmentShader = `
+  varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  uniform float uTime;
+  uniform float uBass;
+  uniform vec3 uColor;
+  uniform vec3 uAccent;
+  uniform float uOpacity;
+
+  // Simple noise function
+  float noise(vec3 p) {
+    return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+  }
+
+  void main() {
+    // Dynamic plasma effect
+    float n = noise(vPosition + uTime * 0.5);
+    float pulse = sin(uTime * 3.0 + vPosition.y * 10.0) * 0.5 + 0.5;
+
+    vec3 color = mix(uColor, uAccent, pulse * 0.5 + uBass * 0.5);
+
+    // Rim lighting
+    float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
+    color += uAccent * pow(rim, 4.0) * (1.0 + uBass * 2.0);
+
+    // Add some "inner fire"
+    float fire = sin(vPosition.x * 10.0 + uTime) * sin(vPosition.y * 10.0 + uTime) * sin(vPosition.z * 10.0 + uTime);
+    color += uAccent * max(0.0, fire) * 0.5 * (1.0 + uBass);
+
+    gl_FragColor = vec4(color, uOpacity);
+  }
+`
+
 export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accent }, ref) => {
   const meshRef = useRef<THREE.Group>(null)
   const coreRef = useRef<THREE.Mesh>(null)
+  const coreMaterialRef = useRef<THREE.ShaderMaterial>(null)
   const pointsMatRef = useRef<THREE.PointsMaterial>(null)
 
   const combinedRef = useCallback((node: THREE.Mesh | null) => {
@@ -34,15 +88,31 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
       else (ref as React.MutableRefObject<THREE.Mesh | null>).current = node;
     }
   }, [ref]);
+
   const orbOpacity = useVisualiserStore(state => state.orbOpacity)
 
   const smoothedBass = useRef(0)
   const smoothedRotation = useRef({ y: 0, z: 0 })
   const colorRef = useRef(new THREE.Color())
 
-  useFrame(() => {
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uBass: { value: 0 },
+    uColor: { value: new THREE.Color(accent.palette.primary) },
+    uAccent: { value: new THREE.Color(accent.palette.accent) },
+    uOpacity: { value: 1.0 },
+  }), [accent.palette.primary, accent.palette.accent])
+
+  useEffect(() => {
+    if (coreMaterialRef.current) {
+      coreMaterialRef.current.uniforms.uColor.value.set(accent.palette.primary)
+      coreMaterialRef.current.uniforms.uAccent.value.set(accent.palette.accent)
+    }
+  }, [accent.palette.primary, accent.palette.accent])
+
+  useFrame((state) => {
     const { bassPower, bpm } = useVisualiserStore.getState()
-    const time = performance.now() * 0.001
+    const time = state.clock.elapsedTime
 
     // Inertia for bass reactivity
     smoothedBass.current += (bassPower - smoothedBass.current) * CONFIG.ANIMATION.BASS_SMOOTHING
@@ -74,6 +144,12 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
       coreRef.current.scale.set(nextScale, nextScale, nextScale)
     }
 
+    if (coreMaterialRef.current) {
+      coreMaterialRef.current.uniforms.uTime.value = time
+      coreMaterialRef.current.uniforms.uBass.value = smoothedBass.current
+      coreMaterialRef.current.uniforms.uOpacity.value = orbOpacity * 0.8
+    }
+
     if (pointsMatRef.current) {
       pointsMatRef.current.opacity = orbOpacity * (0.1 + smoothedBass.current * 0.6)
 
@@ -94,11 +170,14 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     <group ref={meshRef}>
       {/* Inner Core - Now the main sun source */}
       <mesh ref={combinedRef}>
-        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 32, 32]} />
-        <meshBasicMaterial
-          color={accent.palette.primary}
+        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 64, 64]} />
+        <shaderMaterial
+          ref={coreMaterialRef}
+          vertexShader={coreVertexShader}
+          fragmentShader={coreFragmentShader}
+          uniforms={uniforms}
           transparent
-          opacity={orbOpacity * 0.6}
+          depthWrite={true}
         />
       </mesh>
 

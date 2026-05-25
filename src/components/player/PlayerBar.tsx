@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useVisualiserStore } from '../../stores/visualiserStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
 import { getTrackCover, getTrackArtist, isLocalTrack, isDeezerTrack } from '../../types/track';
@@ -30,7 +31,7 @@ function IconNext() {
 function IconPlay() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M4 2.5L14 9L4 15.5V2.5Z" fill="currentColor" />
+      <path d="M5 3L15 9L5 15V3Z" fill="currentColor" />
     </svg>
   );
 }
@@ -38,8 +39,8 @@ function IconPlay() {
 function IconPause() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="4" y="2.5" width="3.5" height="13" rx="1" fill="currentColor" />
-      <rect x="10.5" y="2.5" width="3.5" height="13" rx="1" fill="currentColor" />
+      <rect x="5" y="3" width="3" height="12" rx="1" fill="currentColor" />
+      <rect x="10" y="3" width="3" height="12" rx="1" fill="currentColor" />
     </svg>
   );
 }
@@ -72,26 +73,36 @@ function ControlBtn({
   accentColor = '#1db954',
   title,
 }: ControlBtnProps) {
+  const isPlaying = usePlayerStore(state => state.isPlaying)
+  const beat = useVisualiserStore(state => state.beat)
+
   return (
     <motion.button
       onClick={onClick}
       aria-label={label}
       title={title}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.1, backgroundColor: large ? accentColor : 'rgba(255,255,255,0.1)' }}
       whileTap={{ scale: 0.9 }}
+      animate={large && isPlaying ? {
+        boxShadow: beat
+          ? `0 0 20px ${accentColor}aa`
+          : `0 0 10px ${accentColor}44`,
+        scale: beat ? 1.05 : 1
+      } : {}}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: large ? 40 : 32,
-        height: large ? 40 : 32,
+        width: large ? 42 : 32,
+        height: large ? 42 : 32,
         borderRadius: '50%',
         border: 'none',
         background: large ? accentColor : 'transparent',
-        color: large ? 'var(--bg-color, #050505)' : 'rgba(255,255,255,0.75)',
+        color: large ? 'var(--bg-color, #000)' : 'var(--text-dim, rgba(255,255,255,0.7))',
         cursor: 'pointer',
         flexShrink: 0,
-        transition: 'background 0.15s, color 0.15s',
+        transition: 'background 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease',
+        boxShadow: large ? `0 4px 12px ${accentColor}33` : 'none',
       }}
     >
       {children}
@@ -125,7 +136,7 @@ function PlaybackProgress() {
           fontSize: 11,
           fontFamily: 'monospace',
           fontVariantNumeric: 'tabular-nums',
-          color: 'rgba(232, 245, 232, 0.4)',
+          color: 'var(--text-dim, rgba(232, 245, 232, 0.4))',
           flexShrink: 0,
           width: 32,
           textAlign: 'right',
@@ -143,7 +154,7 @@ function PlaybackProgress() {
           fontSize: 11,
           fontFamily: 'monospace',
           fontVariantNumeric: 'tabular-nums',
-          color: 'rgba(232, 245, 232, 0.4)',
+          color: 'var(--text-dim, rgba(232, 245, 232, 0.4))',
           flexShrink: 0,
           width: 32,
         }}
@@ -289,7 +300,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
-                    color: '#e8f5e8',
+                    color: 'var(--text-color, #e8f5e8)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -309,7 +320,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                   }}
                   style={{
                     fontSize: 11,
-                    color: 'rgba(232, 245, 232, 0.5)',
+                    color: 'var(--text-dim, rgba(232, 245, 232, 0.5))',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -358,7 +369,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                     }}
                     onMouseLeave={(e) => {
                       if (isDeezerTrack(currentTrack)) {
-                        e.currentTarget.style.color = 'rgba(232, 245, 232, 0.5)';
+                        e.currentTarget.style.color = 'var(--text-dim, rgba(232, 245, 232, 0.5))';
                       }
                     }}
                   >
