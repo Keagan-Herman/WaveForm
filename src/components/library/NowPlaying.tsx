@@ -96,12 +96,15 @@ function NowPlayingProgress({ accent, beat, isPlaying }: { accent: string; beat:
               : 'background 0.3s, width 0.1s linear',
           }}
         />
-        <div
+        <motion.div
+          animate={{
+            boxShadow: beat ? `0 0 20px ${accent}` : `0 0 8px ${accent}`,
+            scale: beat ? 1.4 : 1,
+          }}
           style={{
             ...styles.playhead,
             left: `${progress * 100}%`,
             background: accent,
-            boxShadow: `0 0 8px ${accent}`,
             opacity: isPlaying ? 1 : 0,
           }}
         />

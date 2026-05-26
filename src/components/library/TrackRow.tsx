@@ -115,7 +115,7 @@ export const TrackRow = React.memo(
           background: isActive
             ? accentBg
             : isHovered || isFocused
-              ? 'rgba(255,255,255,0.05)'
+              ? `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)`
               : 'transparent',
           borderColor: isActive
             ? accentBorder
@@ -123,10 +123,12 @@ export const TrackRow = React.memo(
               ? `${accentColour}80`
               : 'rgba(255,255,255,0.06)',
           boxShadow: isActive
-            ? `inset 0 0 20px ${accentColour}15`
-            : isFocused
-              ? `inset 0 0 0 1px ${accentColour}30`
-              : 'none',
+            ? `inset 0 0 20px ${accentColour}15, 0 8px 16px rgba(0,0,0,0.2)`
+            : isHovered
+              ? `inset 0 0 10px rgba(255,255,255,0.02), 0 4px 12px rgba(0,0,0,0.1)`
+              : isFocused
+                ? `inset 0 0 0 1px ${accentColour}30`
+                : 'none',
         }}
         onClick={handleSelect}
         onMouseEnter={() => setIsHovered(true)}

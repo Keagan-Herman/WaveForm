@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -120,13 +120,34 @@ export function SearchOverlay({
     setFocusedIndex(prev => (prev === -1 ? prev : -1))
   }, [query, filteredTrackIds])
 
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  }
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+    },
+  }
+
   return (
     <div style={styles.panel}>
       {/* Search input */}
       <div
         style={{
           ...styles.inputWrap,
-          boxShadow: isInputFocused ? `0 0 15px ${accentColour}22` : 'none',
+          boxShadow: isInputFocused ? `0 0 25px ${accentColour}33, inset 0 0 0 1px ${accentColour}44` : 'none',
+          borderColor: isInputFocused ? `${accentColour}66` : 'var(--border-color)',
         }}
       >
         <span style={styles.searchIcon} aria-hidden="true">
@@ -197,64 +218,37 @@ export function SearchOverlay({
         )}
 
         {isLoading && (
-          <div style={styles.skeletonWrap}>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            style={styles.skeletonWrap}
+          >
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={styles.skeletonRow}>
+              <motion.div key={i} variants={itemVariants} style={styles.skeletonRow}>
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0.05, 0.12, 0.05],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.15,
-                  }}
+                  animate={{ opacity: [0.05, 0.12, 0.05] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 }}
                   style={{ ...styles.skeleton, width: '28px' }}
                 />
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0.05, 0.12, 0.05],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.15 + 0.1,
-                  }}
+                  animate={{ opacity: [0.05, 0.12, 0.05] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.05 }}
                   style={{ ...styles.skeleton, width: '36px' }}
                 />
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0.05, 0.12, 0.05],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.15 + 0.2,
-                  }}
+                  animate={{ opacity: [0.05, 0.12, 0.05] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.1 }}
                   style={{ ...styles.skeleton, flex: 1 }}
                 />
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0.05, 0.12, 0.05],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.15 + 0.3,
-                  }}
+                  animate={{ opacity: [0.05, 0.12, 0.05] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.15 }}
                   style={{ ...styles.skeleton, width: '60px' }}
                 />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {error && !isLoading && (
@@ -289,16 +283,20 @@ export function SearchOverlay({
         )}
 
         {!isLoading && !error && visibleTracks.length > 0 && (
-          <div style={styles.trackList} ref={listRef}>
+          <motion.div
+            style={styles.trackList}
+            ref={listRef}
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
             <AnimatePresence mode="popLayout">
               {visibleTracks.map((track, i) => (
                 <motion.div
                   key={track.id}
                   layout
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
+                  variants={itemVariants}
+                  exit={{ opacity: 0, x: -20, filter: 'blur(8px)', transition: { duration: 0.2 } }}
                   role="listitem"
                 >
                   <TrackRow
@@ -313,7 +311,7 @@ export function SearchOverlay({
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>
