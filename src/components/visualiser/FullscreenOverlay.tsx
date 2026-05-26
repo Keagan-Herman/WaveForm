@@ -6,6 +6,7 @@ import { Environment } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useSceneManager } from '@/hooks/useSceneManager'
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
 import { VisualSettings } from './VisualSettings'
 import { CanvasRecorder } from '@/lib/CanvasRecorder'
 import { FluidBackground } from './FluidBackground'
@@ -263,14 +264,20 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
           <div style={styles.uiLayer}>
             <VisualSettings />
 
+            {/* Cinematic HUD Elements */}
+            <div style={styles.hudRight}>
+              <EnergyFlux accent={accent.hex} />
+              <FrequencyScrutinizer accent={accent.hex} />
+            </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={visualLayer}
-                initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+                initial={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
                 animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
+                exit={{ opacity: 0, scale: 1.2, filter: 'blur(20px)' }}
                 transition={{
-                  duration: 0.6,
+                  duration: 0.8,
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 style={{ ...styles.layerIndicator, borderColor: `${accent.hex}33` }}
@@ -383,6 +390,77 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
         </motion.div>
       )}
     </AnimatePresence>
+  )
+}
+
+function EnergyFlux({ accent }: { accent: string }) {
+  const fillRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    return useVisualiserStore.subscribe(
+      state => state.bassPower,
+      bassPower => {
+        if (fillRef.current) {
+          fillRef.current.style.height = `${bassPower * 100}%`
+        }
+      }
+    )
+  }, [])
+
+  return (
+    <div style={styles.energyFlux}>
+      <div style={styles.hudLabel}>ENERGY_FLUX</div>
+      <div style={styles.fluxTrack}>
+        <div
+          ref={fillRef}
+          style={{
+            ...styles.fluxFill,
+            background: accent,
+            transition: 'height 0.1s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function FrequencyScrutinizer({ accent }: { accent: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const draw = useCallback((data: Uint8Array) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const w = canvas.width
+    const h = canvas.height
+    ctx.clearRect(0, 0, w, h)
+
+    const barWidth = 2
+    const gap = 1
+    const count = Math.floor(w / (barWidth + gap))
+
+    ctx.fillStyle = accent
+    for (let i = 0; i < count; i++) {
+      const val = data[i * 2] || 0
+      const bh = (val / 255) * h
+      ctx.fillRect(i * (barWidth + gap), h - bh, barWidth, bh)
+    }
+  }, [accent])
+
+  const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
+
+  useEffect(() => {
+    start()
+    return () => stop()
+  }, [start, stop])
+
+  return (
+    <div style={styles.scrutinizer}>
+      <div style={styles.hudLabel}>FREQ_SCRUTINIZER</div>
+      <canvas ref={canvasRef} width={120} height={40} style={styles.scrutinizerCanvas} />
+    </div>
   )
 }
 
@@ -584,5 +662,50 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid',
     display: 'flex',
     alignItems: 'center',
+  },
+  hudRight: {
+    position: 'absolute',
+    top: '2.5rem',
+    right: '2.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+    alignItems: 'flex-end',
+  },
+  energyFlux: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
+  },
+  hudLabel: {
+    fontSize: '0.55rem',
+    letterSpacing: '0.2em',
+    opacity: 0.4,
+    fontWeight: 600,
+  },
+  fluxTrack: {
+    width: '4px',
+    height: '60px',
+    background: 'rgba(255,255,255,0.05)',
+    borderRadius: '2px',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  fluxFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: '2px',
+  },
+  scrutinizer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
+  },
+  scrutinizerCanvas: {
+    opacity: 0.6,
   },
 }

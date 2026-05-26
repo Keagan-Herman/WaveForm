@@ -78,6 +78,7 @@ function ControlBtn({
 
   return (
     <motion.button
+      initial={false}
       onClick={onClick}
       aria-label={label}
       title={title}
@@ -85,10 +86,11 @@ function ControlBtn({
       whileTap={{ scale: 0.9 }}
       animate={large && isPlaying ? {
         boxShadow: beat
-          ? `0 0 20px ${accentColor}aa`
+          ? [`0 0 10px ${accentColor}44`, `0 0 25px ${accentColor}aa`, `0 0 10px ${accentColor}44`]
           : `0 0 10px ${accentColor}44`,
-        scale: beat ? 1.05 : 1
+        scale: beat ? [1, 1.1, 1] : 1
       } : {}}
+      transition={{ duration: 0.2 }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -120,6 +122,7 @@ function ControlBtn({
 function PlaybackProgress() {
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
+  const beat = useVisualiserStore((s) => s.beat);
 
   return (
     <div
@@ -145,8 +148,21 @@ function PlaybackProgress() {
         {formatTime(currentTime)}
       </span>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
         <WaveformLine height={36} />
+        <motion.div
+          animate={{
+            opacity: beat ? 0.3 : 0.05,
+            scale: beat ? 1.02 : 1,
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(180deg, transparent, var(--accent-color, #1db954), transparent)`,
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        />
       </div>
 
       <span
