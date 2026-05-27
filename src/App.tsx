@@ -12,11 +12,9 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
-import { FrequencyBars } from '@/components/visualiser/FrequencyBars'
 import { BackgroundPulse } from '@/components/visualiser/BackgroundPulse'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { NowPlaying } from '@/components/library/NowPlaying'
-import { GenrePanel } from '@/components/library/GenrePanel'
 import { AlbumGravityField } from '@/components/library/AlbumGravityField'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
@@ -24,7 +22,6 @@ import { useAlbumColour } from '@/hooks/useAlbumColour'
 import { useResize } from '@/hooks/useResize'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/types/track'
-import { Spectrogram } from './components/visualiser/Spectrogram'
 import { RadialVisualiser } from './components/visualiser/RadialVisualiser'
 import { FullscreenOverlay } from './components/visualiser/FullscreenOverlay'
 import { QuadrantErrorBoundary } from '@/components/ui/QuadrantErrorBoundary'
@@ -32,6 +29,11 @@ import { useUIStore } from '@/stores/uiStore'
 import { ArtistPanel } from '@/components/search/ArtistPanel'
 import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
 import { hexToRgb } from '@/utils/color'
+
+// Layout components
+import { Header } from '@/components/layout/Header'
+import { VisualisersPanel } from '@/components/layout/VisualisersPanel'
+import { GenrePanelQuadrant } from '@/components/layout/GenrePanelQuadrant'
 
 function useAppAccent(): AlbumColour {
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -41,70 +43,6 @@ function useAppAccent(): AlbumColour {
       : currentTrack.album.cover_medium
     : null
   return useAlbumColour(imageUrl)
-}
-
-// ─── Top-right: visualisers ────────────────────────────────────────────────
-
-function VisualisersPanel({ accent }: { accent: AlbumColour }) {
-  const isPlaying = usePlayerStore(state => state.isPlaying)
-
-  return (
-    <div style={{ ...styles.quadrant, overflowY: 'auto', ...styles.borderBottom }}>
-      <div style={styles.quadLabel}>Visualisers</div>
-      <div style={styles.visInner}>
-        <div style={styles.canvasBlock}>
-          <p style={styles.canvasLabel}>Spectrogram · hover for frequency</p>
-          <Spectrogram width={680} height={160} accent={accent} />
-        </div>
-
-        <div style={styles.canvasBlock}>
-          <p style={styles.canvasLabel}>Frequency Spectrum</p>
-          <FrequencyBars width={680} height={160} mirrorMode accent={accent} />
-        </div>
-
-        {!isPlaying && (
-          <div style={styles.idleOverlay}>
-            <p style={styles.idleText}>Select a track to visualise</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Bottom-right: genre map ───────────────────────────────────────────────
-
-function GenrePanelQuadrant({
-  tracks,
-  accent,
-  onFilteredTracksChange,
-}: {
-  tracks: DeezerTrack[]
-  accent: AlbumColour
-  onFilteredTracksChange: (ids: string[] | null) => void
-}) {
-  return (
-    <div style={{ ...styles.quadrant, overflowY: 'auto' }}>
-      <div style={styles.quadLabel}>Genre Map</div>
-      <div style={styles.genreInner}>
-        {tracks.length > 0 ? (
-          <GenrePanel
-            tracks={tracks}
-            width={680}
-            onFilteredTracksChange={onFilteredTracksChange}
-            accent={accent}
-          />
-        ) : (
-          <div style={styles.stateWrap}>
-            <p style={styles.stateIcon} aria-hidden="true">
-              ◈
-            </p>
-            <p style={styles.stateDesc}>Search for tracks to see genre relationships</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
 }
 
 // ─── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -180,10 +118,7 @@ function Waveform() {
   })
   const accent = useAppAccent()
 
-  const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const visualLayer = useVisualiserStore(state => state.visualLayer)
-  const isLowQuality = useVisualiserStore(state => state.isLowQuality)
-  const setQuality = useVisualiserStore(state => state.setQuality)
 
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -264,74 +199,19 @@ function Waveform() {
     },
   }
 
-  const logoVariants: Variants = {
-    hidden: { opacity: 0, letterSpacing: '0.1em' },
-    visible: {
-      opacity: 0.85,
-      letterSpacing: '0.4em',
-      transition: { duration: 1.5, ease: 'easeOut' },
-    },
-  }
-
   return (
     <div ref={containerRef} style={styles.root}>
       <BackgroundPulse accent={accent} />
       <PreviewPlayer />
       <KeyboardShortcuts />
 
-      <header style={{ ...styles.header, borderBottomColor: `${accent.hex}28` }}>
-        <motion.h1
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
-          animate="visible"
-          variants={logoVariants}
-          style={styles.logo}
-        >
-          Waveform
-        </motion.h1>
-        <div style={styles.headerMid}>
-          <div
-            style={{ ...styles.accentSwatch, background: accent.hex }}
-            title={`Album colour: ${accent.hex}`}
-          />
-        </div>
-        <div style={styles.headerSub}>
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
-          <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
-          <button
-            onClick={toggleFullscreen}
-            style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
-          >
-            Fullscreen
-          </button>
-          {filteredTrackIds && (
-            <button
-              onClick={() => setFilteredTrackIds(null)}
-              style={{
-                ...styles.headerBtn,
-                borderColor: `${accent.hex}aa`,
-                background: `${accent.hex}22`,
-                color: '#fff',
-              }}
-            >
-              Clear Filter ✕
-            </button>
-          )}
-          <button
-            onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
-            style={{
-              ...styles.headerBtn,
-              borderColor: `${accent.hex}44`,
-              color: isLowQuality ? '#ff4444' : accent.hex,
-            }}
-          >
-            {isLowQuality ? 'HQ Off' : 'HQ On'}
-          </button>
-        </div>
-      </header>
+      <Header
+        accent={accent}
+        hasIntroPlayed={hasIntroPlayed}
+        visualLayer={visualLayer}
+        filteredTrackIds={filteredTrackIds}
+        onClearFilter={() => setFilteredTrackIds(null)}
+      />
 
       <div
         style={{
@@ -479,69 +359,6 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     backgroundImage: 'radial-gradient(circle at top right, var(--surface-color), transparent)',
   },
-  header: {
-    height: HEADER_H,
-    padding: '0 1.75rem',
-    borderBottom: '1px solid var(--border-color)',
-    backdropFilter: 'blur(24px)',
-    flexShrink: 0,
-    zIndex: 20,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '1rem',
-    transition: 'border-color 1s ease',
-  },
-  logo: {
-    fontSize: '0.9rem',
-    letterSpacing: '0.4em',
-    textTransform: 'uppercase',
-    opacity: 0.85,
-    fontWeight: 600,
-    flexShrink: 0,
-  },
-  headerMid: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  accentSwatch: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    transition: 'background 1s ease',
-    flexShrink: 0,
-  },
-  headerSub: {
-    fontSize: '0.65rem',
-    letterSpacing: '0.05em',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.35rem',
-    flexShrink: 0,
-    color: 'var(--text-dim)',
-  },
-  headerBtn: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid',
-    borderRadius: '4px',
-    padding: '0.2rem 0.5rem',
-    fontSize: '0.65rem',
-    cursor: 'pointer',
-    fontFamily: 'monospace',
-    marginLeft: '0.5rem',
-    textTransform: 'uppercase',
-    transition: 'all 0.2s ease',
-  },
-  kbd: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: '3px',
-    padding: '0.08rem 0.3rem',
-    fontSize: '0.65rem',
-    fontFamily: 'monospace',
-    transition: 'border-color 1s ease',
-  },
   grid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -566,46 +383,6 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     fontFamily: 'monospace',
   },
-  visInner: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-    padding: '0.5rem 1.25rem 1.25rem',
-    flex: 1,
-    position: 'relative',
-  },
-  genreInner: {
-    flex: 1,
-    padding: '0 1.25rem 1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  idleOverlay: {
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backdropFilter: 'blur(3px)',
-    pointerEvents: 'none',
-    zIndex: 5,
-  },
-  idleText: {
-    opacity: 0.2,
-    fontSize: '0.75rem',
-    letterSpacing: '0.12em',
-  },
-  canvasBlock: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.3rem',
-    background: 'rgba(0,0,0,0.2)',
-    padding: '0.75rem',
-    borderRadius: '8px',
-    border: '1px solid var(--border-color)',
-    backdropFilter: 'blur(8px)',
-  },
   heroSceneWrap: {
     position: 'relative',
     flex: 1,
@@ -619,29 +396,5 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
     zIndex: 5,
     opacity: 0.7,
-  },
-  canvasLabel: {
-    fontSize: '0.6rem',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    opacity: 0.3,
-    fontFamily: 'monospace',
-  },
-  stateWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    gap: '0.5rem',
-    opacity: 0.3,
-    textAlign: 'center',
-  },
-  stateIcon: { fontSize: '1.5rem' },
-  stateDesc: {
-    fontSize: '0.72rem',
-    lineHeight: 1.6,
-    maxWidth: 220,
-    fontFamily: 'monospace',
   },
 }

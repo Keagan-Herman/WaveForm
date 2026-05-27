@@ -1,0 +1,13 @@
+
+> waveform@0.0.0 dev /app
+> vite
+
+
+  VITE v8.0.11  ready in 363 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+5:50:03 PM [vite] (client) [optimizer] bundling dependencies...
+5:54:07 PM [vite] (client) hmr update /src/App.tsx
+5:54:12 PM [vite] vite.config.js changed, restarting server...
+5:54:12 PM [vite] server restarted.
