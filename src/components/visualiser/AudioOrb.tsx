@@ -2,6 +2,7 @@ import { useRef, forwardRef, useCallback, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualiserStore } from '@/stores/visualiserStore'
+import { SIMPLEX_NOISE_3D } from '@/utils/shaders'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 // Configuration constants
@@ -24,16 +25,32 @@ const coreVertexShader = `
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying float vNoise;
   uniform float uTime;
   uniform float uBass;
+  uniform int uQuality;
+
+  ${SIMPLEX_NOISE_3D}
 
   void main() {
     vUv = uv;
     vNormal = normalize(normalMatrix * normal);
     vPosition = position;
 
-    // Subtle vertex displacement on bass
-    vec3 newPos = position + normal * sin(uTime * 2.0 + position.y * 5.0) * uBass * 0.1;
+    float noise = 0.0;
+    if (uQuality > 0) {
+      // Multi-octave displacement for Medium/Epic
+      noise = snoise(position * 2.0 + uTime * 0.5) * 0.5;
+      if (uQuality > 1) {
+        noise += snoise(position * 4.0 - uTime * 0.8) * 0.25;
+      }
+    } else {
+      // Simple displacement for Low
+      noise = sin(position.y * 5.0 + uTime * 2.0) * 0.2;
+    }
+
+    vNoise = noise;
+    vec3 newPos = position + normal * noise * uBass * 0.3;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
   }
@@ -43,31 +60,36 @@ const coreFragmentShader = `
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying float vNoise;
   uniform float uTime;
   uniform float uBass;
   uniform vec3 uColor;
   uniform vec3 uAccent;
   uniform float uOpacity;
-
-  // Simple noise function
-  float noise(vec3 p) {
-    return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-  }
+  uniform int uQuality;
 
   void main() {
-    // Dynamic plasma effect
-    float n = noise(vPosition + uTime * 0.5);
-    float pulse = sin(uTime * 3.0 + vPosition.y * 10.0) * 0.5 + 0.5;
-
-    vec3 color = mix(uColor, uAccent, pulse * 0.5 + uBass * 0.5);
+    // Solar flare base color
+    float intensity = vNoise * 0.5 + 0.5;
+    vec3 color = mix(uColor * 0.5, uAccent, intensity + uBass * 0.3);
 
     // Rim lighting
     float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
-    color += uAccent * pow(rim, 4.0) * (1.0 + uBass * 2.0);
+    float rimPower = uQuality > 1 ? 6.0 : 4.0;
+    color += uAccent * pow(rim, rimPower) * (1.5 + uBass * 3.0);
 
-    // Add some "inner fire"
-    float fire = sin(vPosition.x * 10.0 + uTime) * sin(vPosition.y * 10.0 + uTime) * sin(vPosition.z * 10.0 + uTime);
-    color += uAccent * max(0.0, fire) * 0.5 * (1.0 + uBass);
+    // Advanced flare patterns for higher quality
+    if (uQuality > 0) {
+      float flares = sin(vPosition.x * 20.0 + uTime) * cos(vPosition.y * 15.0 - uTime);
+      if (uQuality > 1) {
+        flares *= sin(vPosition.z * 10.0 + uTime * 0.5);
+      }
+      color += uAccent * max(0.0, flares) * 0.4 * (1.0 + uBass);
+    }
+
+    // Interior glow (Fresnel-based for better symmetry)
+    float interior = max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
+    color += uColor * pow(interior, 2.0) * 0.4;
 
     gl_FragColor = vec4(color, uOpacity);
   }
@@ -90,6 +112,13 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   }, [ref]);
 
   const orbOpacity = useVisualiserStore(state => state.orbOpacity)
+  const quality = useVisualiserStore(state => state.quality)
+
+  const qualityInt = useMemo(() => {
+    if (quality === 'Epic') return 2
+    if (quality === 'Medium') return 1
+    return 0
+  }, [quality])
 
   const smoothedBass = useRef(0)
   const smoothedRotation = useRef({ y: 0, z: 0 })
@@ -101,14 +130,16 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     uColor: { value: new THREE.Color(accent.palette.primary) },
     uAccent: { value: new THREE.Color(accent.palette.accent) },
     uOpacity: { value: 1.0 },
-  }), [accent.palette.primary, accent.palette.accent])
+    uQuality: { value: qualityInt }
+  }), [accent.palette.primary, accent.palette.accent, qualityInt])
 
   useEffect(() => {
     if (coreMaterialRef.current) {
       coreMaterialRef.current.uniforms.uColor.value.set(accent.palette.primary)
       coreMaterialRef.current.uniforms.uAccent.value.set(accent.palette.accent)
+      coreMaterialRef.current.uniforms.uQuality.value = qualityInt
     }
-  }, [accent.palette.primary, accent.palette.accent])
+  }, [accent.palette.primary, accent.palette.accent, qualityInt])
 
   useFrame((state) => {
     const { bassPower, bpm } = useVisualiserStore.getState()
@@ -166,11 +197,24 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     }
   })
 
+  // Quality based geometry detail
+  const geometryDetail = useMemo(() => {
+    if (quality === 'Epic') return 128
+    if (quality === 'Medium') return 64
+    return 32
+  }, [quality])
+
+  const pointsDetail = useMemo(() => {
+    if (quality === 'Epic') return 100
+    if (quality === 'Medium') return 60
+    return 40
+  }, [quality])
+
   return (
     <group ref={meshRef}>
       {/* Inner Core - Now the main sun source */}
       <mesh ref={combinedRef}>
-        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 64, 64]} />
+        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, geometryDetail, geometryDetail]} />
         <shaderMaterial
           ref={coreMaterialRef}
           vertexShader={coreVertexShader}
@@ -183,7 +227,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
       {/* Outer Glow */}
       <mesh scale={[1.1, 1.1, 1.1]}>
-        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, 32, 32]} />
+        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, quality === 'Low' ? 16 : 32, quality === 'Low' ? 16 : 32]} />
         <meshBasicMaterial
           color={accent.palette.accent}
           transparent
@@ -194,7 +238,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
       {/* Volumetric light rays (simulated with points) */}
       <points>
-        <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, 80, 80]} />
+        <sphereGeometry args={[CONFIG.GEOMETRY.POINTS_RADIUS, pointsDetail, pointsDetail]} />
         <pointsMaterial
           ref={pointsMatRef}
           color={accent.palette.secondary}
