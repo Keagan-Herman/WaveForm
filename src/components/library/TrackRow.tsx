@@ -107,25 +107,27 @@ export const TrackRow = React.memo(
 
     return (
       <motion.button
-        whileHover={{ scale: 1.01, x: 4 }}
+        whileHover={{ scale: 1.01, x: 6 }}
         whileTap={{ scale: 0.99 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 18 }}
         style={{
           ...styles.row,
           background: isActive
             ? accentBg
             : isHovered || isFocused
-              ? `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)`
+              ? `linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%)`
               : 'transparent',
           borderColor: isActive
             ? accentBorder
             : isFocused
               ? `${accentColour}80`
-              : 'rgba(255,255,255,0.06)',
+              : isHovered
+                ? 'rgba(255,255,255,0.15)'
+                : 'rgba(255,255,255,0.06)',
           boxShadow: isActive
             ? `inset 0 0 20px ${accentColour}15, 0 8px 16px rgba(0,0,0,0.2)`
             : isHovered
-              ? `inset 0 0 10px rgba(255,255,255,0.02), 0 4px 12px rgba(0,0,0,0.1)`
+              ? `inset 0 0 15px rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.15)`
               : isFocused
                 ? `inset 0 0 0 1px ${accentColour}30`
                 : 'none',
