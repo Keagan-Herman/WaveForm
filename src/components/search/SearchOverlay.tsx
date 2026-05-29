@@ -146,8 +146,11 @@ export function SearchOverlay({
       <div
         style={{
           ...styles.inputWrap,
-          boxShadow: isInputFocused ? `0 0 25px ${accentColour}33, inset 0 0 0 1px ${accentColour}44` : 'none',
-          borderColor: isInputFocused ? `${accentColour}66` : 'var(--border-color)',
+          boxShadow: isInputFocused
+            ? `0 0 40px ${accentColour}22, inset 0 0 0 1px ${accentColour}66`
+            : 'none',
+          borderColor: isInputFocused ? `${accentColour}88` : 'var(--border-color)',
+          transform: isInputFocused ? 'translateY(-1px)' : 'translateY(0)',
         }}
       >
         <span style={styles.searchIcon} aria-hidden="true">
