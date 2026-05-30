@@ -175,13 +175,20 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
       {/* Top row: small art + primary text */}
       <div style={styles.topRow}>
         <div style={styles.artWrap}>
-          <img
+          <motion.img
+            animate={{
+              scale: beat && isPlaying ? 1.05 : 1,
+              rotate: beat && isPlaying ? 0.5 : 0,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 12,
+            }}
             src={getTrackCover(currentTrack)}
             alt={getTrackAlbum(currentTrack)}
             style={{
               ...styles.art,
-              transform: beat && isPlaying ? 'scale(1.04) rotate(0.3deg)' : 'scale(1) rotate(0deg)',
-              transition: beat ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
               boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 20px ${accentDim}`,
             }}
           />

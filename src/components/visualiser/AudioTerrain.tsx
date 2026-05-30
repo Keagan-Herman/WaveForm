@@ -47,19 +47,19 @@ const vertexShader = `
     );
 
     float noise = 0.0;
-    if (uQuality > 0) {
+    if (uQuality > 1) {
       noise = snoise(noisePos) * ${CONFIG.ANIMATION.BASS_MULT.toFixed(1)} * uBass;
-      if (uQuality > 1) {
+      if (uQuality > 2) {
         noise += snoise(noisePos * 2.0) * 0.5 * uBass;
       }
-    } else {
+    } else if (uQuality == 1) {
       noise = sin(position.x * 0.5 + uTime) * uBass * 0.5;
     }
 
     // Beat shockwave
     float distFromCenter = distance(uv, vec2(0.5));
     float shockwave = 0.0;
-    if (uQuality > 0) {
+    if (uQuality > 1) {
        float waveTime = mod(uTime - uBeatTime, 2.0);
        float waveFront = waveTime * 1.5;
        shockwave = sin(max(0.0, waveFront - distFromCenter * 5.0) * 10.0) * exp(-waveTime * 2.0) * uBeat * 2.0;
@@ -99,7 +99,7 @@ const fragmentShader = `
     vec3 color = baseColor;
 
     // High fidelity highlights
-    if (uQuality > 0) {
+    if (uQuality > 1) {
       color += uAccent * smoothstep(0.3, 1.0, slope) * 0.4;
       color += pow(mixFactor, 4.0) * 1.2 * uAccent;
 
@@ -123,8 +123,9 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const quality = useVisualiserStore(state => state.quality)
 
   const qualityInt = useMemo(() => {
-    if (quality === 'Epic') return 2
-    if (quality === 'Medium') return 1
+    if (quality === 'Epic') return 3
+    if (quality === 'Medium') return 2
+    if (quality === 'Low') return 1
     return 0
   }, [quality])
 
@@ -192,7 +193,8 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   const detail = useMemo(() => {
     if (quality === 'Epic') return 128
     if (quality === 'Medium') return 64
-    return 32
+    if (quality === 'Low') return 32
+    return 16
   }, [quality])
 
   return (

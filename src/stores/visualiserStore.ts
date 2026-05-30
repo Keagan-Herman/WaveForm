@@ -9,7 +9,7 @@ import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
 
 export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
-export type QualityLevel = 'Low' | 'Medium' | 'Epic'
+export type QualityLevel = 'Super-Low' | 'Low' | 'Medium' | 'Epic'
 
 interface VisualiserStore {
   // Audio reactive state
@@ -125,7 +125,10 @@ export const useVisualiserStore = create<VisualiserStore>()(
       setIsFullscreen: isFullscreen => set({ isFullscreen }),
       toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
 
-      setQuality: quality => set({ quality, isLowQuality: quality === 'Low' }),
+      setQuality: quality => set({
+        quality,
+        isLowQuality: quality === 'Low' || quality === 'Super-Low'
+      }),
       setAutoCycle: autoCycle => set({ autoCycle }),
       setIsRecording: isRecording => set({ isRecording }),
       setShowSettings: showSettings => set({ showSettings }),

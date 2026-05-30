@@ -193,6 +193,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
   const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
   const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
+  const beat = useVisualiserStore(state => state.beat)
 
   return (
     <motion.div
@@ -238,8 +239,14 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
                 width={44}
                 height={44}
                 initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                animate={{
+                  opacity: 1,
+                  scale: beat && isPlaying ? 1.08 : 1
+                }}
                 exit={{ opacity: 0, scale: 0.8 }}
+                transition={{
+                  scale: { type: 'spring', stiffness: 400, damping: 10 }
+                }}
                 style={{
                   borderRadius: 4,
                   objectFit: 'cover',

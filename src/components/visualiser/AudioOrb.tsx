@@ -38,13 +38,13 @@ const coreVertexShader = `
     vPosition = position;
 
     float noise = 0.0;
-    if (uQuality > 0) {
+    if (uQuality > 1) {
       // Multi-octave displacement for Medium/Epic
       noise = snoise(position * 2.0 + uTime * 0.5) * 0.5;
-      if (uQuality > 1) {
+      if (uQuality > 2) {
         noise += snoise(position * 4.0 - uTime * 0.8) * 0.25;
       }
-    } else {
+    } else if (uQuality == 1) {
       // Simple displacement for Low
       noise = sin(position.y * 5.0 + uTime * 2.0) * 0.2;
     }
@@ -75,13 +75,13 @@ const coreFragmentShader = `
 
     // Rim lighting
     float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
-    float rimPower = uQuality > 1 ? 6.0 : 4.0;
+    float rimPower = uQuality > 2 ? 6.0 : 4.0;
     color += uAccent * pow(rim, rimPower) * (1.5 + uBass * 3.0);
 
     // Advanced flare patterns for higher quality
-    if (uQuality > 0) {
+    if (uQuality > 1) {
       float flares = sin(vPosition.x * 20.0 + uTime) * cos(vPosition.y * 15.0 - uTime);
-      if (uQuality > 1) {
+      if (uQuality > 2) {
         flares *= sin(vPosition.z * 10.0 + uTime * 0.5);
       }
       color += uAccent * max(0.0, flares) * 0.4 * (1.0 + uBass);
@@ -115,8 +115,9 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   const quality = useVisualiserStore(state => state.quality)
 
   const qualityInt = useMemo(() => {
-    if (quality === 'Epic') return 2
-    if (quality === 'Medium') return 1
+    if (quality === 'Epic') return 3
+    if (quality === 'Medium') return 2
+    if (quality === 'Low') return 1
     return 0
   }, [quality])
 
@@ -201,13 +202,15 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   const geometryDetail = useMemo(() => {
     if (quality === 'Epic') return 128
     if (quality === 'Medium') return 64
-    return 32
+    if (quality === 'Low') return 32
+    return 16 // Super-Low
   }, [quality])
 
   const pointsDetail = useMemo(() => {
     if (quality === 'Epic') return 100
     if (quality === 'Medium') return 60
-    return 40
+    if (quality === 'Low') return 40
+    return 20 // Super-Low
   }, [quality])
 
   return (

@@ -76,7 +76,7 @@ export class AudioEngine {
     if (!this.freqBuffer) {
       this.freqBuffer = new Uint8Array(this.analyser.frequencyBinCount)
     }
-    // @ts-expect-error - Web Audio API expects Uint8Array<ArrayBuffer>
+    // @ts-expect-error - Web Audio API buffer typing mismatch in TS 6.0+
     this.analyser.getByteFrequencyData(this.freqBuffer)
     return this.freqBuffer
   }
@@ -93,7 +93,7 @@ export class AudioEngine {
     if (!this.waveBuffer) {
       this.waveBuffer = new Uint8Array(this.analyser.fftSize)
     }
-    // @ts-expect-error - Web Audio API expects Uint8Array<ArrayBuffer>
+    // @ts-expect-error - Web Audio API buffer typing mismatch in TS 6.0+
     this.analyser.getByteTimeDomainData(this.waveBuffer)
     return this.waveBuffer
   }
