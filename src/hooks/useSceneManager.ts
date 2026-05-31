@@ -80,7 +80,9 @@ export function useSceneManager() {
 
       if (hasChanges) {
         // Single Zustand update for all opacity changes this frame
-        Object.entries(updates).forEach(([key, val]) => setLayerOpacity(key, val))
+        Object.entries(updates).forEach(([key, val]) =>
+          setLayerOpacity(key as 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity', val)
+        )
       }
 
       frameId = requestAnimationFrame(update)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { useVisualiserStore, type QualityLevel } from '@/stores/visualiserStore'
 
 export function VisualSettings() {
@@ -18,102 +18,173 @@ export function VisualSettings() {
     bloomIntensity, setBloomIntensity
   } = useVisualiserStore()
 
-  if (!showSettings) return null
-
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        style={styles.panel}
-      >
-        <div style={styles.header}>
-          <h3>Visual Settings</h3>
-          <button onClick={() => setShowSettings(false)} style={styles.closeBtn}>×</button>
-        </div>
-
-        <div style={styles.section}>
-          <label>Quality</label>
-          <div style={styles.buttonGroup}>
-            {(['Low', 'Medium', 'Epic'] as QualityLevel[]).map(q => (
-              <button
-                key={q}
-                onClick={() => setQuality(q)}
-                style={{
-                  ...styles.toggleBtn,
-                  background: quality === q ? 'rgba(255,255,255,0.2)' : 'transparent',
-                  borderColor: quality === q ? '#fff' : 'rgba(255,255,255,0.2)',
-                }}
-              >
-                {q}
-              </button>
-            ))}
+      {showSettings && (
+        <motion.div
+          initial={{ opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={styles.panel}
+        >
+          <div style={styles.header}>
+            <h3 style={styles.title}>Visual Settings</h3>
+            <motion.button
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowSettings(false)}
+              style={styles.closeBtn}
+              aria-label="Close settings"
+            >
+              ×
+            </motion.button>
           </div>
-        </div>
 
-        <div style={styles.section}>
-          <label style={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={autoCycle}
-              onChange={e => setAutoCycle(e.target.checked)}
-            />
-            Auto-Cycle Scenes (30s)
-          </label>
-        </div>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+            }}
+          >
+            <motion.div variants={itemVariants} style={styles.section}>
+              <label style={styles.label}>Quality Profile</label>
+              <div style={styles.buttonGroup}>
+                {(['Low', 'Medium', 'Epic'] as QualityLevel[]).map(q => (
+                  <motion.button
+                    key={q}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setQuality(q)}
+                    style={{
+                      ...styles.toggleBtn,
+                      background: quality === q ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      borderColor: quality === q ? '#fff' : 'rgba(255,255,255,0.1)',
+                      color: quality === q ? '#fff' : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    {q}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
 
-        <div style={styles.divider} />
-
-        <div style={styles.section}>
-          <label style={styles.label}>Effects</label>
-          <div style={styles.fxGrid}>
-            {[
-              { id: 'bloom', label: 'Bloom', val: bloomEnabled },
-              { id: 'godRays', label: 'God Rays', val: godRaysEnabled },
-              { id: 'chromaticAberration', label: 'Chroma', val: chromaticAberrationEnabled },
-              { id: 'vignette', label: 'Vignette', val: vignetteEnabled },
-              { id: 'filmGrain', label: 'Grain', val: filmGrainEnabled },
-              { id: 'dof', label: 'DoF', val: dofEnabled },
-            ].map(fx => (
-              <div
-                key={fx.id}
-                style={styles.toggleRow}
-                onClick={() => setFxEnabled(fx.id, !fx.val)}
-              >
-                <span style={styles.fxLabel}>{fx.label}</span>
-                <div style={{ ...styles.toggleTrack, background: fx.val ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)' }}>
+            <motion.div variants={itemVariants} style={styles.section}>
+              <label style={styles.checkboxLabel}>
+                <div style={styles.checkboxWrapper}>
+                  <input
+                    type="checkbox"
+                    checked={autoCycle}
+                    onChange={e => setAutoCycle(e.target.checked)}
+                    style={styles.hiddenCheckbox}
+                  />
                   <motion.div
-                    animate={{ x: fx.val ? 16 : 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    style={{ ...styles.toggleThumb, background: fx.val ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                    animate={{
+                      backgroundColor: autoCycle ? '#fff' : 'transparent',
+                      borderColor: autoCycle ? '#fff' : 'rgba(255,255,255,0.2)',
+                    }}
+                    style={styles.checkbox}
+                  >
+                    {autoCycle && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        style={styles.checkmark}
+                      />
+                    )}
+                  </motion.div>
+                </div>
+                <span style={{ opacity: autoCycle ? 1 : 0.6 }}>Auto-Cycle Scenes (30s)</span>
+              </label>
+            </motion.div>
+
+            <motion.div variants={itemVariants} style={styles.divider} />
+
+            <motion.div variants={itemVariants} style={styles.section}>
+              <label style={styles.label}>Post-Processing</label>
+              <div style={styles.fxGrid}>
+                {[
+                  { id: 'bloom', label: 'Bloom', val: bloomEnabled },
+                  { id: 'godRays', label: 'God Rays', val: godRaysEnabled },
+                  { id: 'chromaticAberration', label: 'Chroma', val: chromaticAberrationEnabled },
+                  { id: 'vignette', label: 'Vignette', val: vignetteEnabled },
+                  { id: 'filmGrain', label: 'Grain', val: filmGrainEnabled },
+                  { id: 'dof', label: 'DoF', val: dofEnabled },
+                ].map(fx => (
+                  <motion.div
+                    key={fx.id}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.06)' }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      ...styles.toggleRow,
+                      background: fx.val ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                      borderColor: fx.val ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    }}
+                    onClick={() => setFxEnabled(fx.id as 'bloom' | 'godRays' | 'chromaticAberration' | 'vignette' | 'filmGrain' | 'dof', !fx.val)}
+                  >
+                    <span style={{ ...styles.fxLabel, opacity: fx.val ? 1 : 0.5 }}>{fx.label}</span>
+                    <div
+                      style={{
+                        ...styles.toggleTrack,
+                        background: fx.val ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      <motion.div
+                        animate={{
+                          x: fx.val ? 16 : 0,
+                          backgroundColor: fx.val ? '#fff' : 'rgba(255,255,255,0.3)',
+                        }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        style={styles.toggleThumb}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {bloomEnabled && (
+              <motion.div
+                variants={itemVariants}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={styles.section}
+              >
+                <div style={styles.rangeHeader}>
+                  <label style={styles.label}>Bloom Intensity</label>
+                  <span style={styles.rangeValue}>{bloomIntensity.toFixed(1)}</span>
+                </div>
+                <div style={styles.rangeWrapper}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={bloomIntensity}
+                    onChange={e => setBloomIntensity(parseFloat(e.target.value))}
+                    style={styles.range}
+                  />
+                  <motion.div
+                    style={{
+                      ...styles.rangeTrack,
+                      width: `${(bloomIntensity / 5) * 100}%`,
+                    }}
                   />
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {bloomEnabled && (
-          <div style={styles.section}>
-            <div style={styles.rangeHeader}>
-              <label style={styles.label}>Bloom Intensity</label>
-              <span style={styles.rangeValue}>{bloomIntensity.toFixed(1)}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.1"
-              value={bloomIntensity}
-              onChange={e => setBloomIntensity(parseFloat(e.target.value))}
-              style={styles.range}
-            />
-          </div>
-        )}
-      </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   )
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -138,15 +209,28 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '1.5rem',
+    marginBottom: '2rem',
+  },
+  title: {
+    fontSize: '1rem',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    opacity: 0.9,
   },
   closeBtn: {
-    background: 'none',
+    background: 'rgba(255,255,255,0.05)',
     border: 'none',
     color: '#fff',
-    fontSize: '1.5rem',
+    fontSize: '1.2rem',
     cursor: 'pointer',
-    padding: '0 0.5rem',
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
   },
   section: {
     marginBottom: '1.2rem',
@@ -235,12 +319,58 @@ const styles: Record<string, React.CSSProperties> = {
     fontVariantNumeric: 'tabular-nums',
     opacity: 0.6,
   },
+  rangeWrapper: {
+    position: 'relative',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+  },
   range: {
     width: '100%',
     cursor: 'pointer',
-    accentColor: '#fff',
+    WebkitAppearance: 'none',
+    background: 'rgba(255,255,255,0.1)',
     height: '4px',
     borderRadius: '2px',
-    marginTop: '0.5rem',
-  }
+    zIndex: 2,
+    position: 'relative',
+    outline: 'none',
+  },
+  rangeTrack: {
+    position: 'absolute',
+    left: 0,
+    height: '4px',
+    background: '#fff',
+    borderRadius: '2px',
+    zIndex: 1,
+    pointerEvents: 'none',
+  },
+  checkboxWrapper: {
+    position: 'relative',
+    width: '18px',
+    height: '18px',
+  },
+  hiddenCheckbox: {
+    position: 'absolute',
+    opacity: 0,
+    cursor: 'pointer',
+    height: 0,
+    width: 0,
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '4px',
+    border: '1px solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  checkmark: {
+    width: '6px',
+    height: '6px',
+    backgroundColor: '#000',
+    borderRadius: '1px',
+  },
 }

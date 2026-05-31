@@ -268,6 +268,7 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             <div style={styles.hudRight}>
               <EnergyFlux accent={accent.hex} />
               <FrequencyScrutinizer accent={accent.hex} />
+              <WaveformScrutinizer accent={accent.hex} />
             </div>
 
             <AnimatePresence mode="wait">
@@ -287,9 +288,13 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   {Array.from(visualLayer.toUpperCase()).map((char, i) => (
                     <motion.span
                       key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 + 0.2 }}
+                      initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      transition={{
+                        delay: i * 0.04 + 0.1,
+                        duration: 0.6,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
                     >
                       {char}
                     </motion.span>
@@ -415,11 +420,62 @@ function EnergyFlux({ accent }: { accent: string }) {
           ref={fillRef}
           style={{
             ...styles.fluxFill,
-            background: accent,
-            transition: 'height 0.1s cubic-bezier(0.4, 0, 0.2, 1)'
+            background: `linear-gradient(to top, transparent, ${accent}88, ${accent})`,
+            boxShadow: `0 0 15px ${accent}44`,
+            transition: 'height 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
       </div>
+    </div>
+  )
+}
+
+function WaveformScrutinizer({ accent }: { accent: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const draw = useCallback(
+    (data: Uint8Array) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const w = canvas.width
+      const h = canvas.height
+      ctx.clearRect(0, 0, w, h)
+
+      ctx.beginPath()
+      ctx.strokeStyle = accent
+      ctx.lineWidth = 1.5
+      ctx.lineJoin = 'round'
+
+      const sliceWidth = w / data.length
+      let x = 0
+
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i] / 128.0
+        const y = (v / 2) * h
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+        x += sliceWidth
+      }
+
+      ctx.stroke()
+    },
+    [accent]
+  )
+
+  const { start, stop } = useAudioAnalyser({ onWaveformData: draw })
+
+  useEffect(() => {
+    start()
+    return () => stop()
+  }, [start, stop])
+
+  return (
+    <div style={styles.scrutinizer}>
+      <div style={styles.hudLabel}>WAVE_SCRUTINIZER</div>
+      <canvas ref={canvasRef} width={120} height={40} style={styles.scrutinizerCanvas} />
     </div>
   )
 }
