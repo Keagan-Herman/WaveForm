@@ -63,10 +63,10 @@ interface VisualiserStore {
   setShowSettings: (show: boolean) => void
 
   // Layer controls
-  setLayerOpacity: (layer: string, opacity: number) => void
+  setLayerOpacity: (layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity', opacity: number) => void
 
   // FX controls
-  setFxEnabled: (fx: string, enabled: boolean) => void
+  setFxEnabled: (fx: 'bloom' | 'godRays' | 'chromaticAberration' | 'vignette' | 'filmGrain' | 'dof', enabled: boolean) => void
   setBloomIntensity: (intensity: number) => void
 
   // Helper for backward compatibility
@@ -131,13 +131,24 @@ export const useVisualiserStore = create<VisualiserStore>()(
       setShowSettings: showSettings => set({ showSettings }),
 
       setLayerOpacity: (layer, opacity) => {
-        const key = `${layer}Opacity` as keyof VisualiserStore
-        set({ [key]: opacity } as unknown as Partial<VisualiserStore>)
+        switch (layer) {
+          case 'orb': set({ orbOpacity: opacity }); break
+          case 'terrain': set({ terrainOpacity: opacity }); break
+          case 'particles': set({ particlesOpacity: opacity }); break
+          case 'presets': set({ presetsOpacity: opacity }); break
+          case 'albumGravity': set({ albumGravityOpacity: opacity }); break
+        }
       },
 
       setFxEnabled: (fx, enabled) => {
-        const key = `${fx}Enabled` as keyof VisualiserStore
-        set({ [key]: enabled } as unknown as Partial<VisualiserStore>)
+        switch (fx) {
+          case 'bloom': set({ bloomEnabled: enabled }); break
+          case 'godRays': set({ godRaysEnabled: enabled }); break
+          case 'chromaticAberration': set({ chromaticAberrationEnabled: enabled }); break
+          case 'vignette': set({ vignetteEnabled: enabled }); break
+          case 'filmGrain': set({ filmGrainEnabled: enabled }); break
+          case 'dof': set({ dofEnabled: enabled }); break
+        }
       },
 
       setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
