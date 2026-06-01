@@ -58,15 +58,27 @@ const fragmentShader = `
 
   void main() {
     vec2 uv = vUv;
-    float n = snoise(uv * 3.0 + uTime * 0.2) * 0.5 + 0.5;
-    float d = snoise(uv * 10.0 - uTime * 0.5 + uBass * 2.0) * 0.5 + 0.5;
 
-    // Darken it to look like a nebula and not blow out the scene
-    vec3 baseColor = uColor * 0.03; // Much darker base
-    vec3 accentColor = mix(uColor, uSecondary, d) * 0.12;
+    // Multi-octave fbm-like noise for deep space feel
+    float n = snoise(uv * 2.0 + uTime * 0.1) * 0.5;
+    n += snoise(uv * 4.0 - uTime * 0.15) * 0.25;
+    n += snoise(uv * 8.0 + uTime * 0.2) * 0.125;
+    n = n * 0.5 + 0.5;
 
-    vec3 color = mix(baseColor, accentColor, n);
-    color += uBass * 0.04 * uSecondary;
+    float d = snoise(uv * 12.0 - uTime * 0.4 + uBass * 1.5) * 0.5 + 0.5;
+
+    // Deep space colors
+    vec3 baseColor = uColor * 0.02;
+    vec3 nebulaColor = mix(uColor, uSecondary, d) * 0.15;
+
+    // Star field simulation
+    float stars = pow(snoise(uv * 50.0), 20.0) * 0.5;
+    stars += pow(snoise(uv * 80.0 + 10.0), 30.0) * 0.8;
+    stars *= (0.8 + uBass * 1.5);
+
+    vec3 color = mix(baseColor, nebulaColor, n);
+    color += stars * uSecondary;
+    color += uBass * 0.03 * uSecondary;
 
     gl_FragColor = vec4(color, 1.0);
   }

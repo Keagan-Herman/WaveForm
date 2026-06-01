@@ -331,13 +331,15 @@ const styles: Record<string, React.CSSProperties> = {
   inputWrap: {
     display: 'flex',
     alignItems: 'center',
-    padding: '0.85rem 1rem',
-    borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))',
+    padding: '0.85rem 1.25rem',
+    borderBottom: '1px solid var(--border-color)',
     flexShrink: 0,
     gap: '0.75rem',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(10px)',
+    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+    background: 'rgba(255, 255, 255, 0.02)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
   },
   searchIcon: { fontSize: '1rem', opacity: 0.4, flexShrink: 0, lineHeight: 1 },
   input: {
@@ -404,21 +406,43 @@ const styles: Record<string, React.CSSProperties> = {
   results: {
     flex: 1,
     overflowY: 'auto',
-    padding: '0.35rem',
+    padding: '0.5rem',
     background: 'rgba(0, 0, 0, 0.2)',
+    scrollBehavior: 'smooth',
   },
   stateWrap: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '2.5rem 1.5rem',
+    padding: '4rem 2rem',
     textAlign: 'center',
-    gap: '0.4rem',
+    gap: '0.75rem',
+    background: 'radial-gradient(circle at center, rgba(255,255,255,0.02), transparent)',
+    borderRadius: '12px',
+    margin: '1rem',
+    border: '1px solid rgba(255,255,255,0.03)',
   },
-  stateIcon: { fontSize: '1.75rem', opacity: 0.18, marginBottom: '0.4rem' },
-  stateTitle: { fontSize: '0.82rem', opacity: 0.55 },
-  stateDesc: { fontSize: '0.7rem', opacity: 0.3, lineHeight: 1.6, maxWidth: 220 },
+  stateIcon: {
+    fontSize: '2.5rem',
+    opacity: 0.15,
+    marginBottom: '0.5rem',
+    filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1))'
+  },
+  stateTitle: {
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    letterSpacing: '0.05em',
+    color: '#fff',
+    opacity: 0.8
+  },
+  stateDesc: {
+    fontSize: '0.75rem',
+    opacity: 0.4,
+    lineHeight: 1.6,
+    maxWidth: 240,
+    fontFamily: 'monospace'
+  },
   skeletonWrap: {
     display: 'flex',
     flexDirection: 'column',
@@ -434,7 +458,8 @@ const styles: Record<string, React.CSSProperties> = {
   skeleton: {
     height: '100%',
     borderRadius: '4px',
-    background: 'rgba(255,255,255,0.06)',
+    background: 'linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
+    backgroundSize: '200% 100%',
   },
   trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },
 }

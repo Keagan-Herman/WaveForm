@@ -59,7 +59,7 @@ export function useDeezerSearch(query: string, debounceMs = 400) {
         total: result.total,
         hasMore: result.hasMore,
       })
-    } catch (err) {
+    } catch (err: unknown) {
       if (latestQueryRef.current !== q) return
 
       setState(prev => ({

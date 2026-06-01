@@ -51,6 +51,25 @@ body {
   outline: 2px solid var(--accent-color, #1db954);
   outline-offset: 3px;
   border-radius: inherit;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.5), 0 0 15px var(--accent-color);
+}
+
+/* Global Interactive Polish */
+button, [role="button"], [role="slider"] {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+button:hover, [role="button"]:hover {
+  filter: brightness(1.1) contrast(1.05);
+}
+
+button:active, [role="button"]:active {
+  transform: scale(0.97);
+}
+
+:root {
+  --noise-filter: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* Slim, refined scrollbars for a premium feel */

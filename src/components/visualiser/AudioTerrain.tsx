@@ -171,7 +171,8 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
   useFrame(state => {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
-    const { bassPower, beat, beatConfidence } = useVisualiserStore.getState()
+    const visualState = useVisualiserStore.getState()
+    const { bassPower, beat, beatConfidence } = visualState
 
     if (beat) {
       lastBeatTime.current = clock.elapsedTime
