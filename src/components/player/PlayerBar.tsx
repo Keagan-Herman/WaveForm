@@ -209,10 +209,11 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderTop: '1px solid var(--border-color)',
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '1.2fr 1fr 2fr 0.5fr',
         alignItems: 'center',
-        gap: 16,
-        padding: '0 20px',
+        gap: 24,
+        padding: '0 32px',
         zIndex: 200,
       }}
     >
@@ -221,9 +222,8 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          width: 220,
-          flexShrink: 0,
+          gap: 14,
+          minWidth: 0,
           overflow: 'hidden',
         }}
       >
@@ -419,7 +419,8 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
+          justifyContent: 'center',
+          gap: 12,
           flexShrink: 0,
         }}
       >
@@ -458,7 +459,8 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          justifyContent: 'flex-end',
+          gap: 12,
           flexShrink: 0,
         }}
       >

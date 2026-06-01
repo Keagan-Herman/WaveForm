@@ -420,9 +420,9 @@ function EnergyFlux({ accent }: { accent: string }) {
           ref={fillRef}
           style={{
             ...styles.fluxFill,
-            background: `linear-gradient(to top, transparent, ${accent}88, ${accent})`,
-            boxShadow: `0 0 15px ${accent}44`,
-            transition: 'height 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
+            background: `linear-gradient(to top, transparent, ${accent}22, ${accent}88, ${accent}, #fff)`,
+            boxShadow: `0 0 20px ${accent}66`,
+            transition: 'height 0.12s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
       </div>
@@ -432,6 +432,7 @@ function EnergyFlux({ accent }: { accent: string }) {
 
 function WaveformScrutinizer({ accent }: { accent: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const smoothedData = useRef<Float32Array | null>(null)
 
   const draw = useCallback(
     (data: Uint8Array) => {
@@ -444,16 +445,31 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
 
+      if (!smoothedData.current || smoothedData.current.length !== data.length) {
+        smoothedData.current = new Float32Array(data.length)
+      }
+
+      // Smooth the waveform data to avoid jitter
+      for (let i = 0; i < data.length; i++) {
+        smoothedData.current[i] += (data[i] - smoothedData.current[i]) * 0.4
+      }
+
       ctx.beginPath()
-      ctx.strokeStyle = accent
-      ctx.lineWidth = 1.5
+      const gradient = ctx.createLinearGradient(0, 0, w, 0)
+      gradient.addColorStop(0, 'transparent')
+      gradient.addColorStop(0.2, accent)
+      gradient.addColorStop(0.8, accent)
+      gradient.addColorStop(1, 'transparent')
+
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = 2
       ctx.lineJoin = 'round'
 
       const sliceWidth = w / data.length
       let x = 0
 
       for (let i = 0; i < data.length; i++) {
-        const v = data[i] / 128.0
+        const v = smoothedData.current[i] / 128.0
         const y = (v / 2) * h
         if (i === 0) ctx.moveTo(x, y)
         else ctx.lineTo(x, y)

@@ -31,7 +31,35 @@ import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { formatDuration } from '@/lib/deezerApi'
 import { useUIStore } from '@/stores/uiStore'
+import { useVisualiserStore } from '@/stores/visualiserStore'
 import { Track, getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
+
+// ─── Sub-components for performance ──────────────────────────────────────────
+
+const BassReactiveGlow = ({ accentColour }: { accentColour: string }) => {
+  const bassPower = useVisualiserStore(state => state.bassPower)
+
+  return (
+    <motion.div
+      animate={{
+        boxShadow: [
+          `inset 0 0 20px ${accentColour}15, 0 4px 12px rgba(0,0,0,0.2)`,
+          `inset 0 0 30px ${accentColour}30, 0 8px 24px ${accentColour}44`,
+          `inset 0 0 20px ${accentColour}15, 0 4px 12px rgba(0,0,0,0.2)`
+        ],
+        scale: 1 + bassPower * 0.015,
+      }}
+      transition={{ duration: 0.1 }}
+      style={{
+        position: 'absolute',
+        inset: -1,
+        borderRadius: 'inherit',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  )
+}
 
 interface TrackRowProps {
   track: Track
@@ -108,22 +136,22 @@ export const TrackRow = React.memo(
     return (
       <motion.button
         whileHover={{ scale: 1.01, x: 6 }}
-        whileTap={{ scale: 0.99 }}
+        whileTap={{ scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 18 }}
         style={{
           ...styles.row,
           background: isActive
             ? accentBg
             : isHovered || isFocused
-              ? `linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%)`
+              ? `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)`
               : 'transparent',
           borderColor: isActive
             ? accentBorder
             : isFocused
               ? `${accentColour}80`
               : isHovered
-                ? 'rgba(255,255,255,0.15)'
-                : 'rgba(255,255,255,0.06)',
+                ? 'rgba(255,255,255,0.2)'
+                : 'rgba(255,255,255,0.08)',
           boxShadow: isActive
             ? `inset 0 0 20px ${accentColour}15, 0 8px 16px rgba(0,0,0,0.2)`
             : isHovered
@@ -139,6 +167,8 @@ export const TrackRow = React.memo(
         aria-label={`Play ${track.title} by ${getTrackArtist(track)}${isDeezerTrack(track) && track.explicit_lyrics ? ' (Explicit)' : ''}`}
         aria-pressed={isActive}
       >
+        {isActive && isPlaying && <BassReactiveGlow accentColour={accentColour} />}
+
         <div style={styles.indexWrap}>
           {isActive ? (
             isPlaying ? (
@@ -225,6 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#f0f0f0',
     transition: 'background 0.12s, border-color 0.12s',
     fontFamily: 'monospace',
+    position: 'relative',
   },
   indexWrap: {
     display: 'flex',
@@ -264,11 +295,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   info: { minWidth: 0 },
   name: {
-    fontSize: '0.8rem',
+    fontSize: '0.82rem',
+    fontWeight: 600,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     marginBottom: '0.12rem',
+    letterSpacing: '0.01em',
   },
   artist: {
     fontSize: '0.7rem',

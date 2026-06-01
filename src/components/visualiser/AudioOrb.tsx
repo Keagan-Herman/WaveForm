@@ -69,9 +69,15 @@ const coreFragmentShader = `
   uniform int uQuality;
 
   void main() {
-    // Solar flare base color
+    // Solar flare base color - multi-layered for filament effect
     float intensity = vNoise * 0.5 + 0.5;
-    vec3 color = mix(uColor * 0.5, uAccent, intensity + uBass * 0.3);
+
+    // Filament noise
+    float filaments = snoise(vPosition * 8.0 + uTime * 0.4) * 0.5 + 0.5;
+    filaments *= snoise(vPosition * 16.0 - uTime * 0.6) * 0.5 + 0.5;
+
+    vec3 color = mix(uColor * 0.4, uAccent, intensity + uBass * 0.4);
+    color = mix(color, uAccent * 1.5, filaments * intensity * (0.2 + uBass * 0.8));
 
     // Rim lighting
     float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
@@ -89,7 +95,11 @@ const coreFragmentShader = `
 
     // Interior glow (Fresnel-based for better symmetry)
     float interior = max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
-    color += uColor * pow(interior, 2.0) * 0.4;
+    color += uColor * pow(interior, 2.5) * 0.5;
+
+    // Organic pulse glow
+    float pulse = sin(uTime * 2.0) * 0.5 + 0.5;
+    color += uAccent * pulse * 0.1 * (1.0 + uBass);
 
     gl_FragColor = vec4(color, uOpacity);
   }

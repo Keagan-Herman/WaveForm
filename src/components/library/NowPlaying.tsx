@@ -126,8 +126,8 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
 
   const accent = accentColour?.hex ?? '#7a8fa6'
   const accentDim = accentColour
-    ? `hsla(${accentColour.h}, ${accentColour.s}%, ${accentColour.l}%, 0.18)`
-    : 'rgba(122,143,166,0.18)'
+    ? `hsla(${accentColour.h}, ${accentColour.s}%, ${accentColour.l}%, 0.12)`
+    : 'rgba(122,143,166,0.12)'
 
   if (!currentTrack) {
     return (
@@ -164,14 +164,31 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   return (
     <motion.div
       key={currentTrack.id}
-      initial={{ opacity: 0, filter: 'blur(10px)', x: -20 }}
-      animate={{ opacity: 1, filter: 'blur(0px)', x: 0 }}
+      initial={{ opacity: 0, filter: 'blur(20px)', scale: 0.98 }}
+      animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
       transition={{
-        duration: 0.6,
+        duration: 0.8,
         ease: [0.16, 1, 0.3, 1],
       }}
-      style={{ ...styles.wrap, background: `linear-gradient(135deg, ${accentDim}, transparent)` }}
+      style={{
+        ...styles.wrap,
+        background: `linear-gradient(165deg, ${accentDim} 0%, transparent 60%)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
+      {/* Grain/Noise Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.04,
+          pointerEvents: 'none',
+          backgroundImage: 'var(--noise-filter)',
+          zIndex: 0,
+        }}
+      />
+
       {/* Top row: small art + primary text */}
       <div style={styles.topRow}>
         <div style={styles.artWrap}>
@@ -453,16 +470,17 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
   },
   trackName: {
-    fontSize: '1.1rem',
+    fontSize: '1.25rem',
     color: '#fff',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.02em',
     textTransform: 'uppercase',
-    fontWeight: 700,
-    lineHeight: 1.2,
-    margin: '0.2rem 0',
+    fontWeight: 800,
+    lineHeight: 1.1,
+    margin: '0.3rem 0',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
   },
   artistName: {
     fontSize: '0.85rem',
