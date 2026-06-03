@@ -1,30 +1,5 @@
 /**
- * TrackRow.tsx
- *
- * Individual track row for the search results list.
- * Handles its own hover state and communicates selection upward via onSelect.
- *
- * Deliberately kept as a pure presentational component — no store access.
- * The parent (SearchPanel) owns selection logic and passes isActive down.
- */
-
-/**
- * TrackRow.tsx — Deezer version
- *
- * Changes from Spotify version:
- * - DeezerTrack instead of SpotifyTrack
- * - track.artist.name instead of track.artists.map(...)
- * - track.album.cover_medium instead of getAlbumArt()
- * - track.album.title instead of track.album.name
- * - formatDuration receives seconds not milliseconds
- */
-
-/**
- * TrackRow.tsx — enhanced
- *
- * Added accentColour prop for dynamic theming.
- * Active state uses dynamic accent instead of hardcoded green.
- * Contrast improved throughout.
+ * TrackRow.tsx — Redesigned for Functionalism & Japanese Minimalism
  */
 
 import React, { useState, useCallback } from 'react'
@@ -42,18 +17,13 @@ const BassReactiveGlow = ({ accentColour }: { accentColour: string }) => {
   return (
     <motion.div
       animate={{
-        boxShadow: [
-          `inset 0 0 20px ${accentColour}15, 0 4px 12px rgba(0,0,0,0.2)`,
-          `inset 0 0 30px ${accentColour}30, 0 8px 24px ${accentColour}44`,
-          `inset 0 0 20px ${accentColour}15, 0 4px 12px rgba(0,0,0,0.2)`
-        ],
-        scale: 1 + bassPower * 0.015,
+        opacity: 0.05 + bassPower * 0.15,
+        backgroundColor: accentColour,
       }}
       transition={{ duration: 0.1 }}
       style={{
         position: 'absolute',
-        inset: -1,
-        borderRadius: 'inherit',
+        inset: 0,
         pointerEvents: 'none',
         zIndex: 0,
       }}
@@ -71,37 +41,17 @@ interface TrackRowProps {
   accentColour?: string
 }
 
-const PlayingBars = ({ color }: { color: string }) => (
-  <div
-    aria-hidden="true"
+const PlayingIndicator = ({ color }: { color: string }) => (
+  <motion.div
+    animate={{ opacity: [0.3, 1, 0.3] }}
+    transition={{ duration: 1, repeat: Infinity }}
     style={{
-      display: 'flex',
-      alignItems: 'flex-end',
-      gap: '2px',
-      height: '12px',
-      width: '12px',
+      width: '6px',
+      height: '6px',
+      borderRadius: '50%',
+      backgroundColor: color,
     }}
-  >
-    {[0.6, 0.8, 0.5].map((delay, i) => (
-      <motion.span
-        key={i}
-        animate={{
-          height: ['15%', '100%', '15%'],
-          opacity: [0.4, 1, 0.4],
-        }}
-        transition={{
-          duration: delay,
-          repeat: Infinity,
-          ease: 'circInOut',
-        }}
-        style={{
-          flex: 1,
-          background: color,
-          borderRadius: '1px',
-        }}
-      />
-    ))}
-  </div>
+  />
 )
 
 export const TrackRow = React.memo(
@@ -112,7 +62,7 @@ export const TrackRow = React.memo(
     isFocused,
     index,
     onSelect,
-    accentColour = '#1db954',
+    accentColour = '#ffffff',
   }: TrackRowProps) => {
     const [isHovered, setIsHovered] = useState(false)
 
@@ -130,112 +80,69 @@ export const TrackRow = React.memo(
       [track]
     )
 
-    const accentBg = `${accentColour}12`
-    const accentBorder = `${accentColour}60`
-
     return (
-      <motion.button
-        whileHover={{ scale: 1.01, x: 6 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+      <button
         style={{
           ...styles.row,
-          background: isActive
-            ? accentBg
+          backgroundColor: isActive
+            ? 'rgba(255,255,255,0.03)'
             : isHovered || isFocused
-              ? `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)`
+              ? 'rgba(255,255,255,0.015)'
               : 'transparent',
-          borderColor: isActive
-            ? accentBorder
-            : isFocused
-              ? `${accentColour}80`
-              : isHovered
-                ? 'rgba(255,255,255,0.2)'
-                : 'rgba(255,255,255,0.08)',
-          boxShadow: isActive
-            ? `inset 0 0 20px ${accentColour}15, 0 8px 16px rgba(0,0,0,0.2)`
-            : isHovered
-              ? `inset 0 0 15px rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.15)`
-              : isFocused
-                ? `inset 0 0 0 2px ${accentColour}`
-                : 'none',
-          outline: 'none',
+          borderColor: isActive || isFocused
+            ? accentColour
+            : 'var(--border-color)',
+          borderWidth: (isActive || isFocused) ? '1px' : '1px',
         }}
         onClick={handleSelect}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        aria-label={`Play ${track.title} by ${getTrackArtist(track)}${isDeezerTrack(track) && track.explicit_lyrics ? ' (Explicit)' : ''}`}
+        aria-label={`Play ${track.title} by ${getTrackArtist(track)}`}
         aria-pressed={isActive}
       >
         {isActive && isPlaying && <BassReactiveGlow accentColour={accentColour} />}
 
         <div style={styles.indexWrap}>
           {isActive ? (
-            isPlaying ? (
-              <PlayingBars color={accentColour} />
-            ) : (
-              <span style={{ ...styles.playingIndicator, color: accentColour }} aria-hidden="true">
-                ▶
-              </span>
-            )
-          ) : isHovered || isFocused ? (
-            <span style={{ ...styles.playingIndicator, opacity: 0.5, color: '#fff' }} aria-hidden="true">
-              ▶
-            </span>
+            <PlayingIndicator color={accentColour} />
           ) : (
-            <span style={styles.index}>{index + 1}</span>
+            <span style={styles.index}>{(index + 1).toString().padStart(2, '0')}</span>
           )}
         </div>
 
         <div style={styles.artWrap}>
-          <motion.img
-            layoutId={`album-${track.id}`}
+          <img
             src={getTrackCover(track)}
-            alt={getTrackAlbum(track)}
-            style={styles.albumArt}
+            alt=""
+            style={{
+              ...styles.albumArt,
+              filter: isActive ? 'none' : 'grayscale(0.5) contrast(1.1)',
+            }}
             loading="lazy"
           />
-          {isDeezerTrack(track) && track.explicit_lyrics && (
-            <div
-              style={{
-                ...styles.explicitBadge,
-                color: accentColour,
-                borderColor: `${accentColour}66`,
-              }}
-              aria-label="Explicit content"
-              title="Explicit content"
-            >
-              E
-            </div>
-          )}
         </div>
 
         <div style={styles.info}>
-          <p
+          <div
             style={{
               ...styles.name,
-              color: isActive ? accentColour : '#f0f0f0',
-              transition: 'color 0.5s ease',
+              color: isActive ? accentColour : 'inherit',
             }}
-            title={track.title}
           >
             {track.title}
-          </p>
-          <p
+          </div>
+          <div
             style={styles.artist}
             onClick={handleArtistClick}
-            title={getTrackArtist(track)}
           >
             {getTrackArtist(track)}
-          </p>
+          </div>
         </div>
 
-        <p style={styles.album} title={getTrackAlbum(track)}>
-          {getTrackAlbum(track)}
-        </p>
+        <div style={styles.album}>{getTrackAlbum(track)}</div>
 
-        <span style={styles.duration}>{formatDuration(track.duration)}</span>
-      </motion.button>
+        <div style={styles.duration}>{formatDuration(track.duration)}</div>
+      </button>
     )
   }
 )
@@ -243,86 +150,73 @@ export const TrackRow = React.memo(
 const styles: Record<string, React.CSSProperties> = {
   row: {
     display: 'grid',
-    gridTemplateColumns: '28px 36px 1fr 1fr auto',
+    gridTemplateColumns: '32px 32px 1.5fr 1fr 50px',
     alignItems: 'center',
-    gap: '0.75rem',
-    padding: '0.45rem 0.7rem',
-    borderRadius: '4px',
-    border: '1px solid',
+    gap: '1rem',
+    padding: '0.5rem 1rem',
+    border: '1px solid var(--border-color)',
+    borderRadius: '2px',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
-    color: '#f0f0f0',
-    transition: 'background 0.12s, border-color 0.12s',
-    fontFamily: 'monospace',
+    transition: 'all 0.1s ease',
     position: 'relative',
+    overflow: 'hidden',
   },
   indexWrap: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 20,
+    width: '100%',
   },
-  index: { fontSize: '0.7rem', opacity: 0.5 },
-  playingIndicator: { fontSize: '0.7rem' },
-  artWrap: {
-    position: 'relative',
-    width: 36,
-    height: 36,
-    flexShrink: 0,
-  },
-  explicitBadge: {
-    position: 'absolute',
-    top: 1,
-    right: 1,
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    border: '1px solid',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '0.65rem',
+  index: {
+    fontSize: '0.6rem',
+    opacity: 0.3,
     fontWeight: 700,
-    background: 'rgba(0,0,0,0.7)',
+    fontFamily: 'var(--font-mono)'
+  },
+  artWrap: {
+    width: 32,
+    height: 32,
+    flexShrink: 0,
+    border: '1px solid var(--border-color)',
   },
   albumArt: {
     width: '100%',
     height: '100%',
-    borderRadius: '3px',
     objectFit: 'cover',
     display: 'block',
+    transition: 'filter 0.3s ease',
   },
-  info: { minWidth: 0 },
+  info: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
   name: {
-    fontSize: '0.82rem',
+    fontSize: '0.75rem',
     fontWeight: 600,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    marginBottom: '0.12rem',
-    letterSpacing: '0.01em',
+    letterSpacing: '-0.01em',
   },
   artist: {
-    fontSize: '0.7rem',
-    opacity: 0.5,
+    fontSize: '0.65rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    opacity: 0.4,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    cursor: 'pointer',
   },
   album: {
-    fontSize: '0.7rem',
-    opacity: 0.5,
+    fontSize: '0.65rem',
+    opacity: 0.3,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    fontFamily: 'monospace',
   },
   duration: {
-    fontSize: '0.7rem',
-    opacity: 0.5,
-    flexShrink: 0,
-    fontVariantNumeric: 'tabular-nums',
+    fontSize: '0.65rem',
+    opacity: 0.3,
+    textAlign: 'right',
+    fontFamily: 'var(--font-mono)',
   },
 }

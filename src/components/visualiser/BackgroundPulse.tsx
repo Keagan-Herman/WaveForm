@@ -1,15 +1,3 @@
-/**
- * BackgroundPulse.tsx — v4
- *
- * Fix: light albums with low saturation (white/grey covers) were still
- * producing a visible blue background because hue 220 at s=20% l=12%
- * reads as dark blue.
- *
- * For light, low-saturation albums: drop saturation to near-zero so
- * the hue is irrelevant and the background reads as neutral dark grey.
- * The lightness still pulses with bass — just without a colour cast.
- */
-
 import { useRef, useEffect } from 'react'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
@@ -19,16 +7,9 @@ interface BackgroundPulseProps {
   accent: AlbumColour
 }
 
-/**
- * BackgroundPulse.tsx — Optimized
- *
- * Performance: Moved to imperative DOM updates.
- * Previously, this component subscribed to bassPower (60fps) via Zustand,
- * causing React to re-render the entire component every frame.
- * Now, it uses a ref and the useAudioAnalyser callback to update styles directly.
- */
 export function BackgroundPulse({ accent }: BackgroundPulseProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const patternRef = useRef<HTMLDivElement>(null)
   const accentRef = useRef(accent)
 
   useEffect(() => {
@@ -37,79 +18,24 @@ export function BackgroundPulse({ accent }: BackgroundPulseProps) {
 
   const updatePulse = () => {
     const el = containerRef.current
-    if (!el) return
+    const p = patternRef.current
+    if (!el || !p) return
 
     const { bassPower, beat } = useVisualiserStore.getState()
-    const { h, s, l } = accentRef.current
+    const { h } = accentRef.current
 
-    const isLight = l > 62
-    const isDark = l < 30
-    const isDesaturated = s < 20
+    // Subtle Japanese/Rams background: Deep base with a very faint, slow organic pulse
+    // and a reactive "glow" only on beat.
+    el.style.backgroundColor = `hsla(${h}, 10%, 4%, 1)`
 
-    const hue = beat ? (h + 12) % 360 : h
+    // Klimt-inspired reactive pattern opacity
+    p.style.opacity = (0.02 + bassPower * 0.08).toString()
 
-    let centerL: number
-    let centerS: number
-    let edgeL: number
-    let edgeS: number
-    let floorL: number
-
-    if (isLight && isDesaturated) {
-      centerL = 10 + bassPower * 14
-      centerS = 4 + bassPower * 8
-      edgeL = 4 + bassPower * 4
-      edgeS = 2
-      floorL = 2
-    } else if (isLight) {
-      centerL = 14 + bassPower * 18
-      centerS = s * 0.7 + bassPower * 25
-      edgeL = 6 + bassPower * 8
-      edgeS = s * 0.35
-      floorL = 3
-    } else if (isDark && isDesaturated) {
-      centerL = 5 + bassPower * 10
-      centerS = 4
-      edgeL = 2 + bassPower * 3
-      edgeS = 2
-      floorL = 1
-    } else if (isDark) {
-      centerL = 6 + bassPower * 14
-      centerS = Math.min(s * 1.4, 90) + bassPower * 20
-      edgeL = 3 + bassPower * 5
-      edgeS = s * 0.5
-      floorL = 2
-    } else if (isDesaturated) {
-      centerL = 8 + bassPower * 12
-      centerS = 5 + bassPower * 8
-      edgeL = 3 + bassPower * 4
-      edgeS = 3
-      floorL = 2
+    if (beat) {
+      el.style.boxShadow = `inset 0 0 ${20 + bassPower * 100}px hsla(${h}, 50%, 40%, ${0.05 + bassPower * 0.1})`
     } else {
-      centerL = 8 + bassPower * 16
-      centerS = s * 0.8 + bassPower * 30
-      edgeL = 4 + bassPower * 6
-      edgeS = s * 0.4
-      floorL = 3
+      el.style.boxShadow = 'none'
     }
-
-    const gradient = `radial-gradient(
-      ellipse 100% 80% at 50% 50%,
-      hsla(${hue}, ${Math.round(centerS)}%, ${Math.round(centerL)}%, 0.8) 0%,
-      hsla(${hue}, ${Math.round(centerS * 0.8)}%, ${Math.round(centerL * 0.7)}%, 0.4) 30%,
-      hsla(${hue}, ${Math.round(edgeS)}%, ${Math.round(edgeL)}%, 0.2) 60%,
-      hsla(${hue}, 4%, ${floorL}%, 0) 100%
-    ), radial-gradient(
-      circle at 20% 20%,
-      hsla(${(hue + 40) % 360}, ${Math.round(centerS * 0.4)}%, ${Math.round(centerL * 0.3)}%, 0.15) 0%,
-      transparent 50%
-    ), radial-gradient(
-      circle at 80% 80%,
-      hsla(${(hue - 40 + 360) % 360}, ${Math.round(centerS * 0.4)}%, ${Math.round(centerL * 0.3)}%, 0.15) 0%,
-      transparent 50%
-    )`
-
-    el.style.background = gradient
-    el.style.transition = beat ? 'background 0.06s ease-out' : 'background 0.6s ease-out'
   }
 
   const { start, stop } = useAudioAnalyser({
@@ -130,7 +56,36 @@ export function BackgroundPulse({ accent }: BackgroundPulseProps) {
         inset: 0,
         zIndex: -1,
         pointerEvents: 'none',
+        transition: 'background-color 1s ease, box-shadow 0.2s ease',
       }}
-    />
+    >
+      {/* Subtle Klimt-inspired geometric pattern (Gold/Metallic feel) */}
+      <div
+        ref={patternRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `
+            radial-gradient(circle at 2px 2px, var(--accent-color) 1px, transparent 0),
+            linear-gradient(45deg, transparent 48%, var(--accent-color) 50%, transparent 52%),
+            linear-gradient(-45deg, transparent 48%, var(--accent-color) 50%, transparent 52%)
+          `,
+          backgroundSize: '40px 40px, 120px 120px, 120px 120px',
+          opacity: 0.03,
+          mixBlendMode: 'overlay',
+        }}
+      />
+
+      {/* Noise texture for paper/plastic feel */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'var(--noise-filter)',
+          opacity: 0.05,
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
   )
 }

@@ -43,7 +43,7 @@ export interface AlbumColour {
   }
 }
 
-const DEBUG_LOG = true
+const DEBUG_LOG = false
 
 // Neutral blue-grey — only used on network/load error
 const ERROR_HEX = '#7082a0'
@@ -65,11 +65,13 @@ function generatePaletteFromHex(hex: string, h: number, s: number, l: number): A
   // Primary is the dominant color itself
   const primary = hex
 
-  // Secondary is a shifted hue or a lighter version
-  const secondary = tinycolor(hex).spin(30).lighten(10).toHexString()
+  // Japanese-inspired refinement: use more muted secondary/accent palettes
+  // but keep them reactive.
+  const secondary = tinycolor(hex).desaturate(20).lighten(5).toHexString()
 
-  // Accent is a high-contrast complementary or split-complementary
-  const accent = tinycolor(hex).complement().lighten(20).toHexString()
+  // Accent is the pop of color, Rams style (often a pure red, yellow, or blue)
+  // but we derive it from the album to maintain harmony.
+  const accent = tinycolor(hex).saturate(30).lighten(10).toHexString()
 
   // Text should always be readable against the DARK background
   // Since we force background and surface to be very dark (max 8% and 12% lightness),
@@ -79,10 +81,10 @@ function generatePaletteFromHex(hex: string, h: number, s: number, l: number): A
   // unless specifically styling an element that uses the accent as its background.
 
   // FIX: Force light text for global variables because they are used on dark backgrounds.
-  const text = '#f0f0f0'
-  const textDim = 'rgba(255,255,255,0.5)'
+  const text = '#e0e0e0'
+  const textDim = 'rgba(255,255,255,0.4)'
 
-  const border = tinycolor(hex).darken(20).setAlpha(0.2).toRgbString()
+  const border = tinycolor(hex).darken(30).setAlpha(0.15).toRgbString()
 
   return {
     h,

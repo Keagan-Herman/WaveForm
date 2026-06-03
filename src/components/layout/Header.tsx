@@ -23,72 +23,65 @@ export function Header({
   const setQuality = useVisualiserStore(state => state.setQuality)
 
   const logoVariants: Variants = {
-    hidden: { opacity: 0, letterSpacing: '0.1em' },
+    hidden: { opacity: 0, x: -10 },
     visible: {
-      opacity: 0.85,
-      letterSpacing: '0.4em',
-      transition: { duration: 1.5, ease: 'easeOut' },
+      opacity: 0.9,
+      x: 0,
+      transition: { duration: 1, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
   return (
-    <header style={{ ...styles.header, borderBottomColor: `${accent.hex}28` }}>
-      <motion.h1
-        initial={hasIntroPlayed ? 'visible' : 'hidden'}
-        animate="visible"
-        variants={logoVariants}
-        style={styles.logo}
-      >
-        Waveform
-      </motion.h1>
-      <div style={styles.headerMid}>
-        <div
-          style={{ ...styles.accentSwatch, background: accent.hex }}
-          title={`Album colour: ${accent.hex}`}
-        />
-      </div>
-      <div style={styles.headerSub}>
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>/</kbd> search ·{' '}
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>Space</kbd> play ·{' '}
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>←</kbd>{' '}
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>→</kbd> navigate ·{' '}
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>F</kbd> full ·{' '}
-        <kbd style={{ ...styles.kbd, borderColor: `${accent.hex}44` }}>V</kbd> {visualLayer}
-        <motion.button
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={toggleFullscreen}
-          style={{ ...styles.headerBtn, borderColor: `${accent.hex}44`, color: accent.hex }}
+    <header style={{ ...styles.header }}>
+      <div style={styles.left}>
+        <motion.h1
+          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          animate="visible"
+          variants={logoVariants}
+          style={styles.logo}
         >
-          Fullscreen
-        </motion.button>
-        {filteredTrackIds && (
-          <motion.button
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClearFilter}
+          Waveform <span style={{ ...styles.version, color: accent.hex }}>v2.0</span>
+        </motion.h1>
+      </div>
+
+      <div style={styles.right}>
+        <div style={styles.controls}>
+           {filteredTrackIds && (
+            <button
+              onClick={onClearFilter}
+              style={{
+                ...styles.functionalBtn,
+                background: `${accent.hex}15`,
+                borderColor: `${accent.hex}30`,
+                color: accent.hex,
+              }}
+            >
+              Reset Filter
+            </button>
+          )}
+
+          <button
+            onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
             style={{
-              ...styles.headerBtn,
-              borderColor: `${accent.hex}aa`,
-              background: `${accent.hex}22`,
-              color: '#fff',
+              ...styles.functionalBtn,
+              color: isLowQuality ? '#ff4444' : 'inherit',
             }}
           >
-            Clear Filter ✕
-          </motion.button>
-        )}
-        <motion.button
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
-          style={{
-            ...styles.headerBtn,
-            borderColor: `${accent.hex}44`,
-            color: isLowQuality ? '#ff4444' : accent.hex,
-          }}
-        >
-          {isLowQuality ? 'HQ Off' : 'HQ On'}
-        </motion.button>
+            {isLowQuality ? 'Low Quality' : 'High Quality'}
+          </button>
+
+          <button
+            onClick={toggleFullscreen}
+            style={{
+              ...styles.functionalBtn,
+              background: accent.hex,
+              color: '#000',
+              fontWeight: 700,
+            }}
+          >
+            Enter {visualLayer}
+          </button>
+        </div>
       </div>
     </header>
   )
@@ -97,65 +90,51 @@ export function Header({
 const styles: Record<string, React.CSSProperties> = {
   header: {
     height: 46,
-    padding: '0 1.75rem',
+    padding: '0 1.5rem',
     borderBottom: '1px solid var(--border-color)',
-    backdropFilter: 'blur(24px)',
+    background: 'rgba(0,0,0,0.2)',
     flexShrink: 0,
-    zIndex: 20,
+    zIndex: 100,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '1rem',
-    transition: 'border-color 1s ease',
   },
-  logo: {
-    fontSize: '0.9rem',
-    letterSpacing: '0.4em',
-    textTransform: 'uppercase',
-    opacity: 0.85,
-    fontWeight: 600,
-    flexShrink: 0,
-  },
-  headerMid: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  accentSwatch: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    transition: 'background 1s ease',
-    flexShrink: 0,
-  },
-  headerSub: {
-    fontSize: '0.65rem',
-    letterSpacing: '0.05em',
+  left: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.35rem',
-    flexShrink: 0,
-    color: 'var(--text-dim)',
+    gap: '1.5rem',
   },
-  headerBtn: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid',
-    borderRadius: '4px',
-    padding: '0.2rem 0.5rem',
-    fontSize: '0.65rem',
-    cursor: 'pointer',
-    fontFamily: 'monospace',
-    marginLeft: '0.5rem',
+  logo: {
+    fontSize: '0.85rem',
+    letterSpacing: '0.3em',
     textTransform: 'uppercase',
-    transition: 'all 0.2s ease',
+    fontWeight: 600,
+    margin: 0,
   },
-  kbd: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: '3px',
-    padding: '0.08rem 0.3rem',
+  version: {
+    fontSize: '0.5rem',
+    letterSpacing: '0.1em',
+    verticalAlign: 'top',
+    marginLeft: '0.5rem',
+    opacity: 0.8,
+  },
+  right: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  controls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  functionalBtn: {
     fontSize: '0.65rem',
-    fontFamily: 'monospace',
-    transition: 'border-color 1s ease',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    padding: '0.35rem 0.75rem',
+    border: '1px solid var(--border-color)',
+    borderRadius: '2px',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    transition: 'all 0.2s ease',
   },
 }
