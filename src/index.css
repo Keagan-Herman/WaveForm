@@ -1,9 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Layout scale */
+  --space-unit: 8px;
+  --space-xs: calc(var(--space-unit) * 1);
+  --space-sm: calc(var(--space-unit) * 2);
+  --space-md: calc(var(--space-unit) * 4);
+  --space-lg: calc(var(--space-unit) * 8);
+  --space-xl: calc(var(--space-unit) * 12);
+
+  /* Borders & Surfaces */
+  --border-width: 1px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  --noise-filter: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 html,
@@ -13,69 +35,86 @@ body,
 }
 
 body {
-  background: #050505;
-  color: #f0f0f0;
-  overflow: hidden; /* App manages its own scroll regions */
+  background: #0d0d0d;
+  color: #e0e0e0;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+/* Texture overlay for that Japanese paper / Rams plastic feel */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: var(--noise-filter);
+  opacity: 0.04;
+  z-index: 9999;
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+code, pre {
+  font-family: var(--font-mono);
 }
 
 /* Skeleton loading shimmer */
 @keyframes shimmer {
-  0% {
-    opacity: 0.04;
-  }
-  50% {
-    opacity: 0.08;
-  }
-  100% {
-    opacity: 0.04;
-  }
-}
-
-/* Beat pulse — used on album art glow and loading pip */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+  0% { opacity: 0.04; }
+  50% { opacity: 0.08; }
+  100% { opacity: 0.04; }
 }
 
 /* Focus ring — visible for keyboard navigation */
 :focus-visible {
-  outline: 2px solid var(--accent-color, #1db954);
+  outline: 2px solid var(--accent-color, #ffffff);
   outline-offset: 3px;
   border-radius: inherit;
-  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-color);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Global Interactive Polish */
-button, [role="button"], [role="slider"] {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+/* Mechanical Button Style (Rams/Dreyfuss) */
+button, [role="button"] {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
   cursor: pointer;
-}
-
-button:hover, [role="button"]:hover {
-  filter: brightness(1.1) contrast(1.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 button:active, [role="button"]:active {
-  transform: scale(0.97);
+  transform: translateY(1px);
 }
 
-:root {
-  --noise-filter: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+/* Functionalist Inputs */
+input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  color: inherit;
 }
 
 /* Slim, refined scrollbars for a premium feel */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 2px;
+  height: 2px;
 }
 
 ::-webkit-scrollbar-track {
@@ -83,11 +122,25 @@ button:active, [role="button"]:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Klimt-inspired Geometric Decorative Elements */
+.klimt-accent {
+  background-image: radial-gradient(circle at center, var(--accent-color) 0%, transparent 70%);
+  opacity: 0.15;
+}
+
+/* Utils for "Ma" */
+.ma-spacing {
+  padding: var(--space-lg);
+}
+
+.ma-gap {
+  gap: var(--space-md);
 }

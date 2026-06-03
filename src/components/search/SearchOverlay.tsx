@@ -1,9 +1,5 @@
 /**
- * SearchOverlay.tsx — genre filter now removes tracks
- *
- * When filteredTrackIds is set, only matching tracks are shown.
- * Non-matching tracks are completely removed from the rendered list,
- * not just dimmed. This makes the filter feel decisive and useful.
+ * SearchOverlay.tsx — Redesigned for Functionalism & Japanese Minimalism
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
@@ -41,7 +37,6 @@ export function SearchOverlay({
     onResultsChange?.(tracks)
   }, [tracks, onResultsChange])
 
-  // Filter tracks — completely remove non-matching ones
   const isFiltered = filteredTrackIds !== null && filteredTrackIds !== undefined
   const visibleTracks = (isFiltered
     ? tracks.filter(t => filteredTrackIds!.includes(String(t.id)))
@@ -49,7 +44,6 @@ export function SearchOverlay({
 
   const handleSelectTrack = useCallback(
     (track: Track) => {
-      // Rebuild queue from visible tracks
       clearQueue()
       visibleTracks.forEach(t => addToQueue(t))
       setTrack(track)
@@ -124,167 +118,51 @@ export function SearchOverlay({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
+      transition: { staggerChildren: 0.03 },
     },
   }
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+    hidden: { opacity: 0, x: -5 },
     visible: {
       opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+      x: 0,
+      transition: { duration: 0.3, ease: 'easeOut' },
     },
   }
 
   return (
     <div style={styles.panel}>
-      {/* Search input */}
-      <div
-        style={{
-          ...styles.inputWrap,
-          boxShadow: isInputFocused
-            ? `0 0 40px ${accentColour}22, inset 0 0 0 1px ${accentColour}66`
-            : 'none',
-          borderColor: isInputFocused ? `${accentColour}88` : 'var(--border-color)',
-          transform: isInputFocused ? 'translateY(-1px)' : 'translateY(0)',
-        }}
-      >
-        <span style={styles.searchIcon} aria-hidden="true">
-          ⌕
-        </span>
-        <input
-          ref={inputRef}
-          style={styles.input}
-          type="text"
-          placeholder="Search tracks... (/)"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          aria-label="Search for tracks"
-          spellCheck={false}
-          onFocus={() => setIsInputFocused(true)}
-          onBlur={() => setIsInputFocused(false)}
-        />
-        {isLoading && <span style={{ ...styles.loadingPip, background: accentColour }} />}
-        {query && !isLoading && (
-          <button
-            style={styles.clearBtn}
-            onClick={() => {
-              setQuery('')
-              inputRef.current?.focus()
-            }}
-            aria-label="Clear search query"
-            title="Clear search (Esc)"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-
-      {/* Genre filter banner */}
-      {isFiltered && (
+      <div style={styles.inputArea}>
+        <div style={styles.inputLabel}>Registry Search</div>
         <div
           style={{
-            ...styles.filterBanner,
-            color: accentColour,
-            borderBottomColor: `${accentColour}25`,
+            ...styles.inputWrap,
+            borderColor: isInputFocused ? accentColour : 'var(--border-color)',
           }}
         >
-          <span style={{ ...styles.filterDot, background: accentColour }} />
-          {visibleTracks.length} of {tracks.length} tracks · genre filtered
+          <input
+            ref={inputRef}
+            style={styles.input}
+            type="text"
+            placeholder="Type to locate..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            spellCheck={false}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
+          />
+          {isLoading && <div style={{ ...styles.scanner, backgroundColor: accentColour }} />}
+        </div>
+      </div>
+
+      {isFiltered && (
+        <div style={{ ...styles.filterTag, color: accentColour }}>
+          Topology Filter Active: {visibleTracks.length} Units
         </div>
       )}
 
-      {/* Column headers */}
-      {visibleTracks.length > 0 && (
-        <div style={styles.columnHeaders}>
-          <span style={{ gridColumn: '1 / 3' }}>#</span>
-          <span>Title</span>
-          <span>Album</span>
-          <span>Dur</span>
-        </div>
-      )}
-
-      {/* Results */}
       <div style={styles.results} role="list">
-        {!query.trim() && (
-          <div style={styles.stateWrap}>
-            <p style={styles.stateIcon} aria-hidden="true">
-              ♫
-            </p>
-            <p style={styles.stateTitle}>Find something to play</p>
-            <p style={styles.stateDesc}>All results include a 30-second preview.</p>
-          </div>
-        )}
-
-        {isLoading && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            style={styles.skeletonWrap}
-          >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <motion.div key={i} variants={itemVariants} style={styles.skeletonRow}>
-                <motion.div
-                  animate={{ opacity: [0.05, 0.12, 0.05] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 }}
-                  style={{ ...styles.skeleton, width: '28px' }}
-                />
-                <motion.div
-                  animate={{ opacity: [0.05, 0.12, 0.05] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.05 }}
-                  style={{ ...styles.skeleton, width: '36px' }}
-                />
-                <motion.div
-                  animate={{ opacity: [0.05, 0.12, 0.05] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.1 }}
-                  style={{ ...styles.skeleton, flex: 1 }}
-                />
-                <motion.div
-                  animate={{ opacity: [0.05, 0.12, 0.05] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 + 0.15 }}
-                  style={{ ...styles.skeleton, width: '60px' }}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {error && !isLoading && (
-          <div style={styles.stateWrap}>
-            <p style={styles.stateIcon} aria-hidden="true">
-              ⚠
-            </p>
-            <p style={styles.stateTitle}>Something went wrong</p>
-            <p style={styles.stateDesc}>{error}</p>
-          </div>
-        )}
-
-        {!isLoading && !error && tracks.length === 0 && query.trim() && (
-          <div style={styles.stateWrap}>
-            <p style={styles.stateIcon} aria-hidden="true">
-              ∅
-            </p>
-            <p style={styles.stateTitle}>No results found</p>
-            <p style={styles.stateDesc}>Try a different search term.</p>
-          </div>
-        )}
-
-        {/* Filtered empty state */}
-        {!isLoading && !error && isFiltered && visibleTracks.length === 0 && tracks.length > 0 && (
-          <div style={styles.stateWrap}>
-            <p style={styles.stateIcon} aria-hidden="true">
-              ∅
-            </p>
-            <p style={styles.stateTitle}>No tracks in this genre</p>
-            <p style={styles.stateDesc}>Click the genre again to clear the filter.</p>
-          </div>
-        )}
-
         {!isLoading && !error && visibleTracks.length > 0 && (
           <motion.div
             style={styles.trackList}
@@ -299,7 +177,7 @@ export function SearchOverlay({
                   key={track.id}
                   layout
                   variants={itemVariants}
-                  exit={{ opacity: 0, x: -20, filter: 'blur(8px)', transition: { duration: 0.2 } }}
+                  exit={{ opacity: 0, x: -10, transition: { duration: 0.2 } }}
                   role="listitem"
                 >
                   <TrackRow
@@ -316,6 +194,13 @@ export function SearchOverlay({
             </AnimatePresence>
           </motion.div>
         )}
+
+        {!query.trim() && visibleTracks.length === 0 && (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>■</div>
+            <div style={styles.emptyText}>Standing by for input.</div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -326,140 +211,74 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    overflow: 'hidden',
+  },
+  inputArea: {
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    borderBottom: '1px solid var(--border-color)',
+  },
+  inputLabel: {
+    fontSize: '0.6rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.15em',
+    opacity: 0.3,
+    fontWeight: 700,
   },
   inputWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '0.85rem 1.25rem',
-    borderBottom: '1px solid var(--border-color)',
-    flexShrink: 0,
-    gap: '0.75rem',
-    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-    background: 'rgba(255, 255, 255, 0.02)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+    position: 'relative',
+    border: '1px solid var(--border-color)',
+    padding: '0.5rem 0.75rem',
+    backgroundColor: 'rgba(255,255,255,0.01)',
+    transition: 'border-color 0.2s ease',
   },
-  searchIcon: { fontSize: '1rem', opacity: 0.4, flexShrink: 0, lineHeight: 1 },
   input: {
-    flex: 1,
-    background: 'none',
-    border: 'none',
-    color: '#f0f0f0',
-    fontFamily: 'monospace',
-    fontSize: '0.82rem',
-    outline: 'none',
-    minWidth: 0,
+    width: '100%',
+    fontSize: '0.85rem',
+    letterSpacing: '-0.01em',
   },
-  loadingPip: {
-    width: 6,
-    height: 6,
-    borderRadius: '50%',
-    flexShrink: 0,
-    animation: 'pulse 1s ease-in-out infinite',
-    transition: 'background 1s ease',
+  scanner: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    height: 1,
+    width: '100%',
+    opacity: 0.5,
+    animation: 'shimmer 1.5s infinite linear',
   },
-  clearBtn: {
-    background: 'none',
-    border: 'none',
-    color: 'rgba(240,240,240,0.45)',
-    cursor: 'pointer',
-    fontSize: '0.7rem',
-    padding: '0.2rem',
-    flexShrink: 0,
-    lineHeight: 1,
-  },
-  filterBanner: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.35rem 0.9rem',
-    background: 'rgba(255,255,255,0.03)',
-    borderBottom: '1px solid',
-    fontSize: '0.65rem',
-    fontFamily: 'monospace',
-    letterSpacing: '0.04em',
-    flexShrink: 0,
-    transition: 'color 1s ease',
-  },
-  filterDot: {
-    width: 5,
-    height: 5,
-    borderRadius: '50%',
-    flexShrink: 0,
-    transition: 'background 1s ease',
-  },
-  columnHeaders: {
-    display: 'grid',
-    gridTemplateColumns: '28px 36px 1fr 1fr auto',
-    gap: '0.75rem',
-    padding: '0.3rem 0.7rem',
+  filterTag: {
     fontSize: '0.6rem',
-    letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    opacity: 0.3,
-    fontFamily: 'monospace',
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
-    flexShrink: 0,
+    letterSpacing: '0.1em',
+    padding: '0.5rem 1.5rem',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderBottom: '1px solid var(--border-color)',
+    fontWeight: 600,
   },
   results: {
     flex: 1,
     overflowY: 'auto',
-    padding: '0.5rem',
-    background: 'rgba(0, 0, 0, 0.2)',
-    scrollBehavior: 'smooth',
+    padding: '0.75rem',
   },
-  stateWrap: {
+  trackList: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4rem 2rem',
-    textAlign: 'center',
-    gap: '0.75rem',
-    background: 'radial-gradient(circle at center, rgba(255,255,255,0.02), transparent)',
-    borderRadius: '12px',
-    margin: '1rem',
-    border: '1px solid rgba(255,255,255,0.03)',
+    gap: '4px',
   },
-  stateIcon: {
-    fontSize: '2.5rem',
-    opacity: 0.15,
-    marginBottom: '0.5rem',
-    filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1))'
-  },
-  stateTitle: {
-    fontSize: '0.9rem',
-    fontWeight: 600,
-    letterSpacing: '0.05em',
-    color: '#fff',
-    opacity: 0.8
-  },
-  stateDesc: {
-    fontSize: '0.75rem',
-    opacity: 0.4,
-    lineHeight: 1.6,
-    maxWidth: 240,
-    fontFamily: 'monospace'
-  },
-  skeletonWrap: {
+  emptyState: {
+    padding: '3rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    padding: '0.8rem 0.4rem',
+    gap: '0.5rem',
+    opacity: 0.2,
   },
-  skeletonRow: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'center',
-    height: '40px',
+  emptyIcon: {
+    fontSize: '1rem',
   },
-  skeleton: {
-    height: '100%',
-    borderRadius: '4px',
-    background: 'linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
-    backgroundSize: '200% 100%',
+  emptyText: {
+    fontSize: '0.7rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
   },
-  trackList: { display: 'flex', flexDirection: 'column', gap: '2px' },
 }

@@ -1,182 +1,100 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useUIStore } from '../../stores/uiStore';
-import { useVisualiserStore } from '../../stores/visualiserStore';
 import { WaveformLine } from '../visualiser/WaveformLine';
 import { LocalFileLoader } from './LocalFileLoader';
-import { getTrackCover, getTrackArtist, isLocalTrack, isDeezerTrack } from '../../types/track';
+import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track';
 import type { AlbumColour } from '../../hooks/useAlbumColour';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function IconPrev() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 3.5L3 12.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M13 3.5L6 8L13 12.5V3.5Z" fill="currentColor" />
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path d="M4 3V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+      <path d="M12 3L6 8L12 13V3Z" fill="currentColor" />
     </svg>
   );
 }
 
 function IconNext() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M13 3.5L13 12.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M3 3.5L10 8L3 12.5V3.5Z" fill="currentColor" />
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path d="M12 3V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+      <path d="M4 3L10 8L4 13V3Z" fill="currentColor" />
     </svg>
   );
 }
 
 function IconPlay() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M5 3L15 9L5 15V3Z" fill="currentColor" />
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+      <path d="M6 4L14 9L6 14V4Z" fill="currentColor" />
     </svg>
   );
 }
 
 function IconPause() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="5" y="3" width="3" height="12" rx="1" fill="currentColor" />
-      <rect x="10" y="3" width="3" height="12" rx="1" fill="currentColor" />
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+      <rect x="6" y="4" width="2" height="10" fill="currentColor" />
+      <rect x="10" y="4" width="2" height="10" fill="currentColor" />
     </svg>
   );
 }
 
-// ─── Time formatter ───────────────────────────────────────────────────────────
-
 function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return '0:00';
+  if (!isFinite(seconds) || seconds < 0) return '00:00';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-// ─── Control button ───────────────────────────────────────────────────────────
+// ─── Physical Control Button ──────────────────────────────────────────────────
 
-interface ControlBtnProps {
-  onClick: () => void;
-  children: React.ReactNode;
-  label: string;
-  large?: boolean;
-  accentColor?: string;
-  title?: string;
-}
-
-function ControlBtn({
+function PhysicalBtn({
   onClick,
   children,
   label,
-  large = false,
-  accentColor = '#1db954',
-  title,
-}: ControlBtnProps) {
-  const isPlaying = usePlayerStore(state => state.isPlaying)
-  const beat = useVisualiserStore(state => state.beat)
-
+  active = false,
+  accentColor,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  label: string;
+  active?: boolean;
+  accentColor: string;
+}) {
   return (
-    <motion.button
-      initial={false}
+    <button
       onClick={onClick}
       aria-label={label}
-      title={title}
-      whileHover={{ scale: 1.1, backgroundColor: large ? accentColor : 'rgba(255,255,255,0.12)' }}
-      whileTap={{ scale: 0.96 }}
-      animate={large && isPlaying ? {
-        boxShadow: beat
-          ? [`0 0 10px ${accentColor}44`, `0 0 25px ${accentColor}aa`, `0 0 10px ${accentColor}44`]
-          : `0 0 10px ${accentColor}44`,
-        scale: beat ? [1, 1.1, 1] : 1
-      } : {}}
-      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: large ? 42 : 32,
-        height: large ? 42 : 32,
-        borderRadius: '50%',
-        border: 'none',
-        background: large ? accentColor : 'transparent',
-        color: large ? 'var(--bg-color, #000)' : 'var(--text-dim, rgba(255,255,255,0.7))',
-        cursor: 'pointer',
-        flexShrink: 0,
-        transition: 'background 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease',
-        boxShadow: large ? `0 4px 12px ${accentColor}33` : 'none',
+        ...styles.physicalBtn,
+        backgroundColor: active ? accentColor : 'rgba(255,255,255,0.03)',
+        borderColor: active ? accentColor : 'var(--border-color)',
+        color: active ? '#000' : 'inherit',
       }}
     >
       {children}
-    </motion.button>
+    </button>
   );
 }
 
-// ─── Progress sub-component ───────────────────────────────────────────────────
+// ─── PlaybackProgress ─────────────────────────────────────────────────────────
 
-/**
- * PlaybackProgress — isolated component for the high-frequency time display.
- * Subscribes specifically to currentTime and duration to prevent the entire
- * PlayerBar from re-rendering on every progress update.
- */
 function PlaybackProgress() {
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
-  const beat = useVisualiserStore((s) => s.beat);
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        minWidth: 0,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 11,
-          fontFamily: 'monospace',
-          fontVariantNumeric: 'tabular-nums',
-          color: 'var(--text-dim, rgba(232, 245, 232, 0.4))',
-          flexShrink: 0,
-          width: 32,
-          textAlign: 'right',
-        }}
-      >
-        {formatTime(currentTime)}
-      </span>
-
-      <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-        <WaveformLine height={36} />
-        <motion.div
-          animate={{
-            opacity: beat ? 0.3 : 0.05,
-            scale: beat ? 1.02 : 1,
-          }}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `linear-gradient(180deg, transparent, var(--accent-color, #1db954), transparent)`,
-            pointerEvents: 'none',
-            zIndex: -1,
-          }}
-        />
+    <div style={styles.progressContainer}>
+      <span style={styles.timeLabel}>{formatTime(currentTime)}</span>
+      <div style={styles.waveformWrap}>
+        <WaveformLine height={32} />
       </div>
-
-      <span
-        style={{
-          fontSize: 11,
-          fontFamily: 'monospace',
-          fontVariantNumeric: 'tabular-nums',
-          color: 'var(--text-dim, rgba(232, 245, 232, 0.4))',
-          flexShrink: 0,
-          width: 32,
-        }}
-      >
-        {duration > 0 ? formatTime(duration) : '--:--'}
-      </span>
+      <span style={styles.timeLabel}>{duration > 0 ? formatTime(duration) : '00:00'}</span>
     </div>
   );
 }
@@ -192,280 +110,174 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
 
   const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
-  const isLocal = currentTrack !== null && isLocalTrack(currentTrack);
 
   return (
-    <motion.div
-      initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+    <motion.footer
+      initial={{ y: 80 }}
+      animate={{ y: 0 }}
+      transition={{ type: 'spring', stiffness: 200, damping: 30 }}
       style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 72,
-        background: 'var(--bg-color, rgba(5, 10, 5, 0.92))',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        ...styles.footer,
+        backgroundColor: 'var(--bg-color)',
         borderTop: '1px solid var(--border-color)',
-        display: 'grid',
-        gridTemplateColumns: '1.2fr 1fr 2fr 0.5fr',
-        alignItems: 'center',
-        gap: 24,
-        padding: '0 32px',
-        zIndex: 200,
       }}
     >
-      {/* ── Track info ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          minWidth: 0,
-          overflow: 'hidden',
-        }}
-      >
-        {/* Album art */}
-        <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
-          <AnimatePresence mode="popLayout">
-            {trackCover ? (
-              <motion.img
-                key={trackCover}
-                src={trackCover}
-                alt="Album art"
-                width={44}
-                height={44}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                style={{
-                  borderRadius: 4,
-                  objectFit: 'cover',
-                  flexShrink: 0,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
-              />
-            ) : (
-            <motion.div
-              key="placeholder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
-                <circle cx="8" cy="8" r="2" fill="rgba(255,255,255,0.2)" />
-              </svg>
-            </motion.div>
-          )}
-          </AnimatePresence>
-
-          {currentTrack && isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 1,
-                right: 1,
-                width: 10,
-                height: 10,
-                borderRadius: 2,
-                border: '1px solid',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                background: 'rgba(0,0,0,0.7)',
-                color: accent.hex,
-                borderColor: `${accent.hex}66`,
-                zIndex: 1,
-              }}
-              aria-label="Explicit content"
-              title="Explicit content"
-            >
-              E
-            </div>
+      {/* 1. Hardware Details / Track Info */}
+      <div style={styles.infoSection}>
+        <div style={styles.artFrame}>
+          {trackCover && (
+            <img src={trackCover} alt="" style={styles.art} />
           )}
         </div>
-
-        {/* Title + artist */}
-        <div style={{ overflow: 'hidden', flex: 1 }}>
-          <AnimatePresence mode="popLayout">
-            {currentTrack ? (
-              <motion.div
-                key={currentTrack.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text-color, #e8f5e8)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    margin: 0,
-                    lineHeight: 1.3,
-                    fontFamily: 'inherit',
-                  }}
-                  title={currentTrack.title}
-                >
-                  {currentTrack.title}
-                </p>
-                <button
-                  onClick={() => {
-                    if (isDeezerTrack(currentTrack)) {
-                      useUIStore.getState().setSelectedArtistId(currentTrack.artist.id);
-                    }
-                  }}
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--text-dim, rgba(232, 245, 232, 0.5))',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    margin: 0,
-                    lineHeight: 1.3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontFamily: 'inherit',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    cursor: isDeezerTrack(currentTrack) ? 'pointer' : 'default',
-                    textAlign: 'left',
-                    width: '100%',
-                  }}
-                  title={trackArtist}
-                  aria-label={
-                    isDeezerTrack(currentTrack) ? `View artist: ${trackArtist}` : trackArtist
-                  }
-                >
-                  {isLocal && (
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        fontFamily: 'monospace',
-                        background: `${accent.hex}26`,
-                        color: accent.hex,
-                        padding: '1px 4px',
-                        borderRadius: 3,
-                        letterSpacing: '0.05em',
-                        flexShrink: 0,
-                      }}
-                    >
-                      LOCAL
-                    </span>
-                  )}
-                  <span
-                    style={{
-                      transition: 'color 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (isDeezerTrack(currentTrack)) {
-                        e.currentTarget.style.color = accent.hex;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (isDeezerTrack(currentTrack)) {
-                        e.currentTarget.style.color = 'var(--text-dim, rgba(232, 245, 232, 0.5))';
-                      }
-                    }}
-                  >
-                    {trackArtist}
-                  </span>
-                </button>
-              </motion.div>
-            ) : (
-              <motion.p
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  fontSize: 12,
-                  color: 'rgba(232, 245, 232, 0.25)',
-                  margin: 0,
-                  fontStyle: 'italic',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Nothing playing
-              </motion.p>
-            )}
-          </AnimatePresence>
+        <div style={styles.meta}>
+          <div style={styles.title}>{currentTrack?.title || 'System Standby'}</div>
+          <div style={styles.artist} onClick={() => {
+             if (currentTrack && isDeezerTrack(currentTrack)) {
+               useUIStore.getState().setSelectedArtistId(currentTrack.artist.id);
+             }
+          }}>
+            {trackArtist || 'Ready'}
+          </div>
         </div>
       </div>
 
-      {/* ── Controls ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12,
-          flexShrink: 0,
-        }}
-      >
-        <ControlBtn
-          onClick={prevTrack}
-          label="Previous track"
-          title="Previous track (←)"
-          accentColor={accent.hex}
-        >
+      {/* 2. Transport Controls */}
+      <div style={styles.transport}>
+        <PhysicalBtn onClick={prevTrack} label="Prev" accentColor={accent.hex}>
           <IconPrev />
-        </ControlBtn>
-        <ControlBtn
+        </PhysicalBtn>
+        <button
           onClick={togglePlay}
-          label={isPlaying ? 'Pause' : 'Play'}
-          title="Play/Pause (Space)"
-          large
-          accentColor={accent.hex}
+          style={{
+            ...styles.playBtn,
+            backgroundColor: isPlaying ? accent.hex : 'rgba(255,255,255,0.05)',
+            color: isPlaying ? '#000' : '#fff',
+          }}
         >
           {isPlaying ? <IconPause /> : <IconPlay />}
-        </ControlBtn>
-        <ControlBtn
-          onClick={nextTrack}
-          label="Next track"
-          title="Next track (→)"
-          accentColor={accent.hex}
-        >
+        </button>
+        <PhysicalBtn onClick={nextTrack} label="Next" accentColor={accent.hex}>
           <IconNext />
-        </ControlBtn>
+        </PhysicalBtn>
       </div>
 
-      {/* ── Waveform + time ── */}
-      <PlaybackProgress />
+      {/* 3. Data Readout (Progress) */}
+      <div style={styles.readoutSection}>
+        <PlaybackProgress />
+      </div>
 
-      {/* ── Right controls: upload button ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: 12,
-          flexShrink: 0,
-        }}
-      >
+      {/* 4. Functional Utilities */}
+      <div style={styles.utilitySection}>
         <LocalFileLoader accent={accent} />
       </div>
-    </motion.div>
+    </motion.footer>
   );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  footer: {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 2rem',
+    zIndex: 200,
+    gap: '3rem',
+  },
+  infoSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    minWidth: '240px',
+  },
+  artFrame: {
+    width: 48,
+    height: 48,
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid var(--border-color)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  art: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  meta: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    overflow: 'hidden',
+  },
+  title: {
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    letterSpacing: '-0.01em',
+  },
+  artist: {
+    fontSize: '0.65rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    opacity: 0.5,
+    cursor: 'pointer',
+  },
+  transport: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  physicalBtn: {
+    width: 32,
+    height: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid',
+    borderRadius: '2px',
+    transition: 'all 0.1s ease',
+  },
+  playBtn: {
+    width: 44,
+    height: 44,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    borderRadius: '2px',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+    transition: 'all 0.1s ease',
+  },
+  readoutSection: {
+    flex: 1,
+    minWidth: 0,
+  },
+  progressContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.5rem',
+  },
+  timeLabel: {
+    fontSize: '0.65rem',
+    fontFamily: 'monospace',
+    opacity: 0.4,
+    width: '40px',
+  },
+  waveformWrap: {
+    flex: 1,
+    height: 32,
+    opacity: 0.3,
+  },
+  utilitySection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  }
 }
