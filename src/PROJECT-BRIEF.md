@@ -1,6 +1,6 @@
 # PROJECT-BRIEF.md — Waveform: Current State and Decisions
 
-Last updated: May 2026
+Last updated: May 2025
 
 This file documents what has been built, what decisions were made and why, and what the known state of the codebase is. Read `AGENTS.md` for conventions and architecture rules.
 
@@ -18,6 +18,7 @@ All primary phases and advanced visual tiers are complete. The app is a high-per
 | 10    | **Audio Terrain**: R3F plane with vertex displacement driven by bass & frequency                       | ✅ Complete |
 | 11    | **Transitions**: Shared element transitions (Framer Motion `layoutId`) for album art                   | ✅ Complete |
 | 12    | **UX Polish**: Keyboard navigation for search, artist panels, and responsive grid                      | ✅ Complete |
+| 13    | **Local Music**: Drag & drop support with client-side metadata and waveform extraction                 | ✅ Complete |
 
 ---
 
@@ -51,6 +52,9 @@ The `BeatDetector` uses a dual-engine approach:
 
 ### GPU-Accelerated Shaders
 Components like `AudioOrb` and `AudioTerrain` use `THREE.DataTexture` to pass 128 bins of frequency data directly into GLSL vertex shaders. This allows for complex geometry morphing (displacement mapping) that is calculated entirely on the GPU.
+
+### Local File Processing
+A concurrency-limited pipeline (max 2 workers) handles local MP3/WAV uploads. It utilizes `music-metadata-browser` for ID3 tags and a single-pass `AudioContext` decoder to extract both the 800-sample waveform envelope and track duration without redundant memory allocations.
 
 ### Album-Reactive Theming
 The `useAlbumColour` system extracts a full palette from album art and injects it as global CSS variables. Visualisers adapt their gradients and shader uniforms dynamically to maintain visual harmony with the music.

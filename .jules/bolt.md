@@ -22,6 +22,10 @@
 - **Result:** Halved CPU and memory usage for file ingestion.
 - **Concurrency:** Limited simultaneous decodes to 2 workers to prevent main-thread jank and browser OOM during batch uploads.
 
-## 2024-05-22 - Squared Distance & String Caching in Canvas Loops
+## 2025-05-14 - Focus Ring Restoration & Navigation Interactivity
+**Learning:** Over-reliance on `outline: none` for "cleaner" visual designs severely breaks keyboard accessibility. Interactive elements like waveforms and scrubbers must maintain focus indicators to be usable without a mouse. Additionally, secondary metadata (like artist names) provides a natural navigation hook that users expect to be interactive.
+**Action:** Always audit interactive components for `:focus-visible` styles and ensure all textual metadata that refers to a navigable entity (Artist, Album) is implemented as a semantic `<button>` or `<a>`.
+
+## 2025-05-22 - Squared Distance & String Caching in Canvas Loops
 **Learning:** In 60fps canvas animations, `Math.sqrt` for distance checks and template literal interpolation for HSL strings (e.g., `hsla(${hue}, ...)`) are significant CPU and memory bottlenecks when called hundreds of times per frame.
 **Action:** Use squared distance (`dx*dx + dy*dy > thresholdSq`) to skip square root calculations. Pre-calculate all possible color strings into lookup tables once per theme change to eliminate all hot-path string allocations and reduce GC pressure.

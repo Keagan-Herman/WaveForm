@@ -147,7 +147,13 @@ pnpm preview
 
 The rAF loop in `useAudioAnalyser.ts` runs at 60fps. Raw `Uint8Array` frequency/waveform data is written directly to canvas via imperative callbacks. Only two derived values cross into Zustand: `beat` (boolean) and `bassPower` (float). This keeps React re-renders minimal.
 
-### 3. Three render loops coexist — keep them separate
+### 3. Zero-Allocation UI Patterns
+
+High-frequency UI updates (like the reactive border pulse or progress bar) should bypass React's render cycle.
+- **Pattern**: Use `useStore.subscribeWithSelector` to listen for transient state changes.
+- **Action**: Update DOM properties (like CSS variables or `style.transform`) directly on the element ref or `document.documentElement`.
+
+### 4. Three render loops coexist — keep them separate
 
 - **rAF canvas loop** — `useAudioAnalyser` module-level loop, writes to `<canvas>` imperatively
 - **R3F `useFrame` loop** — reads from `useVisualiserStore.getState()` (not a subscription), drives Three.js objects
@@ -155,11 +161,11 @@ The rAF loop in `useAudioAnalyser.ts` runs at 60fps. Raw `Uint8Array` frequency/
 
 These loops must never interfere with each other. Do not put Three.js objects into React state. Do not put D3 nodes under React control.
 
-### 4. D3 owns its DOM — React owns only the container
+### 5. D3 owns its DOM — React owns only the container
 
 In `GenreForceGraph.tsx`, React renders one `<svg>` element and passes a ref to D3. D3 creates all nodes, links, labels, and handles all events inside that SVG. React does not touch D3-managed elements. The simulation is stored in a `useRef`, never recreated on re-renders — only `.nodes()`, `.alpha()`, and `.restart()` are called when data changes.
 
-### 5. Deezer API shape — key differences from Spotify
+### 6. Track Data Shape — Deezer vs. Local vs. Spotify
 
 When working with track data, remember:
 
@@ -170,15 +176,23 @@ When working with track data, remember:
 - Every track has a `preview` URL — no filtering for null previews needed
 - Genre data comes from `getAlbumGenres(albumId)` — a separate fetch, not on the track object
 
-### 6. CORS proxy — all Deezer calls go through `/deezer-api/*`
+### 7. CORS proxy — all Deezer calls go through `/deezer-api/*`
 
 Do not construct `https://api.deezer.com/...` URLs directly. Use the `deezerFetch` helper in `deezerApi.ts`, which prefixes `/deezer-api`. Vercel rewrites these to the real API server-side, bypassing CORS. This works in `vercel dev` and production — not in plain `vite dev`.
 
-### 7. AlbumColour propagation
+### 8. AlbumColour propagation
 
 The `useAlbumColour` hook extracts a full palette from the current track's album art and returns an `AlbumColour` object. This object is passed as `accent` to all components that need theming. CSS variables on `:root` are also updated. Do not hardcode colours in visualiser components — use the `accent` prop or CSS variables.
 
-### 8. AudioContext must be created inside a user gesture
+### 9. Unified Track Accessors
+
+To support both Deezer and Local files, always use the accessor helpers from `src/types/track.ts`:
+- `getTrackCover(track)`
+- `getTrackArtist(track)`
+- `getTrackAlbum(track)`
+- Avoid direct property access like `track.album.cover_medium` which breaks for local files.
+
+### 10. AudioContext must be created inside a user gesture
 
 Browser autoplay policy blocks `new AudioContext()` until the user has interacted with the page. `AudioEngine.init()` must be called from a click or keydown handler. It is idempotent — calling it twice is safe.
 
