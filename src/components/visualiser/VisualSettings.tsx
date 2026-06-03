@@ -55,7 +55,8 @@ export function VisualSettings() {
                   <motion.button
                     key={q}
                     whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
                     onClick={() => setQuality(q)}
                     style={{
                       ...styles.toggleBtn,
@@ -114,8 +115,9 @@ export function VisualSettings() {
                 ].map(fx => (
                   <motion.div
                     key={fx.id}
-                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.06)' }}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.06)', x: 4 }}
                     whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
                     style={{
                       ...styles.toggleRow,
                       background: fx.val ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
@@ -190,16 +192,16 @@ const itemVariants: Variants = {
 const styles: Record<string, React.CSSProperties> = {
   panel: {
     position: 'absolute',
-    right: '2rem',
-    top: '2rem',
-    width: '300px',
+    right: '2.5rem',
+    top: '2.5rem',
+    width: '320px',
     background: 'rgba(5, 5, 5, 0.4)',
-    backdropFilter: 'blur(50px) saturate(1.5)',
-    WebkitBackdropFilter: 'blur(50px) saturate(1.5)',
+    backdropFilter: 'blur(64px) saturate(2)',
+    WebkitBackdropFilter: 'blur(64px) saturate(2)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.03)',
+    boxShadow: '0 40px 80px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
     borderRadius: '24px',
-    padding: '1.75rem',
+    padding: '2rem',
     zIndex: 100,
     color: '#fff',
     pointerEvents: 'auto',
@@ -267,17 +269,18 @@ const styles: Record<string, React.CSSProperties> = {
   fxGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '0.5rem',
+    gap: '0.75rem',
   },
   toggleRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '0.6rem 0.75rem',
+    padding: '0.75rem 0.85rem',
     background: 'rgba(255,255,255,0.03)',
-    borderRadius: '10px',
+    borderRadius: '12px',
     cursor: 'pointer',
-    transition: 'background 0.2s ease',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    border: '1px solid rgba(255,255,255,0.05)',
   },
   fxLabel: {
     fontSize: '0.7rem',
