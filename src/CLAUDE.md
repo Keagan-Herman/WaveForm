@@ -42,20 +42,21 @@ These come from `AGENTS.md` but are repeated here because Claude must flag viola
 3. **D3 owns its DOM.** If asked to render D3 nodes via React JSX, refuse and explain the boundary rule.
 4. **Three render loops must stay separate.** R3F `useFrame` reads from `useVisualiserStore.getState()` — not from a React subscription.
 5. **All Deezer calls go through `deezerFetch`.** Never hardcode `https://api.deezer.com`.
+6. **Use Unified Track Accessors.** Always use `getTrackCover`, `getTrackArtist`, etc. from `@/types/track` when working with `Track` objects.
 
 ---
 
-## Deezer Data Shape — Claude Must Remember
+## Track Data Shape — Claude Must Remember
 
-Deezer is not Spotify. The types are defined in `src/lib/deezerApi.ts`. Key differences:
+The app uses a `Track` union type (Deezer vs Local). **Always use unified accessors.**
 
-| Field       | Deezer                     | (old) Spotify               |
-| ----------- | -------------------------- | --------------------------- |
-| Artist      | `track.artist` (object)    | `track.artists` (array)     |
-| Preview URL | `track.preview`            | `track.preview_url`         |
-| Duration    | `track.duration` (seconds) | `track.duration_ms` (ms)    |
-| Popularity  | `track.rank` (0–1M)        | `track.popularity` (0–100)  |
-| Album art   | `track.album.cover_medium` | `track.album.images[0].url` |
+| Field       | Deezer                     | Local                     | Accessor Helper          |
+| ----------- | -------------------------- | ------------------------- | ------------------------ |
+| Artist      | `track.artist.name`        | `track.artist.name`       | `getTrackArtist(track)`  |
+| Album       | `track.album.title`        | `track.album.title`       | `getTrackAlbum(track)`   |
+| Cover       | `track.album.cover_medium` | `track.album.cover`       | `getTrackCover(track)`   |
+| Preview URL | `track.preview`            | `track.preview`           | (direct access)          |
+| Duration    | `track.duration` (s)       | `track.duration` (s)      | (direct access)          |
 
 If Claude ever writes code that accesses `track.artists`, `track.preview_url`, `track.duration_ms`, or `track.popularity` — that is a bug. Stop and correct it.
 

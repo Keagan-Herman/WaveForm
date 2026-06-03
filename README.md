@@ -35,6 +35,7 @@ Waveform is a browser-based music player and visualiser built on the Deezer publ
 
 ### 🎧 The Audio Engine
 - **Hybrid Beat Detection**: Combines Bass Energy Variance with Spectral Flux to identify onsets and estimate BPM in real-time.
+- **Local File Support**: Drag & drop support for local MP3/WAV files with client-side metadata extraction and waveform pre-computation.
 - **Waveform Scrubber**: A mini-oscilloscope progress bar that allows seeking while visualising the time-domain signal.
 - **Spectrogram & Radial Modes**: High-precision scrolling frequency displays and circular visualisers.
 
@@ -118,6 +119,7 @@ pnpm dev
 - **Framework**: React 18, TypeScript, Vite
 - **3D/Vis**: Three.js, React Three Fiber, D3.js, Butterchurn
 - **State/Animation**: Zustand, Framer Motion
+- **Audio/Metadata**: Web Audio API, music-metadata-browser
 - **API**: Deezer (via Vercel Rewrites)
 
 ---

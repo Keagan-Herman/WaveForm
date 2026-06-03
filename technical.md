@@ -51,7 +51,13 @@ While raw buffers stay out of state, **derived scalars** (beat detection, bass p
 - **BPM Estimation**: Uses the interval between high-confidence beats to calculate an "instant BPM," which is then smoothed using a rolling average of the last 8 detections.
 - **Confidence Scoring**: Calculated as the ratio of the signal's overshoot relative to its threshold, capped at 1.0.
 
-### 3.2. GPU-Accelerated Visualizers (GLSL)
+### 3.2. Local Music Pipeline
+Waveform supports local file playback with full audio reactivity.
+- **Concurrency Control**: `LocalFileLoader.tsx` utilizes a worker-pool pattern with a limit of 2 simultaneous decodes. This prevents main-thread jank and potential "Out of Memory" errors when a user uploads many large lossless files at once.
+- **Unified Decoding**: The `computeWaveform` hook performs a single pass over the `AudioBuffer`. It extracts the peak-normalized amplitude envelope (800 samples) and the track duration in one operation, halving the CPU cost compared to sequential metadata/waveform extraction.
+- **Waveform Pre-computation**: For local files, the actual track envelope is pre-computed and stored on the `LocalTrack` object. This allows the `WaveformScrubber` to show the true shape of the song, whereas Deezer tracks use a real-time oscilloscope view due to CORS restrictions.
+
+### 3.3. GPU-Accelerated Visualizers (GLSL)
 - **Files:** `AudioOrb.tsx`, `AudioTerrain.tsx`, `utils/shaders.ts`
 - **Shared Utilities**: Core GLSL logic like `SIMPLEX_NOISE_3D` is centralized in `utils/shaders.ts` and injected into component-specific shaders.
 - **Vertex Displacement**:
@@ -62,26 +68,26 @@ While raw buffers stay out of state, **derived scalars** (beat detection, bass p
     - **Epic**: High-poly geometry (128x128 segments), multi-octave FBM (Fractal Brownian Motion) noise in shaders, advanced post-processing (GodRays, Bokeh DOF).
     - **Low**: Low-poly (32x32), simple sine-wave displacement, post-processing disabled.
 
-### 3.3. D3 Genre Map Integration
+### 3.4. D3 Genre Map Integration
 - **File:** `src/components/library/GenreForceGraph.tsx`
 - **Pattern**: The "Manual Lifecycle" pattern.
 - **Constraint**: The D3 simulation must be stopped on unmount to prevent memory leaks and background CPU usage.
 - **Update Strategy**: When data changes, the simulation is updated in-place via `.nodes()` and `.restart()`. This preserves existing node positions and prevents the "violent reshuffle" typical of naive D3-React implementations.
 
-### 3.4. Butterchurn (MilkDrop) Integration
+### 3.5. Butterchurn (MilkDrop) Integration
 - **Files:** `ButterchurnVisualiser.tsx`, `ButterchurnTexture.tsx`
 - **Mechanism**: Renders the Butterchurn visualizer to an offscreen canvas.
 - **R3F Integration**: The offscreen canvas is used as a `THREE.CanvasTexture` on a plane positioned behind the main 3D scene. This allows Butterchurn to benefit from the global Three.js post-processing stack (Bloom, etc.).
 - **Data Flow**: Butterchurn connects directly to the `analyserNode` from the `AudioEngine`.
 
-### 3.5. State Management & Persistence
+### 3.6. State Management & Persistence
 - **Stores**: Powered by **Zustand**.
     - `playerStore.ts`: Manages playback state, queue, and local media.
     - `visualiserStore.ts`: High-frequency audio state and visual settings.
 - **Persistence**: Selected UI settings (like `godRaysEnabled`) are persisted via `localStorage` using the `persist` middleware.
 - **Local Media**: Supports playback of local files. `playerStore` maintains a `urlRegistry` (Map) for `blob:` URLs to ensure they are revoked on removal, preventing memory leaks.
 
-### 3.6. Keyboard Interactivity & Shortcuts
+### 3.7. Keyboard Interactivity & Shortcuts
 - **Global Listener**: `App.tsx` hosts the global keyboard listener.
 - **Shortcut Guard**: Shortcuts are automatically disabled when the active element is an `INPUT` or `TEXTAREA` to prevent accidental triggers during search.
 - **Key Mappings**:
@@ -92,7 +98,7 @@ While raw buffers stay out of state, **derived scalars** (beat detection, bass p
     - `S`: Toggle FX Settings panel.
     - `/`: Focus Search.
 
-### 3.7. API Integration (Deezer & Vercel)
+### 3.8. API Integration (Deezer & Vercel)
 - **CORS Solution**: Deezer API is proxied via Vercel Rewrites (`vercel.json`). All requests should be made to `/deezer-api/*`.
 - **Data Fetching**: Centralized in `src/lib/deezerApi.ts`. Use `deezerFetch` helper to ensure correct proxy prefixing and error handling.
 - **Data Shape**: Deezer's schema differs from Spotify. Key fields to watch:
@@ -134,6 +140,8 @@ Waveform uses **Vitest** in **Browser Mode** (via Playwright/Chromium) to ensure
 | **GPU Particles** | `ParticleField.tsx` uses a custom `ShaderMaterial` to handle 50k+ particles. Positions are updated in the vertex shader to avoid CPU bottlenecks. |
 | **Post-Processing** | Centralized in `FullscreenOverlay.tsx`. `GodRays` is the most expensive effect and is disabled by default (opt-in). |
 | **Garbage Collection** | Avoids object spreading (`...`) and array methods like `filter`/`map` inside the rAF loop and `useFrame`. |
+| **Zero-Allocation UI** | High-frequency UI updates (e.g., border pulsing) use `subscribeWithSelector` to update CSS variables on `documentElement` directly, bypassing React. |
+| **Rendering Heat** | HSL color strings and distance calculations are optimized. Colors are pre-rendered into lookup tables, and distance checks use squared values to avoid `Math.sqrt`. |
 
 ---
 

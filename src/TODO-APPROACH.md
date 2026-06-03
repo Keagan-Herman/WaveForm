@@ -158,9 +158,9 @@ The `getWaveformData()` from `AudioEngine` gives you the current time-domain sig
 
 **Option A (Simpler):** Use the live waveform data, but draw it as a circular/repeating pattern that fills the bar proportional to `progress`. The "waveform" isn't the actual track shape — it's the real-time oscilloscope data reflected across the bar. This is visually appealing and technically correct (it shows the current audio signal), even if it doesn't match the track's overall shape.
 
-**Option B (Harder, more correct):** Use the Web Audio API's `OfflineAudioContext` to decode the audio buffer and pre-compute the RMS amplitude across the track in segments. This gives you the actual track envelope. The problem: Deezer preview URLs are cross-origin MP3s. You may not be able to fetch them into an `ArrayBuffer` due to CORS. Test this first before committing to Option B.
+**Option B (Harder, more correct):** Use the Web Audio API's `OfflineAudioContext` to decode the audio buffer and pre-compute the RMS amplitude across the track in segments. This gives you the actual track envelope. The problem: Deezer preview URLs are cross-origin MP3s and hit CORS restrictions.
 
-**Recommendation: Option A.** The visual is compelling and it's technically interesting. Explain in a comment that you're showing the live signal, not the pre-computed envelope.
+**Current Implementation:** A hybrid approach. Local files use **Option B** (pre-computed in `computeWaveform.ts`), while Deezer tracks use **Option A** (real-time oscilloscope) to bypass CORS limitations.
 
 **Scrub interaction:**
 

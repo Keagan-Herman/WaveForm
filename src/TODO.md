@@ -24,6 +24,7 @@ This project is currently in a "Complete" state for its initial portfolio goals.
 - **Responsive Layout**: Grid collapse and UI adjustment for tablet/mobile.
 - **Error Boundaries**: Quadrant-level failure isolation.
 - **Low Quality Mode**: Adaptive resolution and particle reduction.
+- **Multi-Source Audio**: Local file drag-and-drop support with client-side metadata/waveform extraction.
 
 ---
 
@@ -31,8 +32,8 @@ This project is currently in a "Complete" state for its initial portfolio goals.
 
 If this project were to evolve further, these are the directions it could take:
 
-### 4.1 · Multi-Source Audio
-Extend the `AudioEngine` to support microphone input or local file drag-and-drop for the visualisers.
+### 4.1 · Microphone Input
+Extend the `AudioEngine` to support real-time microphone input for the visualisers.
 
 ### 4.2 · Shared Listening Rooms
 Use WebRTC or Socket.io to allow multiple users to sync their visualisers to the same playback stream.

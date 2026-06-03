@@ -1,5 +1,16 @@
 # Changelog
 
+## [2025-05-15] - Performance & Accessibility Refinement
+
+### Added
+- **HSL Lookup Tables**: Pre-calculated color strings for canvas visualisers to eliminate per-frame string allocations.
+- **Squared Distance Optimization**: Use of squared distances in radial visualisers to avoid expensive `Math.sqrt` calls.
+- **Zero-Allocation UI**: Transient store updates via `subscribeWithSelector` for high-frequency CSS variable animations.
+- **Focus Ring Restoration**: Re-implemented `:focus-visible` styles for all interactive elements to ensure keyboard accessibility.
+
+### Changed
+- Unified the `Track` data shape and accessors to simplify local vs. remote data handling.
+
 ## [2025-05-10] - Local Music Support Improvements
 
 ### Added
