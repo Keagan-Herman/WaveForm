@@ -400,13 +400,17 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
 function EnergyFlux({ accent }: { accent: string }) {
   const fillRef = useRef<HTMLDivElement>(null)
+  const smoothedPower = useRef(0)
 
   useEffect(() => {
     return useVisualiserStore.subscribe(
       state => state.bassPower,
       bassPower => {
         if (fillRef.current) {
-          fillRef.current.style.height = `${bassPower * 100}%`
+          // Smoother interpolation for "organic" feel
+          smoothedPower.current += (bassPower - smoothedPower.current) * 0.2
+          fillRef.current.style.height = `${smoothedPower.current * 100}%`
+          fillRef.current.style.opacity = `${0.4 + smoothedPower.current * 0.6}`
         }
       }
     )
@@ -420,9 +424,9 @@ function EnergyFlux({ accent }: { accent: string }) {
           ref={fillRef}
           style={{
             ...styles.fluxFill,
-            background: `linear-gradient(to top, transparent, ${accent}22, ${accent}88, ${accent}, #fff)`,
-            boxShadow: `0 0 20px ${accent}66`,
-            transition: 'height 0.12s cubic-bezier(0.16, 1, 0.3, 1)',
+            background: `linear-gradient(to top, transparent, ${accent}33, ${accent}, #fff, #fff)`,
+            boxShadow: `0 0 30px ${accent}44, 0 0 60px ${accent}22`,
+            transition: 'height 0.08s ease-out',
           }}
         />
       </div>
@@ -449,21 +453,24 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
         smoothedData.current = new Float32Array(data.length)
       }
 
-      // Smooth the waveform data to avoid jitter
+      // High-performance smoothing
       for (let i = 0; i < data.length; i++) {
-        smoothedData.current[i] += (data[i] - smoothedData.current[i]) * 0.4
+        smoothedData.current[i] += (data[i] - smoothedData.current[i]) * 0.35
       }
 
       ctx.beginPath()
       const gradient = ctx.createLinearGradient(0, 0, w, 0)
-      gradient.addColorStop(0, 'transparent')
+      gradient.addColorStop(0, 'rgba(255,255,255,0)')
       gradient.addColorStop(0.2, accent)
+      gradient.addColorStop(0.5, '#fff')
       gradient.addColorStop(0.8, accent)
-      gradient.addColorStop(1, 'transparent')
+      gradient.addColorStop(1, 'rgba(255,255,255,0)')
 
       ctx.strokeStyle = gradient
-      ctx.lineWidth = 2
+      ctx.lineWidth = 1.5
       ctx.lineJoin = 'round'
+      ctx.shadowBlur = 8
+      ctx.shadowColor = accent
 
       const sliceWidth = w / data.length
       let x = 0
@@ -477,6 +484,7 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
       }
 
       ctx.stroke()
+      ctx.shadowBlur = 0 // Reset for performance
     },
     [accent]
   )
@@ -491,13 +499,14 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
   return (
     <div style={styles.scrutinizer}>
       <div style={styles.hudLabel}>WAVE_SCRUTINIZER</div>
-      <canvas ref={canvasRef} width={120} height={40} style={styles.scrutinizerCanvas} />
+      <canvas ref={canvasRef} width={140} height={40} style={styles.scrutinizerCanvas} />
     </div>
   )
 }
 
 function FrequencyScrutinizer({ accent }: { accent: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const smoothedData = useRef<Float32Array | null>(null)
 
   const draw = useCallback((data: Uint8Array) => {
     const canvas = canvasRef.current
@@ -509,16 +518,25 @@ function FrequencyScrutinizer({ accent }: { accent: string }) {
     const h = canvas.height
     ctx.clearRect(0, 0, w, h)
 
+    if (!smoothedData.current || smoothedData.current.length !== data.length) {
+      smoothedData.current = new Float32Array(data.length)
+    }
+
     const barWidth = 2
     const gap = 1
     const count = Math.floor(w / (barWidth + gap))
 
-    ctx.fillStyle = accent
     for (let i = 0; i < count; i++) {
       const val = data[i * 2] || 0
-      const bh = (val / 255) * h
+      smoothedData.current[i] += (val - smoothedData.current[i]) * 0.2
+      const bh = (smoothedData.current[i] / 255) * h
+
+      const opacity = 0.3 + (smoothedData.current[i] / 255) * 0.7
+      ctx.fillStyle = i % 2 === 0 ? accent : '#fff'
+      ctx.globalAlpha = opacity
       ctx.fillRect(i * (barWidth + gap), h - bh, barWidth, bh)
     }
+    ctx.globalAlpha = 1.0
   }, [accent])
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
@@ -531,7 +549,7 @@ function FrequencyScrutinizer({ accent }: { accent: string }) {
   return (
     <div style={styles.scrutinizer}>
       <div style={styles.hudLabel}>FREQ_SCRUTINIZER</div>
-      <canvas ref={canvasRef} width={120} height={40} style={styles.scrutinizerCanvas} />
+      <canvas ref={canvasRef} width={140} height={40} style={styles.scrutinizerCanvas} />
     </div>
   )
 }
@@ -563,8 +581,9 @@ function HUDButton({ onClick, label, shortcut, accent, isActive }: {
 }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.12)', x: 2 }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
       onClick={onClick}
       style={{
         ...styles.hudButton,
