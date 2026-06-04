@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-04T00:00:00.000Z",
+  "title": "Design System: Waveform",
+  "extensions": {
+    "colorMeta": {
+      "deep-black": {
+        "role": "neutral",
+        "displayName": "Deep Black",
+        "canonical": "#0d0d0d",
+        "tonalRamp": [
+          "#0d0d0d",
+          "#1a1a1a",
+          "#282828",
+          "#383838",
+          "#4a4a4a",
+          "#606060",
+          "#808080",
+          "#a8a8a8"
+        ]
+      },
+      "monitor-white": {
+        "role": "neutral",
+        "displayName": "Monitor White",
+        "canonical": "#e0e0e0",
+        "tonalRamp": [
+          "#2a2a2a",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#969696",
+          "#b2b2b2",
+          "#cbcbcb",
+          "#e0e0e0"
+        ]
+      },
+      "system-idle": {
+        "role": "primary",
+        "displayName": "System Idle",
+        "canonical": "#7082a0",
+        "tonalRamp": [
+          "#141b2a",
+          "#1e2a3e",
+          "#2a3c56",
+          "#384e6e",
+          "#496086",
+          "#5c749e",
+          "#7082a0",
+          "#96a9c4"
+        ]
+      },
+      "surface-layer": {
+        "role": "neutral",
+        "displayName": "Surface Layer",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#111111",
+          "#1c1c1c",
+          "#2a2a2a",
+          "#3a3a3a",
+          "#4c4c4c",
+          "#636363",
+          "#828282",
+          "#a6a6a6"
+        ]
+      },
+      "border-dim": {
+        "role": "neutral",
+        "displayName": "Border Dim",
+        "canonical": "#1f1f1f",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#2b2b2b",
+          "#3a3a3a",
+          "#4a4a4a",
+          "#5e5e5e",
+          "#767676",
+          "#979797",
+          "#bdbdbd"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "App name in header only. Widest tracking in the system — announces the instrument."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section headers, panel eyebrows, functional button text. Panel legend language — identifies then recedes."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Track titles, primary content. Tighter tracking, heavier weight — the signal name."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Artist names, album titles, timestamps as text. Uppercase, gentle tracking, 40–50% opacity."
+      },
+      "mono": {
+        "displayName": "Mono Readout",
+        "purpose": "Timestamps, track indices. Fixed-width for tabular alignment. 30–40% opacity."
+      }
+    },
+    "shadows": [
+      {
+        "name": "play-hover-glow",
+        "value": "0 0 20px rgba(var(--accent-rgb), 0.27)",
+        "purpose": "Play button hover only. The single outward-casting light in the system. State-driven, not decorative."
+      },
+      {
+        "name": "play-inset-highlight",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.10)",
+        "purpose": "Play button at rest. Faint bevel that reads as a physical button surface."
+      },
+      {
+        "name": "reactive-border-glow",
+        "value": "0 0 0 1px rgba(var(--accent-rgb), 0.05–0.20)",
+        "purpose": "Bass-reactive. Updated at 60fps via direct DOM mutation on --reactive-border. Pulses with each beat; never decorative."
+      }
+    ],
+    "motion": [
+      {
+        "name": "spring-control",
+        "value": "spring(stiffness: 400, damping: 18)",
+        "purpose": "Transport buttons, all physical controls. Fast spring — confirms the mechanical press."
+      },
+      {
+        "name": "spring-panel",
+        "value": "spring(stiffness: 200, damping: 30)",
+        "purpose": "PlayerBar entrance slide-up. Heavier spring — panel-weight motion."
+      },
+      {
+        "name": "ease-panel",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Section panel entrances (opacity + y). Expo ease-out."
+      },
+      {
+        "name": "ease-state",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Button state transitions (background, border-color). 0.2s duration."
+      },
+      {
+        "name": "ease-colour",
+        "value": "linear",
+        "purpose": "Album-art colour transitions (--bg-color, --accent-color). 1s duration — slow enough to feel like a scene change."
+      },
+      {
+        "name": "beat-reactive",
+        "value": "0.1s linear",
+        "purpose": "Bass-power driven opacity/color updates on active track row and reactive border. Sub-100ms to stay locked to the beat."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "900px",
+        "purpose": "Below 900px: sidebar stacks vertically, layout shifts to column, overflow-y enabled."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Transport Button (Resting)",
+      "kind": "button",
+      "refersTo": "button-transport",
+      "description": "Prev/Next skip controls. 32px square, near-zero radius. Hardware instrument aesthetic.",
+      "html": "<button class=\"ds-btn-transport\" aria-label=\"Previous track\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M4 3V13\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"square\"/><path d=\"M12 3L6 8L12 13V3Z\" fill=\"currentColor\"/></svg></button>",
+      "css": ".ds-btn-transport { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid #1f1f1f; border-radius: 2px; color: #e0e0e0; cursor: pointer; transition: background 0.1s ease, border-color 0.1s ease; } .ds-btn-transport:hover { background: rgba(255,255,255,0.08); } .ds-btn-transport:active { transform: scale(0.95); } .ds-btn-transport:focus-visible { outline: 2px solid #e0e0e0; outline-offset: 3px; border-radius: 2px; }"
+    },
+    {
+      "name": "Transport Button (Active/Looping)",
+      "kind": "button",
+      "refersTo": "button-transport-active",
+      "description": "Transport button in active state — accent fill signals the engaged state.",
+      "html": "<button class=\"ds-btn-transport ds-btn-transport--active\" aria-label=\"Previous track\" aria-pressed=\"true\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M4 3V13\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"square\"/><path d=\"M12 3L6 8L12 13V3Z\" fill=\"currentColor\"/></svg></button>",
+      "css": ".ds-btn-transport--active { background: #7082a0; border-color: #7082a0; color: #000; }"
+    },
+    {
+      "name": "Play Button (Resting)",
+      "kind": "button",
+      "refersTo": "button-play",
+      "description": "Primary play/pause. 44px, slightly larger than transport to mark the primary action.",
+      "html": "<button class=\"ds-btn-play\" aria-label=\"Play\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 18 18\" fill=\"none\"><path d=\"M6 4L14 9L6 14V4Z\" fill=\"currentColor\"/></svg></button>",
+      "css": ".ds-btn-play { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid #1f1f1f; border-radius: 2px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.10); color: #e0e0e0; cursor: pointer; transition: background 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease; } .ds-btn-play:hover { background: rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 0 20px rgba(112,130,160,0.27); } .ds-btn-play:active { transform: scale(0.94); } .ds-btn-play:focus-visible { outline: 2px solid #e0e0e0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Play Button (Playing)",
+      "kind": "button",
+      "refersTo": "button-play-active",
+      "description": "Play button in active/playing state. Accent fill, black icon.",
+      "html": "<button class=\"ds-btn-play ds-btn-play--active\" aria-label=\"Pause\" aria-pressed=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 18 18\" fill=\"none\"><rect x=\"6\" y=\"4\" width=\"2\" height=\"10\" fill=\"currentColor\"/><rect x=\"10\" y=\"4\" width=\"2\" height=\"10\" fill=\"currentColor\"/></svg></button>",
+      "css": ".ds-btn-play--active { background: #7082a0; border-color: #7082a0; color: #000; box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 20px rgba(112,130,160,0.27); }"
+    },
+    {
+      "name": "Functional Button",
+      "kind": "button",
+      "refersTo": "button-functional",
+      "description": "Header utility buttons. Small, uppercase label, mechanical border. Used for Quality toggle, Reset Filter, Enter Visualiser.",
+      "html": "<button class=\"ds-btn-functional\">HIGH QUALITY</button>",
+      "css": ".ds-btn-functional { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.65rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid #1f1f1f; border-radius: 2px; color: #e0e0e0; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; } .ds-btn-functional:hover { background: rgba(255,255,255,0.06); } .ds-btn-functional:active { transform: translateY(1px); } .ds-btn-functional:focus-visible { outline: 2px solid #e0e0e0; outline-offset: 3px; } .ds-btn-functional--accent { background: #7082a0; border-color: #7082a0; color: #000; font-weight: 700; }"
+    },
+    {
+      "name": "Track Row (Resting)",
+      "kind": "custom",
+      "refersTo": "track-row",
+      "description": "A single track in the search results list. Grid layout, 2px radius, bass-reactive glow when active.",
+      "html": "<button class=\"ds-track-row\" aria-label=\"Play Track Title by Artist Name\"><span class=\"ds-track-row__index\">01</span><div class=\"ds-track-row__art\"><img src=\"https://via.placeholder.com/32\" alt=\"\" /></div><div class=\"ds-track-row__info\"><div class=\"ds-track-row__title\">Track Title</div><div class=\"ds-track-row__artist\">ARTIST NAME</div></div><div class=\"ds-track-row__album\">Album Title</div><div class=\"ds-track-row__duration\">0:30</div></button>",
+      "css": ".ds-track-row { display: grid; grid-template-columns: 32px 32px 1.5fr 1fr 50px; align-items: center; gap: 1rem; padding: 0.5rem 1rem; background: transparent; border: 1px solid #1f1f1f; border-radius: 2px; color: #e0e0e0; cursor: pointer; text-align: left; width: 100%; transition: background 0.1s ease; font-family: Inter, -apple-system, sans-serif; } .ds-track-row:hover { background: rgba(255,255,255,0.015); } .ds-track-row__index { font-family: SFMono-Regular, Consolas, monospace; font-size: 0.6rem; font-weight: 700; opacity: 0.3; text-align: center; } .ds-track-row__art { width: 32px; height: 32px; border: 1px solid #1f1f1f; overflow: hidden; } .ds-track-row__art img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.5) contrast(1.1); } .ds-track-row__info { min-width: 0; display: flex; flex-direction: column; gap: 2px; } .ds-track-row__title { font-size: 0.75rem; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-track-row__artist { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-track-row__album { font-size: 0.65rem; opacity: 0.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-track-row__duration { font-family: SFMono-Regular, Consolas, monospace; font-size: 0.65rem; opacity: 0.3; text-align: right; }"
+    },
+    {
+      "name": "Track Row (Active + Playing)",
+      "kind": "custom",
+      "refersTo": "track-row-active",
+      "description": "Active track row with accent border, accent title color, and bass-reactive background glow.",
+      "html": "<button class=\"ds-track-row ds-track-row--active\" aria-label=\"Now playing: Track Title by Artist Name\" aria-pressed=\"true\"><span class=\"ds-track-row__index\"><div class=\"ds-track-row__playing-dot\"></div></span><div class=\"ds-track-row__art\"><img src=\"https://via.placeholder.com/32\" alt=\"\" /></div><div class=\"ds-track-row__info\"><div class=\"ds-track-row__title ds-track-row__title--active\">Track Title</div><div class=\"ds-track-row__artist\">ARTIST NAME</div></div><div class=\"ds-track-row__album\">Album Title</div><div class=\"ds-track-row__duration\">0:30</div></button>",
+      "css": ".ds-track-row--active { background: rgba(255,255,255,0.03); border-color: #7082a0; } .ds-track-row--active .ds-track-row__art img { filter: none; } .ds-track-row__title--active { color: #7082a0; } .ds-track-row__playing-dot { width: 6px; height: 6px; border-radius: 50%; background: #7082a0; animation: ds-pulse 1s ease-in-out infinite; margin: auto; } @keyframes ds-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } } @media (prefers-reduced-motion: reduce) { .ds-track-row__playing-dot { animation: none; opacity: 0.8; } }"
+    },
+    {
+      "name": "Section Header",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Panel zone header. 32px height, uppercase panel legend label, accent dot status indicator.",
+      "html": "<header class=\"ds-section-header\"><span class=\"ds-section-header__label\">Library</span><div class=\"ds-section-header__dot\"></div></header>",
+      "css": ".ds-section-header { height: 32px; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-bottom: 1px solid #1f1f1f; font-family: Inter, -apple-system, sans-serif; } .ds-section-header__label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.4; color: #e0e0e0; } .ds-section-header__dot { width: 4px; height: 4px; border-radius: 50%; background: #7082a0; opacity: 0.6; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Instrumentation Panel",
+    "overview": "Waveform is designed as a precision instrument panel, not a music app. The closest physical references are a studio mixing board at rest, a Teenage Engineering OP-1, or a piece of rack-mount audio equipment: dark anodized aluminum, engraved labels, mechanical buttons that depress exactly 1mm, and numerical readouts in a fixed-width typeface. Everything functional, nothing decorative.\n\nThe interface exists in two states: standby and active. At rest, the palette is near-monochromatic — deep black backgrounds, faint borders, monitor-white text at controlled opacity. The moment a track plays, the album art drives a full reactive palette through CSS custom properties: backgrounds, borders, accents, and glows shift to reflect the music. This reactive system is the visual signature of Waveform. It is not a theme toggle; it is the interface responding to its input signal, like a meter needle moving.\n\nTypography is compressed and functional. All metadata travels in uppercase with wide tracking, echoing the legend labels on hardware panels. Track titles use tight tracking and heavier weight — they are the signal name, not decoration. Monospace appears only for numerical readouts (time, indices) — data that should read like a display, not prose.",
+    "keyCharacteristics": [
+      "Near-monochrome at rest; album-art-reactive when playing",
+      "Square corners throughout (2px maximum radius on interactive elements; 0px on media frames)",
+      "Opacity as the primary hierarchy tool within a single hue",
+      "Spring physics on transport controls; eased curves on panels and overlays",
+      "Uppercase-tracked labels as the dominant typographic voice for all metadata",
+      "No decorative shadows; depth through tonal layering and opacity"
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "--accent-color is used for exactly three things: the active track title, the playing state on transport buttons, and beat-reactive glows. It never appears as a background on neutral elements or as a decoration on inactive states. Its scarcity is what makes it feel like a signal, not a coat of paint.",
+        "section": "colors"
+      },
+      {
+        "name": "The Forced Dark Rule",
+        "body": "No matter what the album art extracts, --bg-color is capped at 8% lightness and --surface-color at 12%. White album? The background is still near-black. The music provides the color; the chassis stays dark.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Static Accent Rule",
+        "body": "Do not pick a single hardcoded accent color for the interface. The accent is always derived from the current track. When no track is playing, System Idle (#7082a0) is the fallback — it signals readiness, not branding.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Case Rule",
+        "body": "Body text is sentence case. Everything else — labels, metadata, section titles, button text — is uppercase. There is no mixed-case metadata in this system; it reads as noise on a dark panel.",
+        "section": "typography"
+      },
+      {
+        "name": "The Opacity Stack Rule",
+        "body": "Within a single hue, hierarchy is expressed through opacity, not size. Monitor White at full opacity is the active element; at 0.5 it is secondary; at 0.3-0.4 it is tertiary context. Never introduce a third typeface or a gray value to create hierarchy — use the opacity stack.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Ambient Shadow Rule",
+        "body": "Shadows are prohibited on resting UI elements: cards, panels, section containers, list items. If an element needs visual separation, use a border or a 1-step opacity shift. Shadows appear only as a response to state (hover, active, beat).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do derive all accent colors from useAlbumColour. The reactive palette is the product's visual signature.",
+      "Do use 2px radius on all interactive controls. This near-square shape is the hardware-instrument signature.",
+      "Do use 0px radius on all media frames (album art, thumbnails). Images are always square-cornered.",
+      "Do express hierarchy through opacity within Monitor White, not through multiple gray values.",
+      "Do uppercase all metadata labels with at least 0.05em letter-spacing.",
+      "Do use spring physics on transport controls and eased curves on panels.",
+      "Do keep --bg-color and --surface-color at ≤8% and ≤12% lightness regardless of album art.",
+      "Do use Framer Motion's whileTap on all buttons for press-depth confirmation (scale: 0.95).",
+      "Do use prefers-reduced-motion via the useReducedMotion hook to disable beat-reactive and entrance animations."
+    ],
+    "donts": [
+      "Don't add border-radius above 4px to any element. No pill-shaped buttons, no rounded cards.",
+      "Don't use Spotify/Apple Music patterns: no rounded card shelves, no curated shelf layouts.",
+      "Don't build screensaver-energy visualizers — rainbow blobs, looping patterns independent of audio.",
+      "Don't add ambient drop shadows to resting elements.",
+      "Don't use SoundCloud/YouTube Music patterns: no waveform-as-decoration, no cluttered dark layouts.",
+      "Don't introduce a second accent color as decoration.",
+      "Don't build standard SaaS dark-mode layouts: no gray sidebar + card grid.",
+      "Don't add section headers with the small-caps eyebrow pattern without questioning whether the label earns its place.",
+      "Don't use rgba(0,0,0,0) as a hover state. Use opacity-shifted Monitor White layers.",
+      "Don't put raw audio data (Uint8Array) in React state or Zustand."
+    ]
+  }
+}

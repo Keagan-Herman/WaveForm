@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = path.dirname(__filename);
 export default defineConfig({
     plugins: [react()],
     resolve: {
@@ -33,7 +33,7 @@ export default defineConfig({
             '/deezer-api': {
                 target: 'https://api.deezer.com',
                 changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/deezer-api/, ''),
+                rewrite: function (path) { return path.replace(/^\/deezer-api/, ''); },
             },
         },
     },

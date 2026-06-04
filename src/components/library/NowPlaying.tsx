@@ -24,9 +24,9 @@ function formatRank(rank: number): string {
 }
 
 function NowPlayingProgress({ accent }: { accent: string }) {
-  const currentTime = usePlayerStore((s) => s.currentTime);
-  const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
-  const progress = duration > 0 ? currentTime / duration : 0;
+  const currentTime = usePlayerStore(s => s.currentTime)
+  const duration = usePlayerStore(s => s.currentTrack?.duration ?? 0)
+  const progress = duration > 0 ? currentTime / duration : 0
 
   const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
   const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
@@ -47,7 +47,7 @@ function NowPlayingProgress({ accent }: { accent: string }) {
         <span style={styles.timeLabel}>{durationStr}</span>
       </div>
     </div>
-  );
+  )
 }
 
 export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
@@ -60,8 +60,8 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   if (!currentTrack) {
     return (
       <div style={styles.empty}>
-         <div style={styles.emptyIcon}>■</div>
-         <div style={styles.emptyText}>Standing by for signal.</div>
+        <div style={styles.emptyIcon}>■</div>
+        <div style={styles.emptyText}>Standing by for signal.</div>
       </div>
     )
   }
@@ -74,59 +74,52 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   return (
     <motion.div
       key={currentTrack.id}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       style={styles.wrap}
     >
       {/* 1. Primary Identity Area */}
       <div style={styles.identity}>
         <div style={styles.artFrame}>
-          <img
-            src={getTrackCover(currentTrack)}
-            alt=""
-            style={styles.art}
-          />
+          <img src={getTrackCover(currentTrack)} alt="" style={styles.art} />
         </div>
         <div style={styles.titleArea}>
-           <div style={styles.trackTitle}>{currentTrack.title}</div>
-           <ArtistRipple active={isPlaying} color={accent}>
-             <div
-               style={{ ...styles.artistName, color: accent }}
-               onClick={() => {
-                 if (isDeezerTrack(currentTrack)) {
-                   useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)
-                 }
-               }}
-             >
-               {getTrackArtist(currentTrack)}
-             </div>
-           </ArtistRipple>
-           <div style={styles.albumTitle}>{getTrackAlbum(currentTrack)}</div>
+          <div style={styles.trackTitle}>{currentTrack.title}</div>
+          <ArtistRipple active={isPlaying} color={accent}>
+            <div
+              style={{ ...styles.artistName, color: accent }}
+              onClick={() => {
+                if (isDeezerTrack(currentTrack)) {
+                  useUIStore.getState().setSelectedArtistId(currentTrack.artist.id)
+                }
+              }}
+            >
+              {getTrackArtist(currentTrack)}
+            </div>
+          </ArtistRipple>
+          <div style={styles.albumTitle}>{getTrackAlbum(currentTrack)}</div>
         </div>
       </div>
 
       {/* 2. Technical Readout (Meta) */}
       <div style={styles.techReadout}>
         <div style={styles.readoutItem}>
-          <span style={styles.readoutLabel}>Registry ID</span>
-          <span style={styles.readoutValue}>{currentTrack.id}</span>
-        </div>
-        <div style={styles.readoutItem}>
-          <span style={styles.readoutLabel}>Signal Status</span>
+          <span style={styles.readoutLabel}>STATUS</span>
           <span style={{ ...styles.readoutValue, color: beat ? '#fff' : accent }}>
-             {isPlaying ? 'ACTIVE_DATA_STREAM' : 'BUFFERED'}
+            {isPlaying ? 'LIVE' : 'READY'}
           </span>
         </div>
         {releaseYear && (
           <div style={styles.readoutItem}>
-             <span style={styles.readoutLabel}>Origin Year</span>
-             <span style={styles.readoutValue}>{releaseYear}</span>
+            <span style={styles.readoutLabel}>YEAR</span>
+            <span style={styles.readoutValue}>{releaseYear}</span>
           </div>
         )}
         {isDeezerTrack(currentTrack) && (
           <div style={styles.readoutItem}>
-             <span style={styles.readoutLabel}>Rank Factor</span>
-             <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
+            <span style={styles.readoutLabel}>RANK</span>
+            <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
           </div>
         )}
       </div>

@@ -1,7 +1,15 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
-import { Bloom, EffectComposer, ChromaticAberration, Vignette, Noise, DepthOfField, GodRays } from '@react-three/postprocessing'
+import {
+  Bloom,
+  EffectComposer,
+  ChromaticAberration,
+  Vignette,
+  Noise,
+  DepthOfField,
+  GodRays,
+} from '@react-three/postprocessing'
 import { Environment } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
@@ -32,10 +40,10 @@ interface FullscreenOverlayProps {
 function FullscreenScene({
   accent,
   tracks,
-  butterchurnCanvas
+  butterchurnCanvas,
 }: {
-  accent: AlbumColour;
-  tracks: DeezerTrack[];
+  accent: AlbumColour
+  tracks: DeezerTrack[]
   butterchurnCanvas: HTMLCanvasElement | null
 }) {
   const quality = useVisualiserStore(state => state.quality)
@@ -96,7 +104,9 @@ function FullscreenScene({
 
       <Environment preset="night" />
 
-      {butterchurnCanvas && <ButterchurnTexture canvas={butterchurnCanvas} opacity={presetsOpacity} />}
+      {butterchurnCanvas && (
+        <ButterchurnTexture canvas={butterchurnCanvas} opacity={presetsOpacity} />
+      )}
 
       {particlesOpacity > 0 && (
         <ParticleField
@@ -112,65 +122,65 @@ function FullscreenScene({
       {albumGravityOpacity > 0 &&
         albumLayout.map(album => <AlbumMesh key={album.albumId} {...album} />)}
 
-        {quality !== 'Low' && (
-          <EffectComposer
-            multisampling={quality === 'Epic' ? 8 : 0}
-            frameBufferType={THREE.HalfFloatType}
-          >
-            {([] as React.ReactElement[]).concat(
-              bloomEnabled
-                ? [
-                    <Bloom
-                      key="bloom"
-                      luminanceThreshold={0.1}
-                      intensity={bloomIntensity * (1 + bassPower * 0.5)}
-                    />,
-                  ]
-                : [],
-              godRaysEnabled && orb
-                ? [
-                    <GodRays
-                      key="godrays"
-                      sun={orb}
-                      samples={quality === 'Epic' ? 32 : 16}
-                      density={0.96}
-                      decay={0.9}
-                      weight={0.3}
-                      exposure={0.4}
-                      clampMax={1.0}
-                    />,
-                  ]
-                : [],
-              chromaticAberrationEnabled
-                ? [
-                    <ChromaticAberration
-                      key="chroma"
-                      /* eslint-disable react-hooks/refs */
-                      offset={chromaOffset.current.set(0.002 * bassPower, 0.002 * bassPower)}
-                      /* eslint-enable react-hooks/refs */
-                      radialModulation={false}
-                      modulationOffset={0}
-                    />,
-                  ]
-                : [],
-              vignetteEnabled
-                ? [<Vignette key="vignette" eskil={false} offset={0.5} darkness={0.5} />]
-                : [],
-              filmGrainEnabled ? [<Noise key="noise" opacity={0.05} />] : [],
-              dofEnabled
-                ? [
-                    <DepthOfField
-                      key="dof"
-                      focusDistance={0}
-                      focalLength={0.02}
-                      bokehScale={2}
-                      height={480}
-                    />,
-                  ]
-                : []
-            )}
-          </EffectComposer>
-        )}
+      {quality !== 'Low' && (
+        <EffectComposer
+          multisampling={quality === 'Epic' ? 8 : 0}
+          frameBufferType={THREE.HalfFloatType}
+        >
+          {([] as React.ReactElement[]).concat(
+            bloomEnabled
+              ? [
+                  <Bloom
+                    key="bloom"
+                    luminanceThreshold={0.1}
+                    intensity={bloomIntensity * (1 + bassPower * 0.5)}
+                  />,
+                ]
+              : [],
+            godRaysEnabled && orb
+              ? [
+                  <GodRays
+                    key="godrays"
+                    sun={orb}
+                    samples={quality === 'Epic' ? 32 : 16}
+                    density={0.96}
+                    decay={0.9}
+                    weight={0.3}
+                    exposure={0.4}
+                    clampMax={1.0}
+                  />,
+                ]
+              : [],
+            chromaticAberrationEnabled
+              ? [
+                  <ChromaticAberration
+                    key="chroma"
+                    /* eslint-disable react-hooks/refs */
+                    offset={chromaOffset.current.set(0.002 * bassPower, 0.002 * bassPower)}
+                    /* eslint-enable react-hooks/refs */
+                    radialModulation={false}
+                    modulationOffset={0}
+                  />,
+                ]
+              : [],
+            vignetteEnabled
+              ? [<Vignette key="vignette" eskil={false} offset={0.5} darkness={0.5} />]
+              : [],
+            filmGrainEnabled ? [<Noise key="noise" opacity={0.05} />] : [],
+            dofEnabled
+              ? [
+                  <DepthOfField
+                    key="dof"
+                    focusDistance={0}
+                    focalLength={0.02}
+                    bokehScale={2}
+                    height={480}
+                  />,
+                ]
+              : []
+          )}
+        </EffectComposer>
+      )}
     </>
   )
 }
@@ -205,7 +215,9 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
       setIsRecording(false)
     } else {
       // Specifically target the Three.js canvas which now contains all layers
-      const canvas = document.querySelector('canvas[data-engine="three.js r170"]') || document.querySelector('canvas')
+      const canvas =
+        document.querySelector('canvas[data-engine="three.js r170"]') ||
+        document.querySelector('canvas')
       if (canvas instanceof HTMLCanvasElement) {
         recorderRef.current = new CanvasRecorder(canvas)
         recorderRef.current.start()
@@ -237,13 +249,15 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
     },
   }
 
+  const EXPO_OUT = [0.16, 1, 0.3, 1] as [number, number, number, number]
+
   const hudItemVariants = {
     hidden: { opacity: 0, x: 20, filter: 'blur(10px)' },
     visible: {
       opacity: 1,
       x: 0,
       filter: 'blur(0px)',
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.8, ease: EXPO_OUT },
     },
   }
 
@@ -275,13 +289,15 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             </div>
 
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Canvas camera={{ position: [0, 0, 8], fov: 60 }}   
-              gl={{
-                preserveDrawingBuffer: isRecording, // only pay this cost when recording
-                stencil: false,
-                antialias: false,
-                powerPreference: 'high-performance',
-              }}>
+              <Canvas
+                camera={{ position: [0, 0, 8], fov: 60 }}
+                gl={{
+                  preserveDrawingBuffer: isRecording, // only pay this cost when recording
+                  stencil: false,
+                  antialias: false,
+                  powerPreference: 'high-performance',
+                }}
+              >
                 <FullscreenScene
                   accent={accent}
                   tracks={tracks}
@@ -437,7 +453,7 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 />
                 <HUDButton
                   onClick={toggleRecording}
-                  label={isRecording ? "STOP_RECORDING" : "START_CAPTURE"}
+                  label={isRecording ? 'STOP_RECORDING' : 'START_CAPTURE'}
                   shortcut="R"
                   accent={isRecording ? '#ff4444' : accent.hex}
                   isActive={isRecording}
@@ -566,36 +582,39 @@ function FrequencyScrutinizer({ accent }: { accent: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const smoothedData = useRef<Float32Array | null>(null)
 
-  const draw = useCallback((data: Uint8Array) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+  const draw = useCallback(
+    (data: Uint8Array) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
-    const w = canvas.width
-    const h = canvas.height
-    ctx.clearRect(0, 0, w, h)
+      const w = canvas.width
+      const h = canvas.height
+      ctx.clearRect(0, 0, w, h)
 
-    if (!smoothedData.current || smoothedData.current.length !== data.length) {
-      smoothedData.current = new Float32Array(data.length)
-    }
+      if (!smoothedData.current || smoothedData.current.length !== data.length) {
+        smoothedData.current = new Float32Array(data.length)
+      }
 
-    const barWidth = 2
-    const gap = 1
-    const count = Math.floor(w / (barWidth + gap))
+      const barWidth = 2
+      const gap = 1
+      const count = Math.floor(w / (barWidth + gap))
 
-    for (let i = 0; i < count; i++) {
-      const val = data[i * 2] || 0
-      smoothedData.current[i] += (val - smoothedData.current[i]) * 0.2
-      const bh = (smoothedData.current[i] / 255) * h
+      for (let i = 0; i < count; i++) {
+        const val = data[i * 2] || 0
+        smoothedData.current[i] += (val - smoothedData.current[i]) * 0.2
+        const bh = (smoothedData.current[i] / 255) * h
 
-      const opacity = 0.3 + (smoothedData.current[i] / 255) * 0.7
-      ctx.fillStyle = i % 2 === 0 ? accent : '#fff'
-      ctx.globalAlpha = opacity
-      ctx.fillRect(i * (barWidth + gap), h - bh, barWidth, bh)
-    }
-    ctx.globalAlpha = 1.0
-  }, [accent])
+        const opacity = 0.3 + (smoothedData.current[i] / 255) * 0.7
+        ctx.fillStyle = i % 2 === 0 ? accent : '#fff'
+        ctx.globalAlpha = opacity
+        ctx.fillRect(i * (barWidth + gap), h - bh, barWidth, bh)
+      }
+      ctx.globalAlpha = 1.0
+    },
+    [accent]
+  )
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
 
@@ -630,11 +649,17 @@ function BeatIndicator({ accent }: { accent: string }) {
   )
 }
 
-function HUDButton({ onClick, label, shortcut, accent, isActive }: {
-  onClick: () => void,
-  label: string,
-  shortcut: string,
-  accent: string,
+function HUDButton({
+  onClick,
+  label,
+  shortcut,
+  accent,
+  isActive,
+}: {
+  onClick: () => void
+  label: string
+  shortcut: string
+  accent: string
   isActive?: boolean
 }) {
   return (

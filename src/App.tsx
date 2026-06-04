@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion'
 import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
@@ -174,12 +174,35 @@ function Waveform() {
     setFilteredTrackIds(ids)
   }, [])
 
-  const panelVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
+  const prefersReducedMotion = useReducedMotion()
+  const skipIntro = hasIntroPlayed || !!prefersReducedMotion
+
+  const sidebarVariants: Variants = {
+    hidden: { opacity: 0, x: -16 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+  }
+  const heroVariants: Variants = {
+    hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 },
+    },
+  }
+  const statusVariants: Variants = {
+    hidden: { opacity: 0, x: 16 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.25 },
+    },
+  }
+  const bottomVariants: Variants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.35 },
     },
   }
 
@@ -206,9 +229,9 @@ function Waveform() {
       >
         {/* Sidebar: Library & Search */}
         <motion.section
-          initial={hasIntroPlayed ? 'visible' : 'hidden'}
+          initial={skipIntro ? 'visible' : 'hidden'}
           animate="visible"
-          variants={panelVariants}
+          variants={sidebarVariants}
           style={{
             ...styles.sidebar,
             width: isMobile ? '100%' : '380px',
@@ -216,10 +239,9 @@ function Waveform() {
             borderBottom: isMobile ? '1px solid var(--border-color)' : 'none',
           }}
         >
-          <header style={styles.sectionHeader}>
-            <span style={styles.sectionTitle}>Library</span>
+          <div style={{ ...styles.sectionHeader, justifyContent: 'flex-end' }}>
             <div style={{ ...styles.klimtDot, background: accent.hex }} />
-          </header>
+          </div>
           <div style={styles.contentScroll}>
             <QuadrantErrorBoundary label="Library" accent={accent.hex}>
               <SearchOverlay
@@ -236,42 +258,62 @@ function Waveform() {
           <div style={{ ...styles.topSection, flexDirection: isMobile ? 'column' : 'row' }}>
             {/* The "Sacred Space" - Visualiser */}
             <motion.section
-              initial={hasIntroPlayed ? 'visible' : 'hidden'}
+              initial={skipIntro ? 'visible' : 'hidden'}
               animate="visible"
-              variants={panelVariants}
+              variants={heroVariants}
               style={styles.heroSection}
             >
               <QuadrantErrorBoundary
                 label={isPlaying ? 'Hero Scene' : 'Visualisers'}
                 accent={accent.hex}
               >
-                {isPlaying ? (
-                  <div style={styles.heroSceneWrap}>
-                    <AlbumGravityField tracks={searchTracks} width={1200} height={600} accent={accent} />
-                    <div style={styles.heroOverlay}>
-                      <RadialVisualiser width={400} height={400} accent={accent} />
-                    </div>
-                  </div>
-                ) : (
-                  <VisualisersPanel accent={accent} />
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isPlaying ? (
+                    <motion.div
+                      key="active"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      style={styles.heroSceneWrap}
+                    >
+                      <AlbumGravityField
+                        tracks={searchTracks}
+                        width={1200}
+                        height={600}
+                        accent={accent}
+                      />
+                      <div style={styles.heroOverlay}>
+                        <RadialVisualiser width={400} height={400} accent={accent} />
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="standby"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      style={styles.heroStandby}
+                    >
+                      <VisualisersPanel accent={accent} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </QuadrantErrorBoundary>
             </motion.section>
 
             {/* Now Playing - Floating or Docked */}
             <motion.section
-              initial={hasIntroPlayed ? 'visible' : 'hidden'}
+              initial={skipIntro ? 'visible' : 'hidden'}
               animate="visible"
-              variants={panelVariants}
+              variants={statusVariants}
               style={{
                 ...styles.nowPlayingSection,
                 width: isMobile ? '100%' : '420px',
                 borderLeft: isMobile ? 'none' : '1px solid var(--border-color)',
               }}
             >
-               <header style={styles.sectionHeader}>
-                <span style={styles.sectionTitle}>Status</span>
-              </header>
               <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 <QuadrantErrorBoundary label="Now Playing" accent={accent.hex}>
                   <NowPlaying accent={accent} />
@@ -282,12 +324,12 @@ function Waveform() {
 
           {/* Bottom Section: Genre Map (Wide & Breathable) */}
           <motion.section
-            initial={hasIntroPlayed ? 'visible' : 'hidden'}
+            initial={skipIntro ? 'visible' : 'hidden'}
             animate="visible"
-            variants={panelVariants}
+            variants={bottomVariants}
             style={styles.bottomSection}
           >
-             <header style={styles.sectionHeader}>
+            <header style={styles.sectionHeader}>
               <span style={styles.sectionTitle}>Topology</span>
             </header>
             <QuadrantErrorBoundary label="Genre Map" accent={accent.hex}>
@@ -419,6 +461,12 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     overflow: 'hidden',
     background: 'radial-gradient(circle at center, rgba(255,255,255,0.03), transparent)',
+  },
+  heroStandby: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    overflow: 'hidden',
   },
   heroOverlay: {
     position: 'absolute',
