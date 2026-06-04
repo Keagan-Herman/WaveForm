@@ -196,10 +196,27 @@ export function SearchOverlay({
         )}
 
         {!query.trim() && visibleTracks.length === 0 && (
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>■</div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={styles.emptyState}
+          >
+            <div style={styles.emptyIcon}>
+              <motion.div
+                animate={{
+                  opacity: [0.2, 0.5, 0.2],
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                ■
+              </motion.div>
+            </div>
             <div style={styles.emptyText}>Standing by for input.</div>
-          </div>
+            <div style={styles.scanlineWrap}>
+              <div style={styles.scanline} />
+            </div>
+          </motion.div>
         )}
       </div>
     </div>
@@ -271,7 +288,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
-    opacity: 0.2,
+    opacity: 0.4,
+    position: 'relative',
+    overflow: 'hidden',
+    border: '1px solid var(--border-color)',
+    background: 'rgba(255,255,255,0.01)',
+    marginTop: '1rem',
   },
   emptyIcon: {
     fontSize: '1rem',
@@ -279,6 +301,19 @@ const styles: Record<string, React.CSSProperties> = {
   emptyText: {
     fontSize: '0.7rem',
     textTransform: 'uppercase',
-    letterSpacing: '0.1em',
+    letterSpacing: '0.2em',
+    fontWeight: 600,
+  },
+  scanlineWrap: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    opacity: 0.1,
+  },
+  scanline: {
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.1) 51%)',
+    backgroundSize: '100% 4px',
   },
 }

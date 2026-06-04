@@ -67,7 +67,10 @@ function PhysicalBtn({
   accentColor: string;
 }) {
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
       onClick={onClick}
       aria-label={label}
       style={{
@@ -78,7 +81,7 @@ function PhysicalBtn({
       }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -146,16 +149,21 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         <PhysicalBtn onClick={prevTrack} label="Prev" accentColor={accent.hex}>
           <IconPrev />
         </PhysicalBtn>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.08, boxShadow: `0 0 20px ${accent.hex}44` }}
+          whileTap={{ scale: 0.94 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 18 }}
           onClick={togglePlay}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           style={{
             ...styles.playBtn,
             backgroundColor: isPlaying ? accent.hex : 'rgba(255,255,255,0.05)',
             color: isPlaying ? '#000' : '#fff',
+            borderColor: isPlaying ? accent.hex : 'var(--border-color)',
           }}
         >
           {isPlaying ? <IconPause /> : <IconPlay />}
-        </button>
+        </motion.button>
         <PhysicalBtn onClick={nextTrack} label="Next" accentColor={accent.hex}>
           <IconNext />
         </PhysicalBtn>
@@ -250,10 +258,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none',
+    border: '1px solid var(--border-color)',
     borderRadius: '2px',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
     transition: 'all 0.1s ease',
+    cursor: 'pointer',
   },
   readoutSection: {
     flex: 1,

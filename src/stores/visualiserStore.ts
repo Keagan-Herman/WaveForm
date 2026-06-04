@@ -61,6 +61,7 @@ interface VisualiserStore {
   setAutoCycle: (enabled: boolean) => void
   setIsRecording: (isRecording: boolean) => void
   setShowSettings: (show: boolean) => void
+  autoDowngrade: () => void
 
   // Layer controls
   setLayerOpacity: (layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity', opacity: number) => void
@@ -129,6 +130,11 @@ export const useVisualiserStore = create<VisualiserStore>()(
       setAutoCycle: autoCycle => set({ autoCycle }),
       setIsRecording: isRecording => set({ isRecording }),
       setShowSettings: showSettings => set({ showSettings }),
+      autoDowngrade: () => {
+        const { quality } = get()
+        if (quality === 'Epic') set({ quality: 'Medium' })
+        else if (quality === 'Medium') set({ quality: 'Low', isLowQuality: true })
+      },
 
       setLayerOpacity: (layer, opacity) => {
         switch (layer) {

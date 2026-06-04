@@ -188,6 +188,14 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const setIsRecording = useVisualiserStore(state => state.setIsRecording)
 
   const currentTrack = usePlayerStore(state => state.currentTrack)
+  const quality = useVisualiserStore(state => state.quality)
+  const [showQualityNotice, setShowQualityNotice] = React.useState(false)
+
+  useEffect(() => {
+    setShowQualityNotice(true)
+    const timer = setTimeout(() => setShowQualityNotice(false), 3000)
+    return () => clearTimeout(timer)
+  }, [quality])
 
   const recorderRef = useRef<CanvasRecorder | null>(null)
 
@@ -218,14 +226,36 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
   // AnimatePresence must wrap the conditional — early return here would
   // prevent the exit animation from firing when isFullscreen goes false.
+  const hudContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.4,
+      },
+    },
+  }
+
+  const hudItemVariants = {
+    hidden: { opacity: 0, x: 20, filter: 'blur(10px)' },
+    visible: {
+      opacity: 1,
+      x: 0,
+      filter: 'blur(0px)',
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  }
+
   return (
     <AnimatePresence mode="wait">
       {isFullscreen && (
         <motion.div
           key="fullscreen"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }}
+          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, scale: 0.95, filter: 'blur(20px)' }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={styles.overlay}
         >
           <div style={styles.canvasWrap}>
@@ -264,12 +294,40 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
           <div style={styles.uiLayer}>
             <VisualSettings />
 
+            <AnimatePresence>
+              {showQualityNotice && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  style={{
+                    ...styles.qualityNotice,
+                    color: quality === 'Low' ? '#ff4444' : accent.hex,
+                    borderColor: quality === 'Low' ? '#ff444433' : `${accent.hex}33`,
+                  }}
+                >
+                  PERFORMANCE_OPTIMIZATION: {quality.toUpperCase()}_MODE_ACTIVE
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Cinematic HUD Elements */}
-            <div style={styles.hudRight}>
-              <EnergyFlux accent={accent.hex} />
-              <FrequencyScrutinizer accent={accent.hex} />
-              <WaveformScrutinizer accent={accent.hex} />
-            </div>
+            <motion.div
+              variants={hudContainerVariants}
+              initial="hidden"
+              animate="visible"
+              style={styles.hudRight}
+            >
+              <motion.div variants={hudItemVariants}>
+                <EnergyFlux accent={accent.hex} />
+              </motion.div>
+              <motion.div variants={hudItemVariants}>
+                <FrequencyScrutinizer accent={accent.hex} />
+              </motion.div>
+              <motion.div variants={hudItemVariants}>
+                <WaveformScrutinizer accent={accent.hex} />
+              </motion.div>
+            </motion.div>
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -798,5 +856,22 @@ const styles: Record<string, React.CSSProperties> = {
   },
   scrutinizerCanvas: {
     opacity: 0.6,
+  },
+  qualityNotice: {
+    position: 'absolute',
+    top: '2rem',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(5, 5, 5, 0.6)',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    padding: '0.6rem 1.5rem',
+    borderRadius: '4px',
+    border: '1px solid',
+    fontSize: '0.65rem',
+    letterSpacing: '0.15em',
+    fontWeight: 700,
+    zIndex: 10,
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
   },
 }
