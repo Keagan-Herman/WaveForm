@@ -39,9 +39,9 @@ describe('PlayerBar', () => {
     usePlayerStore.setState({ currentTrack: null, isPlaying: false, currentTime: 0 })
   })
 
-  it('renders "Nothing playing" when no track is set', () => {
+  it('renders "System Standby" when no track is set', () => {
     render(<PlayerBar accent={mockAccent} />)
-    expect(screen.getByText('Nothing playing')).toBeDefined()
+    expect(screen.getByText('System Standby')).toBeDefined()
   })
 
   it('renders track info when a track is playing', () => {
@@ -53,8 +53,13 @@ describe('PlayerBar', () => {
   })
 
   it('toggles playback when play/pause button is clicked', () => {
+    usePlayerStore.setState({ currentTrack: mockTrack })
     render(<PlayerBar accent={mockAccent} />)
-    const playButton = screen.getByLabelText('Play')
+    // Physical buttons don't have aria-label 'Play', only the main playBtn does.
+    // Actually PhysicalBtn has label prop which is used as aria-label.
+    // The main play button doesn't have an aria-label.
+
+    const playButton = screen.getByRole('button', { name: /play/i })
 
     fireEvent.click(playButton)
     expect(usePlayerStore.getState().isPlaying).toBe(true)
@@ -72,7 +77,9 @@ describe('PlayerBar', () => {
     usePlayerStore.setState({ currentTrack: mockTrack, currentTime: 65 })
     render(<PlayerBar accent={mockAccent} />)
 
-    expect(screen.getByText('1:05')).toBeDefined()
-    expect(screen.getByText('3:00')).toBeDefined()
+    // formatTime(65) -> "01:05"
+    // formatTime(180) -> "03:00"
+    expect(screen.getByText('01:05')).toBeDefined()
+    expect(screen.getByText('03:00')).toBeDefined()
   })
 })

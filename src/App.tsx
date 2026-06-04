@@ -24,6 +24,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { ArtistPanel } from '@/components/search/ArtistPanel'
 import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
 import { hexToRgb } from '@/utils/color'
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor'
 
 // Layout components
 import { Header } from '@/components/layout/Header'
@@ -108,6 +109,9 @@ function Waveform() {
     return !!sessionStorage.getItem('waveform_intro_played')
   })
   const accent = useAppAccent()
+
+  const autoDowngrade = useVisualiserStore(state => state.autoDowngrade)
+  usePerformanceMonitor(55, 3000, autoDowngrade)
 
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const isPlaying = usePlayerStore(state => state.isPlaying)

@@ -123,13 +123,27 @@ export const TrackRow = React.memo(
         </div>
 
         <div style={styles.info}>
-          <div
-            style={{
-              ...styles.name,
-              color: isActive ? accentColour : 'inherit',
-            }}
-          >
-            {track.title}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div
+              style={{
+                ...styles.name,
+                color: isActive ? accentColour : 'inherit',
+              }}
+            >
+              {track.title}
+            </div>
+            {isDeezerTrack(track) && track.explicit_lyrics && (
+              <div
+                style={{
+                  ...styles.explicitBadge,
+                  color: accentColour,
+                  borderColor: `${accentColour}66`,
+                }}
+                aria-label="Explicit content"
+              >
+                E
+              </div>
+            )}
           </div>
           <div
             style={styles.artist}
@@ -218,5 +232,18 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.3,
     textAlign: 'right',
     fontFamily: 'var(--font-mono)',
+  },
+  explicitBadge: {
+    fontSize: '0.6rem',
+    fontWeight: 700,
+    width: '12px',
+    height: '12px',
+    border: '1px solid',
+    borderRadius: '2px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    opacity: 0.6,
   },
 }
