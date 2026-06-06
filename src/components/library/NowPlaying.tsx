@@ -54,6 +54,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const beat = useVisualiserStore(state => state.beat)
+  const bpm = useVisualiserStore(state => state.bpm)
 
   const accent = accentColour?.hex ?? '#7a8fa6'
 
@@ -74,20 +75,34 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   return (
     <motion.div
       key={currentTrack.id}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       style={styles.wrap}
     >
+      <div style={styles.dossierLabel}>TRACK_DOSSIER_v2.1</div>
+
       {/* 1. Primary Identity Area */}
       <div style={styles.identity}>
-        <div style={styles.artFrame}>
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          style={styles.artFrame}
+        >
           <img src={getTrackCover(currentTrack)} alt="" style={styles.art} />
-        </div>
+          {isPlaying && (
+            <motion.div
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{ ...styles.artGlow, boxShadow: `0 0 40px ${accent}44` }}
+            />
+          )}
+        </motion.div>
         <div style={styles.titleArea}>
           <div style={styles.trackTitle}>{currentTrack.title}</div>
           <ArtistRipple active={isPlaying} color={accent}>
-            <div
+            <motion.div
+              whileHover={{ x: 4 }}
               style={{ ...styles.artistName, color: accent }}
               onClick={() => {
                 if (isDeezerTrack(currentTrack)) {
@@ -96,7 +111,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
               }}
             >
               {getTrackArtist(currentTrack)}
-            </div>
+            </motion.div>
           </ArtistRipple>
           <div style={styles.albumTitle}>{getTrackAlbum(currentTrack)}</div>
         </div>
@@ -105,27 +120,55 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
       {/* 2. Technical Readout (Meta) */}
       <div style={styles.techReadout}>
         <div style={styles.readoutItem}>
-          <span style={styles.readoutLabel}>STATUS</span>
+          <span style={styles.readoutLabel}>SIGNAL_STATUS</span>
           <span style={{ ...styles.readoutValue, color: beat ? '#fff' : accent }}>
-            {isPlaying ? 'LIVE' : 'READY'}
+            {isPlaying ? 'ACTIVE_BROADCAST' : 'CARRIER_DETECTED'}
+          </span>
+        </div>
+        <div style={styles.readoutItem}>
+          <span style={styles.readoutLabel}>TEMPO_ESTIMATE</span>
+          <span style={{ ...styles.readoutValue, color: beat ? '#fff' : 'inherit' }}>
+            {isPlaying ? `${Math.round(bpm)} BPM` : '---'}
           </span>
         </div>
         {releaseYear && (
           <div style={styles.readoutItem}>
-            <span style={styles.readoutLabel}>YEAR</span>
+            <span style={styles.readoutLabel}>ARCHIVE_YEAR</span>
             <span style={styles.readoutValue}>{releaseYear}</span>
           </div>
         )}
         {isDeezerTrack(currentTrack) && (
-          <div style={styles.readoutItem}>
-            <span style={styles.readoutLabel}>RANK</span>
-            <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
-          </div>
+          <>
+            <div style={styles.readoutItem}>
+              <span style={styles.readoutLabel}>CURRENCY_RANK</span>
+              <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
+            </div>
+            <div style={styles.readoutItem}>
+              <span style={styles.readoutLabel}>ENCODING_SPEC</span>
+              <span style={styles.readoutValue}>MPEG_L3_128K</span>
+            </div>
+            <div style={styles.readoutItem}>
+              <span style={styles.readoutLabel}>SOURCE_NODE</span>
+              <span style={styles.readoutValue}>DEEZER_PUBLIC_CDN</span>
+            </div>
+          </>
         )}
       </div>
 
       {/* 3. Temporal Scrutiny (Scrubber) */}
-      <NowPlayingProgress accent={accent} />
+      <div style={styles.scrubberContainer}>
+        <div style={styles.readoutLabel}>TEMPORAL_PROGRESSION</div>
+        <NowPlayingProgress accent={accent} />
+      </div>
+
+      <div style={styles.footerInfo}>
+        <div style={styles.idBadge}>
+          <span style={{ opacity: 0.4 }}>ID:</span> {String(currentTrack.id).slice(0, 8)}...
+        </div>
+        <div style={styles.idBadge}>
+          <span style={{ opacity: 0.4 }}>TYPE:</span> {currentTrack.source.toUpperCase()}
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -136,7 +179,17 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     padding: '2rem',
     height: '100%',
-    gap: '2rem',
+    gap: '1.5rem',
+    position: 'relative',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
+  },
+  dossierLabel: {
+    fontSize: '0.55rem',
+    letterSpacing: '0.3em',
+    opacity: 0.25,
+    fontWeight: 700,
+    borderBottom: '1px solid var(--border-color)',
+    paddingBottom: '0.5rem',
   },
   identity: {
     display: 'flex',
@@ -148,7 +201,15 @@ const styles: Record<string, React.CSSProperties> = {
     height: 140,
     border: '1px solid var(--border-color)',
     padding: '8px',
-    backgroundColor: 'rgba(255,255,255,0.01)',
+    backgroundColor: 'rgba(5, 5, 5, 0.4)',
+    position: 'relative',
+    flexShrink: 0,
+  },
+  artGlow: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    zIndex: -1,
   },
   art: {
     width: '100%',
@@ -167,24 +228,32 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.02em',
     lineHeight: 1.1,
     marginBottom: '0.5rem',
+    color: '#fff',
   },
   artistName: {
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    fontWeight: 600,
+    letterSpacing: '0.15em',
+    fontWeight: 700,
     cursor: 'pointer',
+    transition: 'color 0.2s ease',
   },
   albumTitle: {
-    fontSize: '0.85rem',
-    opacity: 0.3,
+    fontSize: '0.8rem',
+    opacity: 0.35,
+    letterSpacing: '0.02em',
+    marginTop: '0.25rem',
   },
   techReadout: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
+    gap: '0.6rem',
     borderTop: '1px solid var(--border-color)',
-    paddingTop: '1rem',
+    paddingTop: '1.25rem',
+    background: 'rgba(255,255,255,0.01)',
+    padding: '1.25rem',
+    borderRadius: '4px',
+    border: '1px solid rgba(255,255,255,0.03)',
   },
   readoutItem: {
     display: 'flex',
@@ -203,9 +272,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-mono)',
     fontWeight: 500,
   },
-  scrubberWrap: {
+  scrubberContainer: {
     marginTop: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
   },
+  scrubberWrap: {},
   scrubberTrack: {
     height: 2,
     background: 'rgba(255,255,255,0.05)',
@@ -223,9 +296,22 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '0.5rem',
   },
   timeLabel: {
-    fontSize: '0.6rem',
+    fontSize: '0.55rem',
     fontFamily: 'var(--font-mono)',
-    opacity: 0.3,
+    opacity: 0.4,
+    letterSpacing: '0.1em',
+  },
+  footerInfo: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    paddingTop: '1rem',
+    borderTop: '1px solid var(--border-color)',
+  },
+  idBadge: {
+    fontSize: '0.5rem',
+    fontFamily: 'var(--font-mono)',
+    opacity: 0.4,
+    letterSpacing: '0.1em',
   },
   empty: {
     display: 'flex',

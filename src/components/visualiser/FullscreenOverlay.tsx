@@ -474,7 +474,9 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
 function EnergyFlux({ accent }: { accent: string }) {
   const fillRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const smoothedPower = useRef(0)
+  const history = useRef<number[]>(new Array(40).fill(0))
 
   useEffect(() => {
     return useVisualiserStore.subscribe(
@@ -485,24 +487,63 @@ function EnergyFlux({ accent }: { accent: string }) {
           smoothedPower.current += (bassPower - smoothedPower.current) * 0.2
           fillRef.current.style.height = `${smoothedPower.current * 100}%`
           fillRef.current.style.opacity = `${0.4 + smoothedPower.current * 0.6}`
+
+          // Update history and draw sparkline
+          history.current.push(bassPower)
+          if (history.current.length > 40) history.current.shift()
+          drawSparkline()
         }
       }
     )
-  }, [])
+  }, [accent])
+
+  const drawSparkline = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const w = canvas.width
+    const h = canvas.height
+    ctx.clearRect(0, 0, w, h)
+
+    ctx.beginPath()
+    ctx.strokeStyle = accent
+    ctx.lineWidth = 1
+    ctx.globalAlpha = 0.4
+
+    const step = w / (history.current.length - 1)
+    for (let i = 0; i < history.current.length; i++) {
+      const x = i * step
+      const y = h - history.current[i] * h
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.stroke()
+    ctx.globalAlpha = 1.0
+  }
 
   return (
     <div style={styles.energyFlux}>
       <div style={styles.hudLabel}>ENERGY_FLUX</div>
-      <div style={styles.fluxTrack}>
-        <div
-          ref={fillRef}
-          style={{
-            ...styles.fluxFill,
-            background: `linear-gradient(to top, transparent, ${accent}33, ${accent}, #fff, #fff)`,
-            boxShadow: `0 0 30px ${accent}44, 0 0 60px ${accent}22`,
-            transition: 'height 0.08s ease-out',
-          }}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem' }}>
+        <canvas
+          ref={canvasRef}
+          width={80}
+          height={40}
+          style={{ opacity: 0.4, marginBottom: '2px' }}
         />
+        <div style={styles.fluxTrack}>
+          <div
+            ref={fillRef}
+            style={{
+              ...styles.fluxFill,
+              background: `linear-gradient(to top, transparent, ${accent}33, ${accent}, #fff, #fff)`,
+              boxShadow: `0 0 30px ${accent}44, 0 0 60px ${accent}22`,
+              transition: 'height 0.08s ease-out',
+            }}
+          />
+        </div>
       </div>
     </div>
   )
