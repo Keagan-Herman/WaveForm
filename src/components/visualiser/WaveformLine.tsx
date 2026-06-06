@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { audioEngine } from '../../audio/AudioEngine';
 import { usePlayerStore } from '../../stores/playerStore';
 import { isLocalTrack } from '../../types/track';
@@ -8,6 +9,14 @@ import { useAlbumColour } from '../../hooks/useAlbumColour';
 
 const PLAYHEAD = 'rgba(255, 255, 255, 0.9)';
 const PLAYHEAD_GLOW = 'rgba(255, 255, 255, 0.2)';
+const HOVER_LINE = 'rgba(255, 255, 255, 0.3)';
+
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return '00:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
 
 // ─── Drawing routines ─────────────────────────────────────────────────────────
 
@@ -15,7 +24,8 @@ function drawLiveOscilloscope(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  colour: string
+  colour: string,
+  hoverProgress: number | null
 ) {
   const data = audioEngine.getWaveformData();
   ctx.clearRect(0, 0, width, height);
@@ -38,6 +48,17 @@ function drawLiveOscilloscope(
 
   ctx.lineTo(width, height / 2);
   ctx.stroke();
+
+  if (hoverProgress !== null) {
+    const hx = hoverProgress * width;
+    ctx.beginPath();
+    ctx.strokeStyle = HOVER_LINE;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(hx, 0);
+    ctx.lineTo(hx, height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
 
 function drawStaticWaveform(
@@ -46,7 +67,8 @@ function drawStaticWaveform(
   height: number,
   waveform: Float32Array,
   progress: number, // 0–1
-  colours: { played: string; unplayed: string }
+  colours: { played: string; unplayed: string },
+  hoverProgress: number | null
 ) {
   ctx.clearRect(0, 0, width, height);
 
@@ -63,7 +85,6 @@ function drawStaticWaveform(
   ctx.fillStyle = colours.played;
   for (let i = 0; i < playedCount; i++) {
     const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
-    // Single fillRect covers both top and bottom (mirrored)
     ctx.fillRect(i * unitWidth, centerY - barHeight, drawWidth, barHeight * 2);
   }
 
@@ -72,6 +93,19 @@ function drawStaticWaveform(
   for (let i = playedCount; i < len; i++) {
     const barHeight = Math.max(1, waveform[i] * centerY * 0.92);
     ctx.fillRect(i * unitWidth, centerY - barHeight, drawWidth, barHeight * 2);
+  }
+
+  // ── Hover State ──
+  if (hoverProgress !== null) {
+    const hx = hoverProgress * width;
+    ctx.beginPath();
+    ctx.strokeStyle = HOVER_LINE;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(hx, 0);
+    ctx.lineTo(hx, height);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // ── Playhead ──
@@ -114,13 +148,17 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>();
   const sizeRef = useRef({ width: 300, height });
+  const hoverRef = useRef<number | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<{ x: number; time: string } | null>(null);
+
   const lastRenderRef = useRef({
     progress: -1,
     width: -1,
     height: -1,
     trackId: '',
     isPlaying: false,
-    accent: ''
+    accent: '',
+    hover: null as number | null,
   });
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -144,6 +182,25 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
     const x = e.clientX - rect.left;
     const fraction = Math.max(0, Math.min(1, x / rect.width));
     seekToFraction(fraction);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !currentTrack?.duration) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const fraction = Math.max(0, Math.min(1, x / rect.width));
+    hoverRef.current = fraction;
+    setHoverInfo({
+      x,
+      time: formatTime(fraction * currentTrack.duration),
+    });
+  };
+
+  const handleMouseLeave = () => {
+    hoverRef.current = null;
+    setHoverInfo(null);
   };
 
   const seekToFraction = (fraction: number) => {
@@ -210,6 +267,7 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
       const wf = localTrack?.waveform;
       const dur = currentTrack?.duration ?? 0;
       const progress = dur > 0 ? Math.min(1, currentTime / dur) : 0;
+      const hoverProgress = hoverRef.current;
 
       const trackId = currentTrack?.id ? String(currentTrack.id) : '';
       const last = lastRenderRef.current;
@@ -222,6 +280,7 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
         last.trackId === trackId &&
         last.isPlaying === isPlaying &&
         last.accent === themeColours.played &&
+        last.hover === hoverProgress &&
         wf // Only skip for static waveforms; live oscilloscope always needs update
       ) {
         rafRef.current = requestAnimationFrame(draw);
@@ -231,9 +290,9 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
       ctx.clearRect(0, 0, width, h);
 
       if (wf && wf.length > 0) {
-        drawStaticWaveform(ctx, width, h, wf, progress, themeColours);
+        drawStaticWaveform(ctx, width, h, wf, progress, themeColours, hoverProgress);
       } else {
-        drawLiveOscilloscope(ctx, width, h, themeColours.live);
+        drawLiveOscilloscope(ctx, width, h, themeColours.live, hoverProgress);
       }
 
       last.progress = progress;
@@ -242,6 +301,7 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
       last.trackId = trackId;
       last.isPlaying = isPlaying;
       last.accent = themeColours.played;
+      last.hover = hoverProgress;
 
       rafRef.current = requestAnimationFrame(draw);
     }
@@ -257,9 +317,11 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
     <div
       ref={wrapperRef}
       onClick={handleSeek}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}
       tabIndex={0}
-      style={{ width: '100%', height, cursor: 'pointer' }}
+      style={{ width: '100%', height, cursor: 'pointer', position: 'relative' }}
       title="Click to seek or use arrow keys"
     >
       <canvas
@@ -271,6 +333,38 @@ export const WaveformLine = React.memo(({ height = 48 }: WaveformLineProps) => {
         }
         style={{ display: 'block' }}
       />
+
+      <AnimatePresence>
+        {hoverInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            style={{
+              position: 'absolute',
+              top: -32,
+              left: hoverInfo.x,
+              transform: 'translateX(-50%)',
+              background: 'rgba(5, 5, 5, 0.8)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '2px',
+              fontSize: '0.65rem',
+              fontFamily: 'var(--font-mono)',
+              color: '#fff',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+              zIndex: 10,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            }}
+          >
+            <span style={{ opacity: 0.5, marginRight: '0.25rem' }}>SEEK:</span>
+            {hoverInfo.time}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

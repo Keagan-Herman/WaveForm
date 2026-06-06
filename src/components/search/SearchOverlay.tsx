@@ -123,21 +123,29 @@ export function SearchOverlay({
   }
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, x: -5 },
+    hidden: { opacity: 0, x: -8, filter: 'blur(4px)' },
     visible: {
       opacity: 1,
       x: 0,
-      transition: { duration: 0.3, ease: 'easeOut' },
+      filter: 'blur(0px)',
+      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
   return (
     <div style={styles.panel}>
       <div style={styles.inputArea}>
+        <div style={styles.labelRow}>
+          <span style={styles.panelLabel}>REGISTRY_INDEX</span>
+          <span style={{ ...styles.panelStatus, color: isLoading ? accentColour : 'inherit' }}>
+            {isLoading ? 'SCANNING...' : 'IDLE'}
+          </span>
+        </div>
         <div
           style={{
             ...styles.inputWrap,
             borderColor: isInputFocused ? accentColour : 'var(--border-color)',
+            boxShadow: isInputFocused ? `0 0 15px ${accentColour}22` : 'none',
           }}
         >
           <input
@@ -151,13 +159,31 @@ export function SearchOverlay({
             onFocus={() => setIsInputFocused(true)}
             onBlur={() => setIsInputFocused(false)}
           />
-          {isLoading && <div style={{ ...styles.scanner, backgroundColor: accentColour }} />}
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{
+                  scaleX: [0, 1, 0],
+                  x: ['0%', '0%', '100%'],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                style={{ ...styles.scanner, backgroundColor: accentColour }}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {isFiltered && (
         <div style={{ ...styles.filterTag, color: accentColour }}>
-          × {visibleTracks.length} filtered
+          <span style={{ opacity: 0.5 }}>RESULTS_FILTERED:</span> {visibleTracks.length}_ITEMS
         </div>
       )}
 
@@ -194,20 +220,65 @@ export function SearchOverlay({
           </motion.div>
         )}
 
-        {error && <div style={styles.errorState}>Connection lost — try again.</div>}
+        {error && (
+          <div style={{ ...styles.errorState, color: '#ff4444' }}>
+            [ERROR]: CONNECTION_TIMEOUT · RETRYING_HANDSHAKE...
+          </div>
+        )}
 
         {!error && !query.trim() && visibleTracks.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.emptyState}>
-            <div style={styles.emptyIcon}>
-              <motion.div
-                animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.05, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                ■
-              </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={styles.emptyState}
+          >
+            <div style={styles.emptyHeader}>
+              <div style={{ ...styles.statusDot, backgroundColor: accentColour }} />
+              <span style={styles.statusText}>SYSTEM_READY</span>
             </div>
-            <div style={styles.emptyText}>Search tracks and artists</div>
-            <div style={styles.hintText}>/ focus · space play · ↑↓ navigate</div>
+            <div style={styles.emptyBody}>
+              <div style={styles.emptyIcon}>
+                <motion.div
+                  animate={{
+                    opacity: [0.2, 0.5, 0.2],
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 90, 180, 270, 360],
+                  }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect
+                      x="4"
+                      y="4"
+                      width="16"
+                      height="16"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeDasharray="2 2"
+                    />
+                    <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                </motion.div>
+              </div>
+              <div style={styles.emptyText}>Await Input Signal</div>
+              <div style={styles.hintContainer}>
+                <div style={styles.hintItem}>
+                  <span style={styles.hintKey}>/</span>
+                  <span style={styles.hintDesc}>FOCUS</span>
+                </div>
+                <div style={styles.hintItem}>
+                  <span style={styles.hintKey}>SPACE</span>
+                  <span style={styles.hintDesc}>PLAY</span>
+                </div>
+                <div style={styles.hintItem}>
+                  <span style={styles.hintKey}>↑↓</span>
+                  <span style={styles.hintDesc}>NAV</span>
+                </div>
+              </div>
+            </div>
+            <div style={styles.emptyFooter}>
+              <span style={{ opacity: 0.3 }}>WAVEFORM_OS_V2.5 // UI_PRECISION_INSTRUMENT</span>
+            </div>
           </motion.div>
         )}
       </div>
@@ -225,20 +296,45 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
+    gap: '0.75rem',
     borderBottom: '1px solid var(--border-color)',
+    background: 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
+  },
+  labelRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0 0.25rem',
+  },
+  panelLabel: {
+    fontSize: '0.55rem',
+    letterSpacing: '0.2em',
+    opacity: 0.4,
+    fontWeight: 700,
+  },
+  panelStatus: {
+    fontSize: '0.55rem',
+    letterSpacing: '0.15em',
+    opacity: 0.6,
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
   },
   inputWrap: {
     position: 'relative',
     border: '1px solid var(--border-color)',
-    padding: '0.5rem 0.75rem',
-    backgroundColor: 'rgba(255,255,255,0.01)',
-    transition: 'border-color 0.2s ease',
+    padding: '0.65rem 0.85rem',
+    backgroundColor: 'rgba(5, 5, 5, 0.4)',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    borderRadius: '2px',
   },
   input: {
     width: '100%',
     fontSize: '0.85rem',
-    letterSpacing: '-0.01em',
+    letterSpacing: '0.02em',
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
+    color: 'var(--text-color)',
   },
   scanner: {
     position: 'absolute',
@@ -246,8 +342,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     height: 1,
     width: '100%',
-    opacity: 0.5,
-    animation: 'shimmer 1.5s infinite linear',
+    transformOrigin: 'left',
   },
   filterTag: {
     fontSize: '0.6rem',
@@ -269,31 +364,87 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   emptyState: {
-    padding: '3rem 1.5rem',
+    padding: '0',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
-    opacity: 0.4,
-    position: 'relative',
-    overflow: 'hidden',
+    height: '280px',
     border: '1px solid var(--border-color)',
     background: 'rgba(255,255,255,0.01)',
-    marginTop: '1rem',
+    marginTop: '1.5rem',
+    borderRadius: '4px',
+    overflow: 'hidden',
+  },
+  emptyHeader: {
+    padding: '0.75rem 1rem',
+    borderBottom: '1px solid var(--border-color)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    background: 'rgba(255,255,255,0.02)',
+  },
+  statusDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+  },
+  statusText: {
+    fontSize: '0.55rem',
+    letterSpacing: '0.2em',
+    opacity: 0.5,
+    fontWeight: 700,
+  },
+  emptyBody: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1.25rem',
+    padding: '2rem',
   },
   emptyIcon: {
-    fontSize: '1rem',
+    opacity: 0.3,
+    color: 'inherit',
   },
   emptyText: {
-    fontSize: '0.7rem',
+    fontSize: '0.65rem',
     textTransform: 'uppercase',
-    letterSpacing: '0.2em',
+    letterSpacing: '0.3em',
+    fontWeight: 700,
+    opacity: 0.4,
+  },
+  hintContainer: {
+    display: 'flex',
+    gap: '1.5rem',
+    marginTop: '0.5rem',
+  },
+  hintItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.25rem',
+  },
+  hintKey: {
+    fontSize: '0.6rem',
+    fontFamily: 'var(--font-mono)',
+    background: 'rgba(255,255,255,0.05)',
+    padding: '0.1rem 0.4rem',
+    borderRadius: '2px',
+    border: '1px solid var(--border-color)',
+    opacity: 0.6,
+  },
+  hintDesc: {
+    fontSize: '0.5rem',
+    letterSpacing: '0.1em',
+    opacity: 0.3,
     fontWeight: 600,
   },
-  hintText: {
-    fontSize: '0.6rem',
-    letterSpacing: '0.1em',
-    opacity: 0.6,
-    marginTop: '0.25rem',
+  emptyFooter: {
+    padding: '0.5rem 1rem',
+    borderTop: '1px solid var(--border-color)',
+    fontSize: '0.5rem',
+    fontFamily: 'var(--font-mono)',
+    textAlign: 'center',
   },
   errorState: {
     fontSize: '0.65rem',
