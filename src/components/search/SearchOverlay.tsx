@@ -145,7 +145,10 @@ export function SearchOverlay({
           style={{
             ...styles.inputWrap,
             borderColor: isInputFocused ? accentColour : 'var(--border-color)',
-            boxShadow: isInputFocused ? `0 0 15px ${accentColour}22` : 'none',
+            boxShadow: isInputFocused
+              ? `0 0 15px ${accentColour}22, inset 0 0 10px ${accentColour}11`
+              : 'none',
+            transform: isInputFocused ? 'translateY(-1px)' : 'none',
           }}
         >
           <input
@@ -160,24 +163,37 @@ export function SearchOverlay({
             onBlur={() => setIsInputFocused(false)}
           />
           <AnimatePresence>
-            {isLoading && (
+            {(isLoading || isInputFocused) && (
               <motion.div
                 initial={{ scaleX: 0, opacity: 0 }}
                 animate={{
-                  scaleX: [0, 1, 0],
-                  x: ['0%', '0%', '100%'],
-                  opacity: [0.5, 1, 0.5],
+                  scaleX: isLoading ? [0, 1, 0] : [0, 1],
+                  x: isLoading ? ['0%', '0%', '100%'] : '0%',
+                  opacity: isLoading ? [0.5, 1, 0.5] : [0.2, 0.4],
                 }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
+                  duration: isLoading ? 1.5 : 0.4,
+                  repeat: isLoading ? Infinity : 0,
                   ease: 'easeInOut',
                 }}
                 style={{ ...styles.scanner, backgroundColor: accentColour }}
               />
             )}
           </AnimatePresence>
+          {isInputFocused && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.1, 0.3, 0.1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: `linear-gradient(90deg, transparent, ${accentColour}05, transparent)`,
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </div>
       </div>
 
