@@ -251,6 +251,8 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
   const EXPO_OUT = [0.16, 1, 0.3, 1] as [number, number, number, number]
 
+  const beat = useVisualiserStore(state => state.beat)
+
   const hudItemVariants = {
     hidden: { opacity: 0, x: 20, filter: 'blur(10px)' },
     visible: {
@@ -334,13 +336,25 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               animate="visible"
               style={styles.hudRight}
             >
-              <motion.div variants={hudItemVariants}>
+              <motion.div
+                variants={hudItemVariants}
+                animate={beat ? { scale: 1.02, x: -2 } : { scale: 1, x: 0 }}
+                transition={{ duration: 0.1 }}
+              >
                 <EnergyFlux accent={accent.hex} />
               </motion.div>
-              <motion.div variants={hudItemVariants}>
+              <motion.div
+                variants={hudItemVariants}
+                animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
+                transition={{ duration: 0.12 }}
+              >
                 <FrequencyScrutinizer accent={accent.hex} />
               </motion.div>
-              <motion.div variants={hudItemVariants}>
+              <motion.div
+                variants={hudItemVariants}
+                animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
+                transition={{ duration: 0.14 }}
+              >
                 <WaveformScrutinizer accent={accent.hex} />
               </motion.div>
             </motion.div>

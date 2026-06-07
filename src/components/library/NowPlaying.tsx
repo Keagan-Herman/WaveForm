@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import { getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
@@ -21,6 +22,64 @@ function formatRank(rank: number): string {
   if (rank >= 200_000) return 'Rising'
   if (rank >= 50_000) return 'Known'
   return 'Niche'
+}
+
+function NowPlayingOscilloscope({ accent }: { accent: string }) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+  const smoothedData = React.useRef<Float32Array | null>(null)
+
+  const draw = React.useCallback(
+    (data: Uint8Array) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const w = canvas.width
+      const h = canvas.height
+      ctx.clearRect(0, 0, w, h)
+
+      if (!smoothedData.current || smoothedData.current.length !== data.length) {
+        smoothedData.current = new Float32Array(data.length)
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        smoothedData.current[i] += (data[i] - smoothedData.current[i]) * 0.35
+      }
+
+      ctx.beginPath()
+      ctx.strokeStyle = accent
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.6
+
+      const sliceWidth = w / data.length
+      let x = 0
+
+      for (let i = 0; i < data.length; i++) {
+        const v = smoothedData.current[i] / 128.0
+        const y = (v / 2) * h
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+        x += sliceWidth
+      }
+
+      ctx.stroke()
+    },
+    [accent]
+  )
+
+  const { start, stop } = useAudioAnalyser({ onWaveformData: draw })
+
+  React.useEffect(() => {
+    start()
+    return () => stop()
+  }, [start, stop])
+
+  return (
+    <div style={styles.miniScrutinizer}>
+      <canvas ref={canvasRef} width={100} height={30} style={{ opacity: 0.8 }} />
+    </div>
+  )
 }
 
 function NowPlayingProgress({ accent }: { accent: string }) {
@@ -153,6 +212,16 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
             </div>
           </>
         )}
+
+        <div style={{ ...styles.readoutItem, marginTop: '0.5rem', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <span style={styles.readoutLabel}>WAVEFORM_MONITOR</span>
+            <span style={{ ...styles.readoutValue, fontSize: '0.5rem', opacity: 0.5 }}>
+              REAL-TIME_FFT_STREAM
+            </span>
+          </div>
+          <NowPlayingOscilloscope accent={accent} />
+        </div>
       </div>
 
       {/* 3. Temporal Scrutiny (Scrubber) */}
@@ -271,6 +340,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     fontFamily: 'var(--font-mono)',
     fontWeight: 500,
+  },
+  miniScrutinizer: {
+    height: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    background: 'rgba(0,0,0,0.2)',
+    padding: '0 0.5rem',
+    borderRadius: '2px',
+    border: '1px solid rgba(255,255,255,0.03)',
   },
   scrubberContainer: {
     marginTop: 'auto',

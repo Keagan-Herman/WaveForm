@@ -162,7 +162,16 @@ export const useVisualiserStore = create<VisualiserStore>()(
       {
         name: 'visualiser-settings',
         partialize: state => ({
+          quality: state.quality,
+          visualLayer: state.visualLayer,
+          bloomEnabled: state.bloomEnabled,
+          bloomIntensity: state.bloomIntensity,
           godRaysEnabled: state.godRaysEnabled,
+          chromaticAberrationEnabled: state.chromaticAberrationEnabled,
+          vignetteEnabled: state.vignetteEnabled,
+          filmGrainEnabled: state.filmGrainEnabled,
+          dofEnabled: state.dofEnabled,
+          autoCycle: state.autoCycle,
         }),
       }
     )
