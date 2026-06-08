@@ -867,7 +867,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    transition: 'all 0.3s ease',
+    transition:
+      'background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease',
     fontWeight: 600,
   },
   buttonLabel: {

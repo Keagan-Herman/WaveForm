@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion'
 import { useDeezerSearch } from '@/hooks/useDeezerSearch'
 import { usePlayerStore } from '@/stores/playerStore'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -25,6 +25,7 @@ export function SearchOverlay({
   const [isInputFocused, setIsInputFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const prefersReducedMotion = useReducedMotion()
   const { tracks, isLoading, error } = useDeezerSearch(query)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
@@ -135,12 +136,6 @@ export function SearchOverlay({
   return (
     <div style={styles.panel}>
       <div style={styles.inputArea}>
-        <div style={styles.labelRow}>
-          <span style={styles.panelLabel}>REGISTRY_INDEX</span>
-          <span style={{ ...styles.panelStatus, color: isLoading ? accentColour : 'inherit' }}>
-            {isLoading ? 'SCANNING...' : 'IDLE'}
-          </span>
-        </div>
         <div
           style={{
             ...styles.inputWrap,
@@ -156,6 +151,7 @@ export function SearchOverlay({
             style={styles.input}
             type="text"
             placeholder="Search tracks and artists"
+            aria-label="Search tracks and artists"
             value={query}
             onChange={e => setQuery(e.target.value)}
             spellCheck={false}
@@ -199,7 +195,7 @@ export function SearchOverlay({
 
       {isFiltered && (
         <div style={{ ...styles.filterTag, color: accentColour }}>
-          <span style={{ opacity: 0.5 }}>RESULTS_FILTERED:</span> {visibleTracks.length}_ITEMS
+          {visibleTracks.length} results filtered
         </div>
       )}
 
@@ -237,8 +233,8 @@ export function SearchOverlay({
         )}
 
         {error && (
-          <div style={{ ...styles.errorState, color: '#ff4444' }}>
-            [ERROR]: CONNECTION_TIMEOUT · RETRYING_HANDSHAKE...
+          <div role="alert" style={{ ...styles.errorState, color: 'var(--color-error, #ff4444)' }}>
+            Couldn&apos;t reach Deezer. Check your connection and try again.
           </div>
         )}
 
@@ -250,16 +246,20 @@ export function SearchOverlay({
           >
             <div style={styles.emptyHeader}>
               <div style={{ ...styles.statusDot, backgroundColor: accentColour }} />
-              <span style={styles.statusText}>SYSTEM_READY</span>
+              <span style={styles.statusText}>Ready</span>
             </div>
             <div style={styles.emptyBody}>
               <div style={styles.emptyIcon}>
                 <motion.div
-                  animate={{
-                    opacity: [0.2, 0.5, 0.2],
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 90, 180, 270, 360],
-                  }}
+                  animate={
+                    prefersReducedMotion
+                      ? {}
+                      : {
+                          opacity: [0.2, 0.5, 0.2],
+                          scale: [1, 1.1, 1],
+                          rotate: [0, 90, 180, 270, 360],
+                        }
+                  }
                   transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -276,7 +276,7 @@ export function SearchOverlay({
                   </svg>
                 </motion.div>
               </div>
-              <div style={styles.emptyText}>Await Input Signal</div>
+              <div style={styles.emptyText}>Start typing to search</div>
               <div style={styles.hintContainer}>
                 <div style={styles.hintItem}>
                   <span style={styles.hintKey}>/</span>
@@ -291,9 +291,6 @@ export function SearchOverlay({
                   <span style={styles.hintDesc}>NAV</span>
                 </div>
               </div>
-            </div>
-            <div style={styles.emptyFooter}>
-              <span style={{ opacity: 0.3 }}>WAVEFORM_OS_V2.5 // UI_PRECISION_INSTRUMENT</span>
             </div>
           </motion.div>
         )}
@@ -316,31 +313,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--border-color)',
     background: 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
   },
-  labelRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0 0.25rem',
-  },
-  panelLabel: {
-    fontSize: '0.55rem',
-    letterSpacing: '0.2em',
-    opacity: 0.4,
-    fontWeight: 700,
-  },
-  panelStatus: {
-    fontSize: '0.55rem',
-    letterSpacing: '0.15em',
-    opacity: 0.6,
-    fontWeight: 600,
-    fontFamily: 'var(--font-mono)',
-  },
   inputWrap: {
     position: 'relative',
     border: '1px solid var(--border-color)',
     padding: '0.65rem 0.85rem',
     backgroundColor: 'rgba(5, 5, 5, 0.4)',
-    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    transition:
+      'border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     borderRadius: '2px',
   },
   input: {
@@ -454,13 +433,6 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
     opacity: 0.3,
     fontWeight: 600,
-  },
-  emptyFooter: {
-    padding: '0.5rem 1rem',
-    borderTop: '1px solid var(--border-color)',
-    fontSize: '0.5rem',
-    fontFamily: 'var(--font-mono)',
-    textAlign: 'center',
   },
   errorState: {
     fontSize: '0.65rem',

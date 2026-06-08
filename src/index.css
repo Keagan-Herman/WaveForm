@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@300;400;500;600&display=swap');
 
 *,
 *::before,
@@ -9,8 +9,8 @@
 }
 
 :root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
   /* Layout scale */
   --space-unit: 8px;
@@ -19,6 +19,14 @@
   --space-md: calc(var(--space-unit) * 4);
   --space-lg: calc(var(--space-unit) * 8);
   --space-xl: calc(var(--space-unit) * 12);
+
+  /* Semantic colors */
+  --color-error: #ff4444;
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   /* Borders & Surfaces */
   --border-width: 1px;
@@ -46,7 +54,7 @@ body {
 
 /* Texture overlay for that Japanese paper / Rams plastic feel */
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
@@ -59,20 +67,38 @@ body::before {
 }
 
 /* Typography Overrides */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-code, pre {
+code,
+pre {
   font-family: var(--font-mono);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Skeleton loading shimmer */
 @keyframes shimmer {
-  0% { opacity: 0.04; }
-  50% { opacity: 0.08; }
-  100% { opacity: 0.04; }
+  0% {
+    opacity: 0.04;
+  }
+  50% {
+    opacity: 0.08;
+  }
+  100% {
+    opacity: 0.04;
+  }
 }
 
 /* Focus ring — visible for keyboard navigation */
@@ -84,7 +110,8 @@ code, pre {
 }
 
 /* Mechanical Button Style (Rams/Dreyfuss) */
-button, [role="button"] {
+button,
+[role='button'] {
   background: none;
   border: none;
   font-family: inherit;
@@ -94,11 +121,16 @@ button, [role="button"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
   position: relative;
 }
 
-button:active, [role="button"]:active {
+button:active,
+[role='button']:active {
   transform: translateY(1px);
 }
 

@@ -7,15 +7,19 @@ export function VisualSettings() {
   const setShowSettings = useVisualiserStore(state => state.setShowSettings)
 
   const {
-    quality, setQuality,
-    autoCycle, setAutoCycle,
-    bloomEnabled, setFxEnabled,
+    quality,
+    setQuality,
+    autoCycle,
+    setAutoCycle,
+    bloomEnabled,
+    setFxEnabled,
     godRaysEnabled,
     chromaticAberrationEnabled,
     vignetteEnabled,
     filmGrainEnabled,
     dofEnabled,
-    bloomIntensity, setBloomIntensity
+    bloomIntensity,
+    setBloomIntensity,
   } = useVisualiserStore()
 
   return (
@@ -123,7 +127,18 @@ export function VisualSettings() {
                       background: fx.val ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
                       borderColor: fx.val ? 'rgba(255,255,255,0.1)' : 'transparent',
                     }}
-                    onClick={() => setFxEnabled(fx.id as 'bloom' | 'godRays' | 'chromaticAberration' | 'vignette' | 'filmGrain' | 'dof', !fx.val)}
+                    onClick={() =>
+                      setFxEnabled(
+                        fx.id as
+                          | 'bloom'
+                          | 'godRays'
+                          | 'chromaticAberration'
+                          | 'vignette'
+                          | 'filmGrain'
+                          | 'dof',
+                        !fx.val
+                      )
+                    }
                   >
                     <span style={{ ...styles.fxLabel, opacity: fx.val ? 1 : 0.5 }}>{fx.label}</span>
                     <div
@@ -200,12 +215,12 @@ const styles: Record<string, React.CSSProperties> = {
     WebkitBackdropFilter: 'blur(64px) saturate(2)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     boxShadow: '0 40px 80px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
-    borderRadius: '24px',
+    borderRadius: '4px',
     padding: '2rem',
     zIndex: 100,
     color: '#fff',
     pointerEvents: 'auto',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--font-mono)',
   },
   header: {
     display: 'flex',
@@ -232,7 +247,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s ease',
+    transition: 'background-color 0.2s ease, opacity 0.2s ease',
   },
   section: {
     marginBottom: '1.2rem',
@@ -248,14 +263,15 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     padding: '0.5rem',
     fontSize: '0.65rem',
-    borderRadius: '6px',
+    borderRadius: '4px',
     border: '1px solid',
     color: '#fff',
     cursor: 'pointer',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
     fontWeight: 600,
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition:
+      'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   checkboxLabel: {
     fontSize: '0.75rem',
@@ -277,9 +293,10 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     padding: '0.75rem 0.85rem',
     background: 'rgba(255,255,255,0.03)',
-    borderRadius: '12px',
+    borderRadius: '4px',
     cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    transition:
+      'background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     border: '1px solid rgba(255,255,255,0.05)',
   },
   fxLabel: {
@@ -368,7 +385,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s ease',
+    transition: 'background-color 0.2s ease, border-color 0.2s ease',
   },
   checkmark: {
     width: '6px',

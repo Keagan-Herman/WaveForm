@@ -1,11 +1,12 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { usePlayerStore } from '../../stores/playerStore';
-import { useUIStore } from '../../stores/uiStore';
-import { WaveformLine } from '../visualiser/WaveformLine';
-import { LocalFileLoader } from './LocalFileLoader';
-import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track';
-import type { AlbumColour } from '../../hooks/useAlbumColour';
+import React from 'react'
+import { motion } from 'framer-motion'
+import { usePlayerStore } from '../../stores/playerStore'
+import { useUIStore } from '../../stores/uiStore'
+import { WaveformLine } from '../visualiser/WaveformLine'
+import { LocalFileLoader } from './LocalFileLoader'
+import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track'
+import type { DeezerTrack } from '../../types/track'
+import type { AlbumColour } from '../../hooks/useAlbumColour'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ function IconPrev() {
       <path d="M4 3V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
       <path d="M12 3L6 8L12 13V3Z" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
 function IconNext() {
@@ -24,7 +25,7 @@ function IconNext() {
       <path d="M12 3V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
       <path d="M4 3L10 8L4 13V3Z" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
 function IconPlay() {
@@ -32,7 +33,7 @@ function IconPlay() {
     <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
       <path d="M6 4L14 9L6 14V4Z" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
 function IconPause() {
@@ -41,14 +42,14 @@ function IconPause() {
       <rect x="6" y="4" width="2" height="10" fill="currentColor" />
       <rect x="10" y="4" width="2" height="10" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
 function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return '00:00';
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  if (!isFinite(seconds) || seconds < 0) return '00:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 // ─── Physical Control Button ──────────────────────────────────────────────────
@@ -60,11 +61,11 @@ function PhysicalBtn({
   active = false,
   accentColor,
 }: {
-  onClick: () => void;
-  children: React.ReactNode;
-  label: string;
-  active?: boolean;
-  accentColor: string;
+  onClick: () => void
+  children: React.ReactNode
+  label: string
+  active?: boolean
+  accentColor: string
 }) {
   return (
     <motion.button
@@ -82,14 +83,14 @@ function PhysicalBtn({
     >
       {children}
     </motion.button>
-  );
+  )
 }
 
 // ─── PlaybackProgress ─────────────────────────────────────────────────────────
 
 function PlaybackProgress() {
-  const currentTime = usePlayerStore((s) => s.currentTime);
-  const duration = usePlayerStore((s) => s.currentTrack?.duration ?? 0);
+  const currentTime = usePlayerStore(s => s.currentTime)
+  const duration = usePlayerStore(s => s.currentTrack?.duration ?? 0)
 
   return (
     <div style={styles.progressContainer}>
@@ -99,20 +100,21 @@ function PlaybackProgress() {
       </div>
       <span style={styles.timeLabel}>{duration > 0 ? formatTime(duration) : '00:00'}</span>
     </div>
-  );
+  )
 }
 
 // ─── PlayerBar ────────────────────────────────────────────────────────────────
 
 export function PlayerBar({ accent }: { accent: AlbumColour }) {
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const togglePlay = usePlayerStore((s) => s.togglePlay);
-  const nextTrack = usePlayerStore((s) => s.nextTrack);
-  const prevTrack = usePlayerStore((s) => s.prevTrack);
+  const currentTrack = usePlayerStore(s => s.currentTrack)
+  const isPlaying = usePlayerStore(s => s.isPlaying)
+  const togglePlay = usePlayerStore(s => s.togglePlay)
+  const nextTrack = usePlayerStore(s => s.nextTrack)
+  const prevTrack = usePlayerStore(s => s.prevTrack)
 
-  const trackCover = currentTrack ? getTrackCover(currentTrack) : '';
-  const trackArtist = currentTrack ? getTrackArtist(currentTrack) : '';
+  const trackCover = currentTrack ? getTrackCover(currentTrack) : ''
+  const trackArtist = currentTrack ? getTrackArtist(currentTrack) : ''
+  const isArtistClickable = !!(currentTrack && isDeezerTrack(currentTrack))
 
   return (
     <motion.footer
@@ -128,19 +130,28 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
       {/* 1. Hardware Details / Track Info */}
       <div style={styles.infoSection}>
         <div style={styles.artFrame}>
-          {trackCover && (
-            <img src={trackCover} alt="" style={styles.art} />
-          )}
+          {trackCover && <img src={trackCover} alt="" style={styles.art} />}
         </div>
         <div style={styles.meta}>
           <div style={styles.title}>{currentTrack?.title || 'System Standby'}</div>
-          <div style={styles.artist} onClick={() => {
-             if (currentTrack && isDeezerTrack(currentTrack)) {
-               useUIStore.getState().setSelectedArtistId(currentTrack.artist.id);
-             }
-          }}>
+          <button
+            style={{
+              ...styles.artist,
+              cursor: isArtistClickable ? 'pointer' : 'default',
+              opacity: isArtistClickable ? 0.5 : 0.3,
+            }}
+            onClick={() => {
+              if (isArtistClickable) {
+                useUIStore.getState().setSelectedArtistId((currentTrack as DeezerTrack).artist.id)
+              }
+            }}
+            aria-label={
+              isArtistClickable && trackArtist ? `View artist: ${trackArtist}` : undefined
+            }
+            disabled={!isArtistClickable}
+          >
             {trackArtist || 'Ready'}
-          </div>
+          </button>
         </div>
       </div>
 
@@ -150,7 +161,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
           <IconPrev />
         </PhysicalBtn>
         <motion.button
-          whileHover={{ scale: 1.08, boxShadow: `0 0 20px ${accent.hex}44` }}
+          whileHover={{ scale: 1.04, boxShadow: `0 0 20px ${accent.hex}44` }}
           whileTap={{ scale: 0.94 }}
           transition={{ type: 'spring', stiffness: 400, damping: 18 }}
           onClick={togglePlay}
@@ -179,7 +190,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         <LocalFileLoader accent={accent} />
       </div>
     </motion.footer>
-  );
+  )
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -236,6 +247,12 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
     opacity: 0.5,
     cursor: 'pointer',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    color: 'inherit',
+    fontFamily: 'inherit',
+    textAlign: 'left',
   },
   transport: {
     display: 'flex',
@@ -243,14 +260,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.75rem',
   },
   physicalBtn: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     border: '1px solid',
     borderRadius: '2px',
-    transition: 'all 0.1s ease',
+    transition: 'background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease',
   },
   playBtn: {
     width: 44,
@@ -261,7 +278,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-color)',
     borderRadius: '2px',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
-    transition: 'all 0.1s ease',
+    transition:
+      'background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, box-shadow 0.1s ease',
     cursor: 'pointer',
   },
   readoutSection: {
@@ -288,5 +306,5 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
-  }
+  },
 }

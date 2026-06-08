@@ -460,7 +460,6 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    background: 'radial-gradient(circle at center, rgba(255,255,255,0.03), transparent)',
   },
   heroStandby: {
     flex: 1,

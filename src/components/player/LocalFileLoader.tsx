@@ -1,134 +1,134 @@
-import React, { useRef, useState, useCallback, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePlayerStore } from '../../stores/playerStore';
-import { computeWaveform } from '../../hooks/useWaveformPrecompute';
-import { LocalTrack } from '../../types/track';
-import { buildLocalTrack, isAudioFile } from '../../hooks/useLocalFileMetadata';
-import type { AlbumColour } from '../../hooks/useAlbumColour';
+import React, { useRef, useState, useCallback, useId } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { usePlayerStore } from '../../stores/playerStore'
+import { computeWaveform } from '../../hooks/useWaveformPrecompute'
+import { LocalTrack } from '../../types/track'
+import { buildLocalTrack, isAudioFile } from '../../hooks/useLocalFileMetadata'
+import type { AlbumColour } from '../../hooks/useAlbumColour'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type LoadState = 'idle' | 'loading' | 'success' | 'error';
+type LoadState = 'idle' | 'loading' | 'success' | 'error'
 
 // ─── File processing pipeline ─────────────────────────────────────────────────
 
 async function processFile(file: File): Promise<LocalTrack> {
   // Build metadata first — creates the objectUrl we'll reuse for everything
-  const partialTrack = await buildLocalTrack(file);
+  const partialTrack = await buildLocalTrack(file)
 
   try {
-    const { waveform, duration } = await computeWaveform(file);
-    return { ...partialTrack, duration, waveform };
+    const { waveform, duration } = await computeWaveform(file)
+    return { ...partialTrack, duration, waveform }
   } catch (err) {
-    console.error('Failed to compute waveform/duration:', err);
+    console.error('Failed to compute waveform/duration:', err)
     // Return partial track with default duration if decoding fails
-    return { ...partialTrack, duration: 0 };
+    return { ...partialTrack, duration: 0 }
   }
 }
 
 async function processFiles(files: File[]): Promise<LocalTrack[]> {
-  const audioFiles = files.filter(isAudioFile);
-  if (!audioFiles.length) throw new Error('No supported audio files found.');
+  const audioFiles = files.filter(isAudioFile)
+  if (!audioFiles.length) throw new Error('No supported audio files found.')
 
   // Process with limited concurrency to avoid memory spikes with many large files
-  const concurrencyLimit = 2;
-  const results: LocalTrack[] = [];
-  const remaining = [...audioFiles];
+  const concurrencyLimit = 2
+  const results: LocalTrack[] = []
+  const remaining = [...audioFiles]
 
   async function worker() {
     while (remaining.length > 0) {
-      const file = remaining.shift();
+      const file = remaining.shift()
       if (file) {
-        results.push(await processFile(file));
+        results.push(await processFile(file))
       }
     }
   }
 
-  await Promise.all(Array.from({ length: concurrencyLimit }, worker));
-  return results;
+  await Promise.all(Array.from({ length: concurrencyLimit }, worker))
+  return results
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
-  const inputId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [loadState, setLoadState] = useState<LoadState>('idle');
-  const [isDragOver, setIsDragOver] = useState(false);
-  const registerLocalTrack = usePlayerStore((s) => s.registerLocalTrack);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
-  const setTrack = usePlayerStore((s) => s.setTrack);
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const queue = usePlayerStore((s) => s.queue);
+  const inputId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [loadState, setLoadState] = useState<LoadState>('idle')
+  const [isDragOver, setIsDragOver] = useState(false)
+  const registerLocalTrack = usePlayerStore(s => s.registerLocalTrack)
+  const addToQueue = usePlayerStore(s => s.addToQueue)
+  const setTrack = usePlayerStore(s => s.setTrack)
+  const currentTrack = usePlayerStore(s => s.currentTrack)
+  const queue = usePlayerStore(s => s.queue)
 
   const dispatchTracks = useCallback(
     (tracks: LocalTrack[]) => {
-      tracks.forEach((track) => {
-        registerLocalTrack(track);
-        addToQueue(track);
-      });
+      tracks.forEach(track => {
+        registerLocalTrack(track)
+        addToQueue(track)
+      })
 
       // Auto-play the first loaded track if nothing is currently playing
       if (!currentTrack && tracks.length > 0) {
-        setTrack(tracks[0]);
+        setTrack(tracks[0])
       }
     },
     [registerLocalTrack, addToQueue, setTrack, currentTrack]
-  );
+  )
 
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
-      const arr = Array.from(files);
-      if (!arr.length) return;
+      const arr = Array.from(files)
+      if (!arr.length) return
 
-      setLoadState('loading');
+      setLoadState('loading')
       try {
-        const tracks = await processFiles(arr);
-        dispatchTracks(tracks);
-        setLoadState('success');
-        setTimeout(() => setLoadState('idle'), 1500);
+        const tracks = await processFiles(arr)
+        dispatchTracks(tracks)
+        setLoadState('success')
+        setTimeout(() => setLoadState('idle'), 1500)
       } catch {
-        setLoadState('error');
-        setTimeout(() => setLoadState('idle'), 2000);
+        setLoadState('error')
+        setTimeout(() => setLoadState('idle'), 2000)
       }
     },
     [dispatchTracks]
-  );
+  )
 
   // ── File input ──
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFiles(e.target.files);
+      handleFiles(e.target.files)
       // Reset input so the same file can be re-selected
-      e.target.value = '';
+      e.target.value = ''
     }
-  };
+  }
 
   // ── Drag/drop ──
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    if (e.dataTransfer.files) handleFiles(e.dataTransfer.files)
+  }
 
   // ── Render ──
 
-  const localTrackCount = queue.filter((t) => t.source === 'local').length;
+  const localTrackCount = queue.filter(t => t.source === 'local').length
 
   return (
     <>
@@ -219,14 +219,20 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
               exit={{ opacity: 0 }}
             >
               <line
-                x1="4" y1="4" x2="12" y2="12"
-                stroke="#ff4444"
+                x1="4"
+                y1="4"
+                x2="12"
+                y2="12"
+                stroke="var(--color-error, #ff4444)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <line
-                x1="12" y1="4" x2="4" y2="12"
-                stroke="#ff4444"
+                x1="12"
+                y1="4"
+                x2="4"
+                y2="12"
+                stroke="var(--color-error, #ff4444)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -292,11 +298,6 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
           )}
         </AnimatePresence>
       </motion.button>
-
-      {/* Spinner keyframe — injected once */}
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </>
-  );
+  )
 }

@@ -40,13 +40,13 @@ export function Header({
           variants={logoVariants}
           style={styles.logo}
         >
-          Waveform <span style={{ ...styles.version, color: accent.hex }}>v2.0</span>
+          Waveform
         </motion.h1>
       </div>
 
       <div style={styles.right}>
         <div style={styles.controls}>
-           {filteredTrackIds && (
+          {filteredTrackIds && (
             <button
               onClick={onClearFilter}
               style={{
@@ -111,13 +111,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     margin: 0,
   },
-  version: {
-    fontSize: '0.5rem',
-    letterSpacing: '0.1em',
-    verticalAlign: 'top',
-    marginLeft: '0.5rem',
-    opacity: 0.8,
-  },
   right: {
     display: 'flex',
     alignItems: 'center',
@@ -135,6 +128,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-color)',
     borderRadius: '2px',
     backgroundColor: 'rgba(255,255,255,0.03)',
-    transition: 'all 0.2s ease',
+    transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease',
   },
 }

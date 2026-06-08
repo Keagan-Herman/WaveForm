@@ -2,7 +2,7 @@
  * TrackRow.tsx — Redesigned for Functionalism & Japanese Minimalism
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { formatDuration } from '@/lib/deezerApi'
 import { useUIStore } from '@/stores/uiStore'
@@ -12,20 +12,29 @@ import { Track, getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } fr
 // ─── Sub-components for performance ──────────────────────────────────────────
 
 const BassReactiveGlow = ({ accentColour }: { accentColour: string }) => {
-  const bassPower = useVisualiserStore(state => state.bassPower)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    return useVisualiserStore.subscribe(
+      state => state.bassPower,
+      bassPower => {
+        el.style.opacity = String(0.05 + bassPower * 0.15)
+      }
+    )
+  }, [])
 
   return (
-    <motion.div
-      animate={{
-        opacity: 0.05 + bassPower * 0.15,
-        backgroundColor: accentColour,
-      }}
-      transition={{ duration: 0.1 }}
+    <div
+      ref={ref}
       style={{
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
         zIndex: 0,
+        backgroundColor: accentColour,
+        opacity: 0.05,
       }}
     />
   )
@@ -89,10 +98,8 @@ export const TrackRow = React.memo(
             : isHovered || isFocused
               ? 'rgba(255,255,255,0.015)'
               : 'transparent',
-          borderColor: isActive || isFocused
-            ? accentColour
-            : 'var(--border-color)',
-          borderWidth: (isActive || isFocused) ? '1px' : '1px',
+          borderColor: isActive || isFocused ? accentColour : 'var(--border-color)',
+          borderWidth: isActive || isFocused ? '1px' : '1px',
         }}
         onClick={handleSelect}
         onMouseEnter={() => setIsHovered(true)}
@@ -145,10 +152,7 @@ export const TrackRow = React.memo(
               </div>
             )}
           </div>
-          <div
-            style={styles.artist}
-            onClick={handleArtistClick}
-          >
+          <div style={styles.artist} onClick={handleArtistClick}>
             {getTrackArtist(track)}
           </div>
         </div>
@@ -173,7 +177,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
-    transition: 'all 0.1s ease',
+    transition: 'background-color 0.1s ease, border-color 0.1s ease',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -187,7 +191,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.6rem',
     opacity: 0.3,
     fontWeight: 700,
-    fontFamily: 'var(--font-mono)'
+    fontFamily: 'var(--font-mono)',
   },
   artWrap: {
     width: 32,

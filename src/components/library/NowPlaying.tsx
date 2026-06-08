@@ -1,9 +1,5 @@
-/**
- * NowPlaying.tsx — Redesigned for Functionalism & Japanese Minimalism
- */
-
 import React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -114,6 +110,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   const isPlaying = usePlayerStore(state => state.isPlaying)
   const beat = useVisualiserStore(state => state.beat)
   const bpm = useVisualiserStore(state => state.bpm)
+  const prefersReducedMotion = useReducedMotion()
 
   const accent = accentColour?.hex ?? '#7a8fa6'
 
@@ -134,34 +131,31 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   return (
     <motion.div
       key={currentTrack.id}
-      initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
+      initial={prefersReducedMotion ? false : { opacity: 0, x: 20, filter: 'blur(8px)' }}
       animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       style={styles.wrap}
     >
-      <div style={styles.dossierLabel}>TRACK_DOSSIER_v2.1</div>
-
-      {/* 1. Primary Identity Area */}
+      {/* Identity: art + title block */}
       <div style={styles.identity}>
         <motion.div
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          style={styles.artFrame}
+          style={{
+            ...styles.artFrame,
+            boxShadow: isPlaying ? `0 0 32px ${accent}2e` : 'none',
+            transition: 'box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
           <img src={getTrackCover(currentTrack)} alt="" style={styles.art} />
-          {isPlaying && (
-            <motion.div
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              style={{ ...styles.artGlow, boxShadow: `0 0 40px ${accent}44` }}
-            />
-          )}
         </motion.div>
+
         <div style={styles.titleArea}>
           <div style={styles.trackTitle}>{currentTrack.title}</div>
           <ArtistRipple active={isPlaying} color={accent}>
             <motion.div
               whileHover={{ x: 4 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               style={{ ...styles.artistName, color: accent }}
               onClick={() => {
                 if (isDeezerTrack(currentTrack)) {
@@ -176,67 +170,69 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
         </div>
       </div>
 
-      {/* 2. Technical Readout (Meta) */}
+      {/* Instrument readout */}
       <div style={styles.techReadout}>
+        {/* STATUS — crossfades on play/pause */}
         <div style={styles.readoutItem}>
-          <span style={styles.readoutLabel}>SIGNAL_STATUS</span>
-          <span style={{ ...styles.readoutValue, color: beat ? '#fff' : accent }}>
-            {isPlaying ? 'ACTIVE_BROADCAST' : 'CARRIER_DETECTED'}
-          </span>
+          <span style={styles.readoutLabel}>STATUS</span>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={isPlaying ? 'active' : 'standby'}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              style={{ ...styles.readoutValue, color: beat ? '#fff' : accent }}
+            >
+              {isPlaying ? 'ACTIVE' : 'STANDBY'}
+            </motion.span>
+          </AnimatePresence>
         </div>
-        <div style={styles.readoutItem}>
-          <span style={styles.readoutLabel}>TEMPO_ESTIMATE</span>
-          <span style={{ ...styles.readoutValue, color: beat ? '#fff' : 'inherit' }}>
-            {isPlaying ? `${Math.round(bpm)} BPM` : '---'}
+
+        {/* TEMPO — micro-pulse on beat */}
+        <motion.div
+          animate={
+            beat && !prefersReducedMotion
+              ? { scale: [1, 1.005, 1], transition: { duration: 0.12, ease: 'easeOut' } }
+              : { scale: 1 }
+          }
+          style={styles.readoutItem}
+        >
+          <span style={styles.readoutLabel}>TEMPO</span>
+          <span
+            style={{
+              ...styles.readoutValue,
+              color: beat ? '#fff' : 'inherit',
+              transition: 'color 0.1s ease',
+            }}
+          >
+            {isPlaying ? `${Math.round(bpm)} BPM` : '—'}
           </span>
-        </div>
+        </motion.div>
+
         {releaseYear && (
           <div style={styles.readoutItem}>
-            <span style={styles.readoutLabel}>ARCHIVE_YEAR</span>
+            <span style={styles.readoutLabel}>YEAR</span>
             <span style={styles.readoutValue}>{releaseYear}</span>
           </div>
         )}
+
         {isDeezerTrack(currentTrack) && (
-          <>
-            <div style={styles.readoutItem}>
-              <span style={styles.readoutLabel}>CURRENCY_RANK</span>
-              <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
-            </div>
-            <div style={styles.readoutItem}>
-              <span style={styles.readoutLabel}>ENCODING_SPEC</span>
-              <span style={styles.readoutValue}>MPEG_L3_128K</span>
-            </div>
-            <div style={styles.readoutItem}>
-              <span style={styles.readoutLabel}>SOURCE_NODE</span>
-              <span style={styles.readoutValue}>DEEZER_PUBLIC_CDN</span>
-            </div>
-          </>
+          <div style={styles.readoutItem}>
+            <span style={styles.readoutLabel}>RANK</span>
+            <span style={styles.readoutValue}>{formatRank(currentTrack.rank)}</span>
+          </div>
         )}
 
         <div style={{ ...styles.readoutItem, marginTop: '0.5rem', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <span style={styles.readoutLabel}>WAVEFORM_MONITOR</span>
-            <span style={{ ...styles.readoutValue, fontSize: '0.5rem', opacity: 0.5 }}>
-              REAL-TIME_FFT_STREAM
-            </span>
-          </div>
+          <span style={styles.readoutLabel}>SIGNAL</span>
           <NowPlayingOscilloscope accent={accent} />
         </div>
       </div>
 
-      {/* 3. Temporal Scrutiny (Scrubber) */}
+      {/* Scrubber */}
       <div style={styles.scrubberContainer}>
-        <div style={styles.readoutLabel}>TEMPORAL_PROGRESSION</div>
         <NowPlayingProgress accent={accent} />
-      </div>
-
-      <div style={styles.footerInfo}>
-        <div style={styles.idBadge}>
-          <span style={{ opacity: 0.4 }}>ID:</span> {String(currentTrack.id).slice(0, 8)}...
-        </div>
-        <div style={styles.idBadge}>
-          <span style={{ opacity: 0.4 }}>TYPE:</span> {currentTrack.source.toUpperCase()}
-        </div>
       </div>
     </motion.div>
   )
@@ -250,15 +246,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     gap: '1.5rem',
     position: 'relative',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
-  },
-  dossierLabel: {
-    fontSize: '0.55rem',
-    letterSpacing: '0.3em',
-    opacity: 0.25,
-    fontWeight: 700,
-    borderBottom: '1px solid var(--border-color)',
-    paddingBottom: '0.5rem',
   },
   identity: {
     display: 'flex',
@@ -273,12 +260,6 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'rgba(5, 5, 5, 0.4)',
     position: 'relative',
     flexShrink: 0,
-  },
-  artGlow: {
-    position: 'absolute',
-    inset: 0,
-    pointerEvents: 'none',
-    zIndex: -1,
   },
   art: {
     width: '100%',
@@ -318,11 +299,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '0.6rem',
     borderTop: '1px solid var(--border-color)',
-    paddingTop: '1.25rem',
-    background: 'rgba(255,255,255,0.01)',
-    padding: '1.25rem',
-    borderRadius: '4px',
-    border: '1px solid rgba(255,255,255,0.03)',
+    padding: '1.25rem 0 0',
   },
   readoutItem: {
     display: 'flex',
@@ -348,13 +325,9 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(0,0,0,0.2)',
     padding: '0 0.5rem',
     borderRadius: '2px',
-    border: '1px solid rgba(255,255,255,0.03)',
   },
   scrubberContainer: {
     marginTop: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
   },
   scrubberWrap: {},
   scrubberTrack: {
@@ -367,6 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
     top: 0,
     left: 0,
     height: '100%',
+    transition: 'width 0.1s linear',
   },
   scrubberLabels: {
     display: 'flex',
@@ -375,18 +349,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timeLabel: {
     fontSize: '0.55rem',
-    fontFamily: 'var(--font-mono)',
-    opacity: 0.4,
-    letterSpacing: '0.1em',
-  },
-  footerInfo: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    paddingTop: '1rem',
-    borderTop: '1px solid var(--border-color)',
-  },
-  idBadge: {
-    fontSize: '0.5rem',
     fontFamily: 'var(--font-mono)',
     opacity: 0.4,
     letterSpacing: '0.1em',
