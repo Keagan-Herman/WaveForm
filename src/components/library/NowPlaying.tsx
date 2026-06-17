@@ -7,6 +7,7 @@ import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
 import { ArtistRipple } from '@/components/search/ArtistRipple'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import { getTrackCover, getTrackArtist, getTrackAlbum, isDeezerTrack } from '@/types/track'
+import { usePreloadImage } from '@/hooks/usePreloadImage'
 
 interface NowPlayingProps {
   accent?: AlbumColour
@@ -124,11 +125,16 @@ function NowPlayingProgress({ accent }: { accent: string }) {
 export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
+  const queue = usePlayerStore(state => state.queue)
   const beat = useVisualiserStore(state => state.beat)
   const bpm = useVisualiserStore(state => state.bpm)
   const prefersReducedMotion = useReducedMotion()
 
   const accent = accentColour?.hex ?? '#7a8fa6'
+
+  const currentIdx = currentTrack ? queue.findIndex(t => t.id === currentTrack.id) : -1
+  const nextTrack = currentIdx >= 0 ? (queue[currentIdx + 1] ?? null) : null
+  usePreloadImage(nextTrack ? getTrackCover(nextTrack) : null)
 
   if (!currentTrack) {
     return (
