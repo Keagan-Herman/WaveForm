@@ -45,6 +45,7 @@ interface TrackRowProps {
   isActive: boolean
   isPlaying?: boolean
   isFocused?: boolean
+  isQueued?: boolean
   index: number
   onSelect: (track: Track, index: number) => void
   accentColour?: string
@@ -69,6 +70,7 @@ export const TrackRow = React.memo(
     isActive,
     isPlaying,
     isFocused,
+    isQueued = false,
     index,
     onSelect,
     accentColour = '#ffffff',
@@ -108,6 +110,22 @@ export const TrackRow = React.memo(
         aria-pressed={isActive}
       >
         {isActive && isPlaying && <BassReactiveGlow accentColour={accentColour} />}
+
+        {isQueued && !isActive && (
+          <div
+            data-testid="queue-indicator"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 2,
+              bottom: 2,
+              width: '2px',
+              backgroundColor: accentColour,
+              opacity: 0.35,
+              borderRadius: '0 1px 1px 0',
+            }}
+          />
+        )}
 
         <div style={styles.indexWrap}>
           {isActive ? (

@@ -29,6 +29,7 @@ export function SearchOverlay({
   const { tracks, isLoading, error } = useDeezerSearch(query)
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const isPlaying = usePlayerStore(state => state.isPlaying)
+  const queue = usePlayerStore(state => state.queue)
   const setTrack = usePlayerStore(state => state.setTrack)
   const play = usePlayerStore(state => state.play)
   const addToQueue = usePlayerStore(state => state.addToQueue)
@@ -223,6 +224,7 @@ export function SearchOverlay({
                     isActive={currentTrack?.id === track.id}
                     isPlaying={currentTrack?.id === track.id && isPlaying}
                     isFocused={focusedIndex === i}
+                    isQueued={queue.some(q => q.id === track.id)}
                     onSelect={handleSelectTrack}
                     accentColour={accentColour}
                   />
