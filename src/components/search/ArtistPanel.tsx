@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type CSSProperties } from 'react'
+import { useEffect, useState, useRef, type CSSProperties, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { getArtist, getArtistTopTracks, type DeezerArtist } from '@/lib/deezerApi'
 import { TrackRow } from '@/components/library/TrackRow'
@@ -9,6 +9,31 @@ interface ArtistPanelProps {
   artistId: number
   accentColour: string
   onClose: () => void
+}
+
+function Skeleton({
+  width,
+  height,
+  style,
+}: {
+  width: string | number
+  height: string | number
+  style?: CSSProperties
+}): ReactNode {
+  return (
+    <div
+      data-testid="skeleton"
+      style={{
+        width,
+        height,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        borderRadius: '2px',
+        animation: 'shimmer 1.6s ease infinite',
+        flexShrink: 0,
+        ...style,
+      }}
+    />
+  )
 }
 
 export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProps) {
@@ -131,7 +156,21 @@ export function ArtistPanel({ artistId, accentColour, onClose }: ArtistPanelProp
         </header>
 
         {isLoading ? (
-          <div style={styles.loading}>Loading Artist...</div>
+          <div style={styles.scrollArea}>
+            <div style={styles.hero}>
+              <Skeleton width={80} height={80} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                <Skeleton width="60%" height={22} />
+                <Skeleton width="40%" height={14} />
+              </div>
+            </div>
+            <div style={styles.trackSection}>
+              <Skeleton width={120} height={14} style={{ marginBottom: '1rem' }} />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} width="100%" height={48} style={{ marginBottom: '4px' }} />
+              ))}
+            </div>
+          </div>
         ) : artist ? (
           <div style={styles.scrollArea}>
             <div style={styles.hero}>
