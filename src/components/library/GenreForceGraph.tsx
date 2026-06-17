@@ -39,6 +39,7 @@ interface GenreForceGraphProps {
   height: number
   activeGenre: string | null
   onSelectGenre: (genre: string | null) => void
+  onQueueGenre?: (genreId: string) => void
 }
 
 // Colour scale — maps genre cluster to a hue
@@ -58,6 +59,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
   height,
   activeGenre,
   onSelectGenre,
+  onQueueGenre,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -66,12 +68,17 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
 
   // Keep callback in a ref to avoid stale closures in D3 event handlers
   const onSelectRef = useRef(onSelectGenre)
+  const onQueueGenreRef = useRef(onQueueGenre)
   const activeGenreRef = useRef(activeGenre)
   const lastSimRestartRef = useRef(0)
 
   useEffect(() => {
     onSelectRef.current = onSelectGenre
   }, [onSelectGenre])
+
+  useEffect(() => {
+    onQueueGenreRef.current = onQueueGenre
+  }, [onQueueGenre])
 
   useEffect(() => {
     activeGenreRef.current = activeGenre
@@ -341,7 +348,33 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         const t = typeof d.target === 'string' ? d.target : d.target.id
         return s === activeGenre || t === activeGenre ? 1 : 0.02
       })
-  }, [activeGenre]) // Styling only — no simulation touch
+
+    // Manage QUEUE ALL button on active node
+    d3.select(svg).select('g.labels').selectAll('.queue-btn').remove()
+    if (activeGenre && onQueueGenreRef.current) {
+      const simulation = simulationRef.current
+      const activeNode = simulation?.nodes().find(n => n.id === activeGenre)
+      if (activeNode) {
+        d3.select(svg)
+          .select('g.labels')
+          .append('text')
+          .attr('class', 'queue-btn')
+          .attr('x', clamp(activeNode.x ?? 0, 20, width - 20))
+          .attr('y', clamp(activeNode.y ?? 0, 20, height - 20) - nodeRadius(activeNode) - 14)
+          .style('cursor', 'pointer')
+          .style('font-size', '8px')
+          .style('font-weight', '700')
+          .style('letter-spacing', '0.1em')
+          .style('fill', '#fff')
+          .attr('text-anchor', 'middle')
+          .text('QUEUE ALL')
+          .on('click', event => {
+            event.stopPropagation()
+            onQueueGenreRef.current?.(activeGenre)
+          })
+      }
+    }
+  }, [activeGenre, width, height]) // Styling only — no simulation touch
 
   return (
     <svg

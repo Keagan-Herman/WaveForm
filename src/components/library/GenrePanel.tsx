@@ -24,6 +24,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { GenreForceGraph } from './GenreForceGraph'
 import { useGenreGraph } from '@/hooks/useGenreGraph'
+import { usePlayerStore } from '@/stores/playerStore'
 import type { DeezerTrack } from '@/lib/deezerApi'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
@@ -40,6 +41,21 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: Ge
   const [isHovered, setIsHovered] = useState(false)
 
   const HEIGHT = 280
+
+  const handleQueueGenre = useCallback(
+    (genreId: string) => {
+      const node = graphData.nodes.find(n => n.id === genreId)
+      if (!node) return
+      const genreTracks = tracks.filter(t => node.trackIds.includes(String(t.id)))
+      if (genreTracks.length === 0) return
+      const { clearQueue, addToQueue, setTrack, play } = usePlayerStore.getState()
+      clearQueue()
+      genreTracks.forEach(t => addToQueue(t))
+      setTrack(genreTracks[0])
+      play()
+    },
+    [graphData.nodes, tracks]
+  )
 
   const handleSelectGenre = useCallback(
     (genre: string | null) => {
@@ -131,6 +147,7 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: Ge
             height={HEIGHT}
             activeGenre={activeGenre}
             onSelectGenre={handleSelectGenre}
+            onQueueGenre={handleQueueGenre}
           />
           <p style={{ ...styles.hint, color: accent?.palette.textDim ?? 'rgba(232,245,232,0.15)' }}>
             Click a genre to filter tracks · Drag nodes to rearrange
