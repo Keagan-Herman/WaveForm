@@ -67,6 +67,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
   // Keep callback in a ref to avoid stale closures in D3 event handlers
   const onSelectRef = useRef(onSelectGenre)
   const activeGenreRef = useRef(activeGenre)
+  const lastSimRestartRef = useRef(0)
 
   useEffect(() => {
     onSelectRef.current = onSelectGenre
@@ -111,7 +112,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         'collision',
         d3.forceCollide<GenreNode>().radius(d => nodeRadius(d) + 4)
       )
-      .alphaDecay(0.03) // slower decay = more time to settle
+      .alphaDecay(0.08) // balanced: settles in ~8s without visible quality loss
       .velocityDecay(0.4) // more damping = less jitter
 
     simulationRef.current = simulation
@@ -156,6 +157,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         if (!event.active) simulation.alphaTarget(0.3).restart()
         d.fx = d.x
         d.fy = d.y
+        d3.select(event.sourceEvent.target as SVGCircleElement).style('cursor', 'grabbing')
       })
       .on('drag', (event, d) => {
         d.fx = event.x
@@ -165,6 +167,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
         if (!event.active) simulation.alphaTarget(0)
         d.fx = null
         d.fy = null
+        d3.select(event.sourceEvent.target as SVGCircleElement).style('cursor', 'grab')
       })
 
     // Store drag on the svg element so the data effect can access it
@@ -226,7 +229,7 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .append('circle')
       .attr('r', 0)
       .style('opacity', 0)
-      .style('cursor', 'pointer')
+      .style('cursor', 'grab')
       .on('click', (_event, d) => {
         const current = activeGenreRef.current
         onSelectRef.current(current === d.id ? null : d.id)
@@ -292,8 +295,12 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
     const linkForce = simulation.force<d3.ForceLink<GenreNode, GenreLink>>('link')
     linkForce?.links(links)
 
-    // Gentle restart — alpha 0.3 settles quickly without a violent reshuffle
-    simulation.alpha(0.3).restart()
+    // Gentle restart — throttled so rapid searches don't thrash the simulation
+    const now = Date.now()
+    if (now - lastSimRestartRef.current > 100) {
+      simulation.alpha(0.3).restart()
+      lastSimRestartRef.current = now
+    }
   }, [data]) // Runs when data changes — simulation ref is stable
 
   // ── Update active genre styling without restarting simulation ─────────
