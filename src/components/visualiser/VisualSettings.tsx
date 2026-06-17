@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { useVisualiserStore, type QualityLevel } from '@/stores/visualiserStore'
+import { PresetManager } from './PresetManager'
 
 export function VisualSettings() {
   const showSettings = useVisualiserStore(state => state.showSettings)
@@ -235,6 +236,11 @@ export function VisualSettings() {
                 </div>
               </motion.div>
             )}
+            <motion.div variants={itemVariants} style={styles.divider} />
+
+            <motion.div variants={itemVariants} style={styles.section}>
+              <PresetManager accentColor="#fff" />
+            </motion.div>
           </motion.div>
         </motion.div>
       )}

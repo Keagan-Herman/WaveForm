@@ -11,6 +11,27 @@ import { persist, subscribeWithSelector } from 'zustand/middleware'
 export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
 export type QualityLevel = 'Low' | 'Medium' | 'Epic'
 
+export interface ScenePresetSettings {
+  orbOpacity: number
+  bloomIntensity: number
+  particlesOpacity: number
+  terrainOpacity: number
+  albumGravityOpacity: number
+  bloomEnabled: boolean
+  godRaysEnabled: boolean
+  chromaticAberrationEnabled: boolean
+  vignetteEnabled: boolean
+  filmGrainEnabled: boolean
+  dofEnabled: boolean
+}
+
+export interface ScenePreset {
+  id: string
+  name: string
+  settings: ScenePresetSettings
+  createdAt: number
+}
+
 interface VisualiserStore {
   // Audio reactive state
   beat: boolean
@@ -42,6 +63,12 @@ interface VisualiserStore {
   filmGrainEnabled: boolean
   dofEnabled: boolean
   multisamplingEnabled: boolean
+
+  // Scene presets
+  presets: ScenePreset[]
+  savePreset: (name: string) => void
+  loadPreset: (id: string) => void
+  deletePreset: (id: string) => void
 
   // Fullscreen UI toggles
   showNowPlaying: boolean
@@ -119,6 +146,42 @@ export const useVisualiserStore = create<VisualiserStore>()(
         filmGrainEnabled: true,
         dofEnabled: false,
         multisamplingEnabled: false,
+
+        presets: [],
+
+        savePreset: name =>
+          set(s => {
+            const settings: ScenePresetSettings = {
+              orbOpacity: s.orbOpacity,
+              bloomIntensity: s.bloomIntensity,
+              particlesOpacity: s.particlesOpacity,
+              terrainOpacity: s.terrainOpacity,
+              albumGravityOpacity: s.albumGravityOpacity,
+              bloomEnabled: s.bloomEnabled,
+              godRaysEnabled: s.godRaysEnabled,
+              chromaticAberrationEnabled: s.chromaticAberrationEnabled,
+              vignetteEnabled: s.vignetteEnabled,
+              filmGrainEnabled: s.filmGrainEnabled,
+              dofEnabled: s.dofEnabled,
+            }
+            const entry: ScenePreset = {
+              id: crypto.randomUUID(),
+              name,
+              settings,
+              createdAt: Date.now(),
+            }
+            const next = [...s.presets, entry]
+            return { presets: next.length > 8 ? next.slice(-8) : next }
+          }),
+
+        loadPreset: id =>
+          set(s => {
+            const preset = s.presets.find(p => p.id === id)
+            if (!preset) return s
+            return { ...s, ...preset.settings }
+          }),
+
+        deletePreset: id => set(s => ({ presets: s.presets.filter(p => p.id !== id) })),
 
         showNowPlaying: true,
         toggleNowPlaying: () => set(s => ({ showNowPlaying: !s.showNowPlaying })),
@@ -216,6 +279,7 @@ export const useVisualiserStore = create<VisualiserStore>()(
           dofEnabled: state.dofEnabled,
           multisamplingEnabled: state.multisamplingEnabled,
           autoCycle: state.autoCycle,
+          presets: state.presets,
         }),
       }
     )
