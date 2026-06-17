@@ -60,7 +60,41 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: Ge
     onFilteredTracksChange?.(null)
   }, [tracks, onFilteredTracksChange])
 
-  if (!isLoading && graphData.nodes.length < 3) return null
+  if (!isLoading && graphData.nodes.length < 3) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          opacity: 0.4,
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.6rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+            fontWeight: 700,
+          }}
+        >
+          Topology unavailable
+        </div>
+        <div
+          style={{
+            fontSize: '0.6rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}
+        >
+          Search for more tracks to build the genre map
+        </div>
+      </div>
+    )
+  }
 
   const accentHex = accent?.hex ?? '#1db954'
   const accentDim = accent ? `${accentHex}18` : 'rgba(29,185,84,0.12)'
