@@ -81,39 +81,36 @@ export function Spectrogram({
     offscreenRef.current.height = effectiveHeight
   }, [effectiveWidth, effectiveHeight])
 
-  const draw = useCallback(
-    (data: Uint8Array) => {
-      const canvas = canvasRef.current
-      const offscreen = offscreenRef.current
-      if (!canvas || !offscreen) return
+  const draw = useCallback((data: Uint8Array) => {
+    const canvas = canvasRef.current
+    const offscreen = offscreenRef.current
+    if (!canvas || !offscreen) return
 
-      const ctx = canvas.getContext('2d')
-      const offCtx = offscreen.getContext('2d')
-      if (!ctx || !offCtx) return
+    const ctx = canvas.getContext('2d')
+    const offCtx = offscreen.getContext('2d')
+    if (!ctx || !offCtx) return
 
-      const w = canvas.width
-      const h = canvas.height
-      const colorMap = colorMapRef.current
+    const w = canvas.width
+    const h = canvas.height
+    const colorMap = colorMapRef.current
 
-      // Shift the existing image to the left
-      offCtx.drawImage(canvas, 0, 0)
-      ctx.drawImage(offscreen, -1, 0)
-      // Clear the last column
-      ctx.clearRect(w - 1, 0, 1, h)
+    // Shift the existing image to the left
+    offCtx.drawImage(canvas, 0, 0)
+    ctx.drawImage(offscreen, -1, 0)
+    // Clear the last column
+    ctx.clearRect(w - 1, 0, 1, h)
 
-      const bins = data.length
-      const colHeight = h / bins
+    const bins = data.length
+    const colHeight = h / bins
 
-      for (let i = 0; i < bins; i++) {
-        const value = data[bins - 1 - i]
-        if (value < 4) continue // Minor threshold for noise/silence
+    for (let i = 0; i < bins; i++) {
+      const value = data[bins - 1 - i]
+      if (value < 4) continue // Minor threshold for noise/silence
 
-        ctx.fillStyle = colorMap[value] || 'transparent'
-        ctx.fillRect(w - 1, i * colHeight, 1, colHeight + 0.5)
-      }
-    },
-    []
-  )
+      ctx.fillStyle = colorMap[value] || 'transparent'
+      ctx.fillRect(w - 1, i * colHeight, 1, colHeight + 0.5)
+    }
+  }, [])
 
   const { start, stop } = useAudioAnalyser({ onFrequencyData: draw })
 
@@ -211,7 +208,7 @@ export function Spectrogram({
             style={{
               position: 'absolute',
               bottom: 4,
-              left: Math.min(hoverInfo.x + 6, (width || initialWidth) - 80),
+              left: hoverInfo.x + 120 > effectiveWidth ? hoverInfo.x - 120 : hoverInfo.x + 6,
               fontFamily: 'monospace',
               fontSize: '0.65rem',
               color: accentHex,
