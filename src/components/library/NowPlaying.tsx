@@ -81,14 +81,30 @@ function NowPlayingOscilloscope({ accent }: { accent: string }) {
 function NowPlayingProgress({ accent }: { accent: string }) {
   const currentTime = usePlayerStore(s => s.currentTime)
   const duration = usePlayerStore(s => s.currentTrack?.duration ?? 0)
+  const seekTo = usePlayerStore(s => s.seekTo)
   const progress = duration > 0 ? currentTime / duration : 0
 
   const durationStr = `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
   const elapsedStr = `${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`
 
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (duration === 0) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1))
+    seekTo(ratio * duration)
+  }
+
   return (
     <div style={styles.scrubberWrap}>
-      <div style={styles.scrubberTrack}>
+      <div
+        style={{ ...styles.scrubberTrack, cursor: duration > 0 ? 'pointer' : 'default' }}
+        onClick={handleSeek}
+        role="slider"
+        aria-label="Playback position"
+        aria-valuenow={Math.round(currentTime)}
+        aria-valuemin={0}
+        aria-valuemax={Math.round(duration)}
+      >
         <div
           style={{
             ...styles.scrubberFill,
@@ -193,7 +209,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
         <motion.div
           animate={
             beat && !prefersReducedMotion
-              ? { scale: [1, 1.005, 1], transition: { duration: 0.12, ease: 'easeOut' } }
+              ? { scale: [1, 1.02, 1], transition: { duration: 0.12, ease: 'easeOut' } }
               : { scale: 1 }
           }
           style={styles.readoutItem}
@@ -278,7 +294,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.02em',
     lineHeight: 1.1,
     marginBottom: '0.5rem',
-    color: '#fff',
+    color: 'var(--text-color)',
   },
   artistName: {
     fontSize: '0.8rem',
@@ -290,7 +306,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   albumTitle: {
     fontSize: '0.8rem',
-    opacity: 0.35,
+    opacity: 0.45,
     letterSpacing: '0.02em',
     marginTop: '0.25rem',
   },
@@ -310,7 +326,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.6rem',
     textTransform: 'uppercase',
     letterSpacing: '0.15em',
-    opacity: 0.3,
+    opacity: 0.45,
     fontWeight: 700,
   },
   readoutValue: {
@@ -350,7 +366,7 @@ const styles: Record<string, React.CSSProperties> = {
   timeLabel: {
     fontSize: '0.55rem',
     fontFamily: 'var(--font-mono)',
-    opacity: 0.4,
+    opacity: 0.45,
     letterSpacing: '0.1em',
   },
   empty: {
@@ -360,7 +376,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     height: '100%',
     gap: '0.5rem',
-    opacity: 0.2,
+    opacity: 0.4,
   },
   emptyIcon: {
     fontSize: '1.5rem',

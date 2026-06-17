@@ -294,13 +294,13 @@ const styles: Record<string, React.CSSProperties> = {
   timeLabel: {
     fontSize: '0.65rem',
     fontFamily: 'monospace',
-    opacity: 0.4,
+    opacity: 0.45,
     width: '40px',
   },
   waveformWrap: {
     flex: 1,
     height: 32,
-    opacity: 0.3,
+    opacity: 0.5,
   },
   utilitySection: {
     display: 'flex',

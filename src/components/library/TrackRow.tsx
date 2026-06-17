@@ -55,9 +55,9 @@ const PlayingIndicator = ({ color }: { color: string }) => (
     animate={{ opacity: [0.3, 1, 0.3] }}
     transition={{ duration: 1, repeat: Infinity }}
     style={{
-      width: '6px',
-      height: '6px',
-      borderRadius: '50%',
+      width: '5px',
+      height: '5px',
+      borderRadius: '1px',
       backgroundColor: color,
     }}
   />
@@ -189,7 +189,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   index: {
     fontSize: '0.6rem',
-    opacity: 0.3,
+    opacity: 0.45,
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
   },
@@ -219,21 +219,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
-    opacity: 0.4,
+    opacity: 0.45,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   album: {
     fontSize: '0.65rem',
-    opacity: 0.3,
+    opacity: 0.45,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
   duration: {
     fontSize: '0.65rem',
-    opacity: 0.3,
+    opacity: 0.45,
     textAlign: 'right',
     fontFamily: 'var(--font-mono)',
   },

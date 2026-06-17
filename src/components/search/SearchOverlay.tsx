@@ -251,16 +251,8 @@ export function SearchOverlay({
             <div style={styles.emptyBody}>
               <div style={styles.emptyIcon}>
                 <motion.div
-                  animate={
-                    prefersReducedMotion
-                      ? {}
-                      : {
-                          opacity: [0.2, 0.5, 0.2],
-                          scale: [1, 1.1, 1],
-                          rotate: [0, 90, 180, 270, 360],
-                        }
-                  }
-                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                  animate={prefersReducedMotion ? {} : { opacity: [0.15, 0.35, 0.15] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <rect
@@ -385,7 +377,7 @@ const styles: Record<string, React.CSSProperties> = {
   statusText: {
     fontSize: '0.55rem',
     letterSpacing: '0.2em',
-    opacity: 0.5,
+    opacity: 0.55,
     fontWeight: 700,
   },
   emptyBody: {
@@ -406,7 +398,7 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.3em',
     fontWeight: 700,
-    opacity: 0.4,
+    opacity: 0.5,
   },
   hintContainer: {
     display: 'flex',
@@ -431,7 +423,7 @@ const styles: Record<string, React.CSSProperties> = {
   hintDesc: {
     fontSize: '0.5rem',
     letterSpacing: '0.1em',
-    opacity: 0.3,
+    opacity: 0.45,
     fontWeight: 600,
   },
   errorState: {

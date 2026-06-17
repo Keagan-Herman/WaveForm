@@ -239,7 +239,8 @@ function Waveform() {
             borderBottom: isMobile ? '1px solid var(--border-color)' : 'none',
           }}
         >
-          <div style={{ ...styles.sectionHeader, justifyContent: 'flex-end' }}>
+          <div style={styles.sectionHeader}>
+            <span style={styles.sectionTitle}>Library</span>
             <div style={{ ...styles.klimtDot, background: accent.hex }} />
           </div>
           <div style={styles.contentScroll}>
