@@ -22,6 +22,12 @@ function revokeEntry(id: string) {
 
 // ─── Store types ──────────────────────────────────────────────────────────────
 
+export interface ColorHistoryEntry {
+  trackId: string | number
+  hex: string
+  title: string
+}
+
 interface PlayerStore {
   currentTrack: Track | null
   isPlaying: boolean
@@ -29,6 +35,7 @@ interface PlayerStore {
   currentTime: number // seconds — updated by PreviewPlayer on timeupdate
   localTrackCount: number // derived: how many local tracks are in the queue
   isTransitioning: boolean
+  colorHistory: ColorHistoryEntry[]
 
   // Playback
   setTrack: (track: Track) => void
@@ -43,6 +50,9 @@ interface PlayerStore {
   clearQueue: () => void
   nextTrack: () => void
   prevTrack: () => void
+
+  // Color history
+  pushColorHistory: (entry: ColorHistoryEntry) => void
 
   // Local file management
   registerLocalTrack: (track: LocalTrack) => void
@@ -61,6 +71,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   currentTime: 0,
   localTrackCount: 0,
   isTransitioning: false,
+  colorHistory: [],
 
   // ── Playback ──
 
@@ -77,6 +88,16 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (audio) audio.currentTime = time
     set({ currentTime: time })
   },
+
+  // ── Color history ──
+
+  pushColorHistory: entry =>
+    set(s => {
+      const last = s.colorHistory[s.colorHistory.length - 1]
+      if (last?.trackId === entry.trackId) return s
+      const next = [...s.colorHistory, entry]
+      return { colorHistory: next.length > 20 ? next.slice(-20) : next }
+    }),
 
   // ── Queue ──
 

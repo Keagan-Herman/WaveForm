@@ -4,6 +4,7 @@ import { usePlayerStore } from '../../stores/playerStore'
 import { useUIStore } from '../../stores/uiStore'
 import { WaveformLine } from '../visualiser/WaveformLine'
 import { LocalFileLoader } from './LocalFileLoader'
+import { ColorHistoryStrip } from './ColorHistoryStrip'
 import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track'
 import type { DeezerTrack } from '../../types/track'
 import type { AlbumColour } from '../../hooks/useAlbumColour'
@@ -189,6 +190,8 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
       <div style={styles.utilitySection}>
         <LocalFileLoader accent={accent} />
       </div>
+
+      <ColorHistoryStrip />
     </motion.footer>
   )
 }

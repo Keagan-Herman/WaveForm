@@ -125,7 +125,14 @@ function Waveform() {
     }
     const status = isPlaying ? '▶' : '⏸'
     document.title = `${status} ${currentTrack.title} · ${currentTrack.artist.name} | Waveform`
-  }, [currentTrack, isPlaying])
+    if (accent.hex && accent.hex !== '#7a8fa6') {
+      usePlayerStore.getState().pushColorHistory({
+        trackId: currentTrack.id,
+        hex: accent.hex,
+        title: currentTrack.title,
+      })
+    }
+  }, [currentTrack, isPlaying, accent.hex])
 
   useEffect(() => {
     if (hasIntroPlayed) return
