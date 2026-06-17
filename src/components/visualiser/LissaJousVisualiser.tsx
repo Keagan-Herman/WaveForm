@@ -25,6 +25,38 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 
+// Circular buffer for trail points — avoids per-frame array allocation
+interface TrailBuffer {
+  data: Float32Array // interleaved [x0, y0, x1, y1, ...]
+  head: number // index of the next write slot (in point units)
+  count: number // number of valid points currently stored
+  capacity: number // max points the buffer can hold
+}
+
+function createTrailBuffer(capacity: number): TrailBuffer {
+  return { data: new Float32Array(capacity * 2), head: 0, count: 0, capacity }
+}
+
+function writePoints(buf: TrailBuffer, points: Array<[number, number]>): void {
+  for (const [x, y] of points) {
+    buf.data[buf.head * 2] = x
+    buf.data[buf.head * 2 + 1] = y
+    buf.head = (buf.head + 1) % buf.capacity
+    if (buf.count < buf.capacity) buf.count++
+  }
+}
+
+// Returns points in order from oldest to newest
+function readPoints(buf: TrailBuffer): Array<[number, number]> {
+  const result: Array<[number, number]> = new Array(buf.count)
+  const start = buf.count < buf.capacity ? 0 : buf.head
+  for (let i = 0; i < buf.count; i++) {
+    const idx = (start + i) % buf.capacity
+    result[i] = [buf.data[idx * 2], buf.data[idx * 2 + 1]]
+  }
+  return result
+}
+
 interface LissajousVisualiserProps {
   size?: number
   accentHue?: number
@@ -40,7 +72,8 @@ export function LissajousVisualiser({
   const frozenRef = useRef(false)
   const [frozen, setFrozen] = useState(false)
   const accentRef = useRef({ hue: accentHue, colour: accentColour })
-  const trailRef = useRef<Array<[number, number]>>([])
+  const TRAIL_CAPACITY = 180 * 512 // maxTrail * max newPoints per frame
+  const trailBufRef = useRef<TrailBuffer>(createTrailBuffer(TRAIL_CAPACITY))
 
   // Pre-calculated lookups to eliminate hot-path allocations
   const hueMapRef = useRef<string[]>([])
@@ -110,9 +143,8 @@ export function LissajousVisualiser({
       newPoints.push([px, py])
     }
 
-    // Trail persistence scales with bass — more bass = longer trail
-    const maxTrail = Math.floor(60 + bassPower * 120)
-    trailRef.current = [...newPoints, ...trailRef.current].slice(0, maxTrail * newPoints.length)
+    writePoints(trailBufRef.current, newPoints)
+    const trail = readPoints(trailBufRef.current)
 
     ctx.clearRect(0, 0, w, h)
 
@@ -133,26 +165,26 @@ export function LissajousVisualiser({
     ctx.lineWidth = 1
     ctx.stroke()
 
-    if (newPoints.length < 2) return
+    if (trail.length < 2) return
 
     const hueMap = hueMapRef.current
     const glowMap = glowMapRef.current
     const glowThresholdSq = (w * 0.42 * 0.7) ** 2
 
-    for (let i = 1; i < newPoints.length; i++) {
-      const progressIdx = Math.floor((i / newPoints.length) * 255)
+    for (let i = 1; i < trail.length; i++) {
+      const progressIdx = Math.floor((i / trail.length) * 255)
 
       ctx.beginPath()
-      ctx.moveTo(newPoints[i - 1][0], newPoints[i - 1][1])
-      ctx.lineTo(newPoints[i][0], newPoints[i][1])
+      ctx.moveTo(trail[i - 1][0], trail[i - 1][1])
+      ctx.lineTo(trail[i][0], trail[i][1])
       ctx.strokeStyle = hueMap[progressIdx]
       ctx.lineWidth = 1 + bassPower * 1.5
       ctx.lineCap = 'round'
       ctx.stroke()
 
       // Glow on high-energy points (using squared distance to avoid Math.sqrt)
-      const px = newPoints[i][0]
-      const py = newPoints[i][1]
+      const px = trail[i][0]
+      const py = trail[i][1]
       const dx = px - cx
       const dy = py - cy
       const distSq = dx * dx + dy * dy
