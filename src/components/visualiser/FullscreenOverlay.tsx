@@ -64,6 +64,7 @@ function FullscreenScene({
   const vignetteEnabled = useVisualiserStore(state => state.vignetteEnabled)
   const filmGrainEnabled = useVisualiserStore(state => state.filmGrainEnabled)
   const dofEnabled = useVisualiserStore(state => state.dofEnabled)
+  const multisamplingEnabled = useVisualiserStore(state => state.multisamplingEnabled)
 
   const bassPower = useVisualiserStore(state => state.bassPower)
   const chromaOffset = useRef(new THREE.Vector2())
@@ -124,7 +125,7 @@ function FullscreenScene({
 
       {quality !== 'Low' && (
         <EffectComposer
-          multisampling={quality === 'Epic' ? 8 : 0}
+          multisampling={multisamplingEnabled && quality === 'Epic' ? 4 : 0}
           frameBufferType={THREE.HalfFloatType}
         >
           {([] as React.ReactElement[]).concat(

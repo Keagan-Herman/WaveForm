@@ -20,6 +20,8 @@ export function VisualSettings() {
     dofEnabled,
     bloomIntensity,
     setBloomIntensity,
+    multisamplingEnabled,
+    setMultisamplingEnabled,
   } = useVisualiserStore()
 
   return (
@@ -159,6 +161,47 @@ export function VisualSettings() {
                   </motion.div>
                 ))}
               </div>
+
+              <motion.div
+                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.06)', x: 4 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                style={{
+                  ...styles.toggleRow,
+                  marginTop: '0.5rem',
+                  background: multisamplingEnabled
+                    ? 'rgba(255,255,255,0.04)'
+                    : 'rgba(255,255,255,0.02)',
+                  borderColor: multisamplingEnabled ? 'rgba(255,255,255,0.1)' : 'transparent',
+                }}
+                onClick={() => setMultisamplingEnabled(!multisamplingEnabled)}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                  <span style={{ ...styles.fxLabel, opacity: multisamplingEnabled ? 1 : 0.5 }}>
+                    MSAA
+                  </span>
+                  <span style={{ fontSize: '0.5rem', opacity: 0.35, letterSpacing: '0.08em' }}>
+                    Epic only · GPU intensive
+                  </span>
+                </div>
+                <div
+                  style={{
+                    ...styles.toggleTrack,
+                    background: multisamplingEnabled
+                      ? 'rgba(255,255,255,0.15)'
+                      : 'rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <motion.div
+                    animate={{
+                      x: multisamplingEnabled ? 16 : 0,
+                      backgroundColor: multisamplingEnabled ? '#fff' : 'rgba(255,255,255,0.3)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    style={styles.toggleThumb}
+                  />
+                </div>
+              </motion.div>
             </motion.div>
 
             {bloomEnabled && (

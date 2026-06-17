@@ -41,6 +41,7 @@ interface VisualiserStore {
   vignetteEnabled: boolean
   filmGrainEnabled: boolean
   dofEnabled: boolean
+  multisamplingEnabled: boolean
 
   // Actions
   setBeat: (beat: boolean) => void
@@ -64,11 +65,18 @@ interface VisualiserStore {
   autoDowngrade: () => void
 
   // Layer controls
-  setLayerOpacity: (layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity', opacity: number) => void
+  setLayerOpacity: (
+    layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity',
+    opacity: number
+  ) => void
 
   // FX controls
-  setFxEnabled: (fx: 'bloom' | 'godRays' | 'chromaticAberration' | 'vignette' | 'filmGrain' | 'dof', enabled: boolean) => void
+  setFxEnabled: (
+    fx: 'bloom' | 'godRays' | 'chromaticAberration' | 'vignette' | 'filmGrain' | 'dof',
+    enabled: boolean
+  ) => void
   setBloomIntensity: (intensity: number) => void
+  setMultisamplingEnabled: (enabled: boolean) => void
 
   // Helper for backward compatibility
   isLowQuality: boolean
@@ -78,87 +86,111 @@ export const useVisualiserStore = create<VisualiserStore>()(
   subscribeWithSelector(
     persist(
       (set, get) => ({
-      beat: false,
-      bassPower: 0,
-      beatConfidence: 0,
-      bpm: 0,
+        beat: false,
+        bassPower: 0,
+        beatConfidence: 0,
+        bpm: 0,
 
-      visualLayer: 'Ambient',
-      isFullscreen: false,
-      quality: 'Medium',
-      autoCycle: false,
-      isRecording: false,
-      showSettings: false,
-      isLowQuality: false,
+        visualLayer: 'Ambient',
+        isFullscreen: false,
+        quality: 'Medium',
+        autoCycle: false,
+        isRecording: false,
+        showSettings: false,
+        isLowQuality: false,
 
-      orbOpacity: 1,
-      terrainOpacity: 1,
-      particlesOpacity: 1,
-      presetsOpacity: 0,
-      albumGravityOpacity: 1,
+        orbOpacity: 1,
+        terrainOpacity: 1,
+        particlesOpacity: 1,
+        presetsOpacity: 0,
+        albumGravityOpacity: 1,
 
-      bloomEnabled: true,
-      bloomIntensity: 1.5,
-      godRaysEnabled: false,
-      chromaticAberrationEnabled: false,
-      vignetteEnabled: true,
-      filmGrainEnabled: true,
-      dofEnabled: false,
+        bloomEnabled: true,
+        bloomIntensity: 1.5,
+        godRaysEnabled: false,
+        chromaticAberrationEnabled: false,
+        vignetteEnabled: true,
+        filmGrainEnabled: true,
+        dofEnabled: false,
+        multisamplingEnabled: false,
 
-      setBeat: beat => set({ beat }),
-      setBassPower: bassPower => set({ bassPower }),
-      setBeatConfidence: beatConfidence => set({ beatConfidence }),
-      setBpm: bpm => set({ bpm }),
-      setAudioData: data => set(data),
+        setBeat: beat => set({ beat }),
+        setBassPower: bassPower => set({ bassPower }),
+        setBeatConfidence: beatConfidence => set({ beatConfidence }),
+        setBpm: bpm => set({ bpm }),
+        setAudioData: data => set(data),
 
-      setVisualLayer: visualLayer => {
-        // Legacy support: when switching layers, we might want to reset opacities
-        // or keep them. For now, let's just update the label.
-        set({ visualLayer })
-      },
-      cycleVisualLayer: () => {
-        const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
-        const current = get().visualLayer
-        const nextIndex = (layers.indexOf(current) + 1) % layers.length
-        set({ visualLayer: layers[nextIndex] })
-      },
+        setVisualLayer: visualLayer => {
+          // Legacy support: when switching layers, we might want to reset opacities
+          // or keep them. For now, let's just update the label.
+          set({ visualLayer })
+        },
+        cycleVisualLayer: () => {
+          const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
+          const current = get().visualLayer
+          const nextIndex = (layers.indexOf(current) + 1) % layers.length
+          set({ visualLayer: layers[nextIndex] })
+        },
 
-      setIsFullscreen: isFullscreen => set({ isFullscreen }),
-      toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
+        setIsFullscreen: isFullscreen => set({ isFullscreen }),
+        toggleFullscreen: () => set(state => ({ isFullscreen: !state.isFullscreen })),
 
-      setQuality: quality => set({ quality, isLowQuality: quality === 'Low' }),
-      setAutoCycle: autoCycle => set({ autoCycle }),
-      setIsRecording: isRecording => set({ isRecording }),
-      setShowSettings: showSettings => set({ showSettings }),
-      autoDowngrade: () => {
-        const { quality } = get()
-        if (quality === 'Epic') set({ quality: 'Medium' })
-        else if (quality === 'Medium') set({ quality: 'Low', isLowQuality: true })
-      },
+        setQuality: quality => set({ quality, isLowQuality: quality === 'Low' }),
+        setAutoCycle: autoCycle => set({ autoCycle }),
+        setIsRecording: isRecording => set({ isRecording }),
+        setShowSettings: showSettings => set({ showSettings }),
+        autoDowngrade: () => {
+          const { quality } = get()
+          if (quality === 'Epic') set({ quality: 'Medium' })
+          else if (quality === 'Medium') set({ quality: 'Low', isLowQuality: true })
+        },
 
-      setLayerOpacity: (layer, opacity) => {
-        switch (layer) {
-          case 'orb': set({ orbOpacity: opacity }); break
-          case 'terrain': set({ terrainOpacity: opacity }); break
-          case 'particles': set({ particlesOpacity: opacity }); break
-          case 'presets': set({ presetsOpacity: opacity }); break
-          case 'albumGravity': set({ albumGravityOpacity: opacity }); break
-        }
-      },
+        setLayerOpacity: (layer, opacity) => {
+          switch (layer) {
+            case 'orb':
+              set({ orbOpacity: opacity })
+              break
+            case 'terrain':
+              set({ terrainOpacity: opacity })
+              break
+            case 'particles':
+              set({ particlesOpacity: opacity })
+              break
+            case 'presets':
+              set({ presetsOpacity: opacity })
+              break
+            case 'albumGravity':
+              set({ albumGravityOpacity: opacity })
+              break
+          }
+        },
 
-      setFxEnabled: (fx, enabled) => {
-        switch (fx) {
-          case 'bloom': set({ bloomEnabled: enabled }); break
-          case 'godRays': set({ godRaysEnabled: enabled }); break
-          case 'chromaticAberration': set({ chromaticAberrationEnabled: enabled }); break
-          case 'vignette': set({ vignetteEnabled: enabled }); break
-          case 'filmGrain': set({ filmGrainEnabled: enabled }); break
-          case 'dof': set({ dofEnabled: enabled }); break
-        }
-      },
+        setFxEnabled: (fx, enabled) => {
+          switch (fx) {
+            case 'bloom':
+              set({ bloomEnabled: enabled })
+              break
+            case 'godRays':
+              set({ godRaysEnabled: enabled })
+              break
+            case 'chromaticAberration':
+              set({ chromaticAberrationEnabled: enabled })
+              break
+            case 'vignette':
+              set({ vignetteEnabled: enabled })
+              break
+            case 'filmGrain':
+              set({ filmGrainEnabled: enabled })
+              break
+            case 'dof':
+              set({ dofEnabled: enabled })
+              break
+          }
+        },
 
-      setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
-    }),
+        setBloomIntensity: bloomIntensity => set({ bloomIntensity }),
+        setMultisamplingEnabled: enabled => set({ multisamplingEnabled: enabled }),
+      }),
       {
         name: 'visualiser-settings',
         partialize: state => ({
@@ -171,6 +203,7 @@ export const useVisualiserStore = create<VisualiserStore>()(
           vignetteEnabled: state.vignetteEnabled,
           filmGrainEnabled: state.filmGrainEnabled,
           dofEnabled: state.dofEnabled,
+          multisamplingEnabled: state.multisamplingEnabled,
           autoCycle: state.autoCycle,
         }),
       }
