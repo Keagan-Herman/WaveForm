@@ -90,7 +90,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backdropFilter: 'blur(20px)',
+    backgroundColor: 'rgba(13,13,13,0.85)',
     pointerEvents: 'none',
     zIndex: 5,
   },
