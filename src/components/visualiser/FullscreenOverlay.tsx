@@ -27,6 +27,7 @@ import { SceneController } from './SceneController'
 import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { ButterchurnTexture } from './ButterchurnTexture'
 import { usePlayerStore } from '@/stores/playerStore'
+import { useShareableURL } from '@/hooks/useShareableURL'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 import type { DeezerTrack } from '@/lib/deezerApi'
 import { getTrackCover, getTrackArtist, isDeezerTrack } from '@/types/track'
@@ -212,6 +213,16 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
     const timer = setTimeout(() => setShowQualityNotice(false), 3000)
     return () => clearTimeout(timer)
   }, [quality])
+
+  const { buildShareURL } = useShareableURL()
+  const [copied, setCopied] = React.useState(false)
+
+  const handleShare = async () => {
+    const url = buildShareURL()
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const recorderRef = useRef<CanvasRecorder | null>(null)
 
@@ -620,6 +631,14 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   shortcut="R"
                   accent={isRecording ? '#ff4444' : accent.hex}
                   isActive={isRecording}
+                  showRecordingDot={isRecording}
+                />
+                <HUDButton
+                  onClick={handleShare}
+                  label={copied ? 'COPIED' : 'SHARE'}
+                  shortcut="—"
+                  accent={copied ? accent.hex : accent.hex}
+                  isActive={copied}
                 />
               </div>
               <div style={styles.info}>
@@ -859,12 +878,14 @@ function HUDButton({
   shortcut,
   accent,
   isActive,
+  showRecordingDot,
 }: {
   onClick: () => void
   label: string
   shortcut: string
   accent: string
   isActive?: boolean
+  showRecordingDot?: boolean
 }) {
   return (
     <motion.button
@@ -879,6 +900,21 @@ function HUDButton({
         background: isActive ? `${accent}22` : 'rgba(0,0,0,0.4)',
       }}
     >
+      {showRecordingDot && (
+        <motion.span
+          animate={{ opacity: [1, 0.2, 1] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            display: 'inline-block',
+            width: '6px',
+            height: '6px',
+            borderRadius: '1px',
+            backgroundColor: '#ff4444',
+            flexShrink: 0,
+          }}
+          aria-hidden="true"
+        />
+      )}
       <span style={styles.buttonLabel}>{label}</span>
       <span style={styles.buttonShortcut}>[{shortcut}]</span>
     </motion.button>

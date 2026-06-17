@@ -25,6 +25,7 @@ import { ArtistPanel } from '@/components/search/ArtistPanel'
 import { TrackTransitionOverlay } from '@/components/ui/TrackTransitionOverlay'
 import { hexToRgb } from '@/utils/color'
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor'
+import { useShareableURL } from '@/hooks/useShareableURL'
 
 // Layout components
 import { Header } from '@/components/layout/Header'
@@ -128,6 +129,14 @@ function Waveform() {
 
   const autoDowngrade = useVisualiserStore(state => state.autoDowngrade)
   usePerformanceMonitor(55, 3000, autoDowngrade)
+
+  const { restoreFromURL } = useShareableURL()
+  useEffect(() => {
+    restoreFromURL()
+    if (window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [restoreFromURL])
 
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const isPlaying = usePlayerStore(state => state.isPlaying)
