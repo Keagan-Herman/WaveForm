@@ -272,6 +272,11 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .enter()
       .append('text')
       .style('opacity', 0)
+      .style('cursor', 'pointer')
+      .on('click', (_event, d) => {
+        const current = activeGenreRef.current
+        onSelectRef.current(current === d.id ? null : d.id)
+      })
       .text(d => d.label)
       .transition()
       .duration(400)
@@ -282,9 +287,9 @@ export const GenreForceGraph: FC<GenreForceGraphProps> = ({
       .selectAll<SVGTextElement, GenreNode>('text')
       .attr('text-anchor', 'middle')
       .attr('fill', d => (activeGenreRef.current === d.id ? '#fff' : 'rgba(232,245,232,0.45)'))
+      .style('font-weight', d => (activeGenreRef.current === d.id ? '700' : '400'))
       .style('font-size', d => `${Math.max(9, Math.min(11, 8 + d.count))}px`)
       .style('font-family', 'monospace')
-      .style('pointer-events', 'none')
       .style('user-select', 'none')
       .text(d => d.label)
 
