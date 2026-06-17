@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { searchTracks, searchArtists, getTrack, formatDuration } from './deezerApi'
+import {
+  searchTracks,
+  searchArtists,
+  getTrack,
+  formatDuration,
+  isDeezerErrorBody,
+} from './deezerApi'
 
 describe('deezerApi', () => {
   describe('searchTracks', () => {
@@ -41,6 +47,28 @@ describe('deezerApi', () => {
       expect(formatDuration(60)).toBe('1:00')
       expect(formatDuration(65)).toBe('1:05')
       expect(formatDuration(3601)).toBe('60:01')
+    })
+  })
+
+  describe('isDeezerErrorBody', () => {
+    it('returns true for a valid Deezer error body', () => {
+      expect(isDeezerErrorBody({ error: { code: 800, message: 'No data' } })).toBe(true)
+    })
+
+    it('returns false when error is a string', () => {
+      expect(isDeezerErrorBody({ error: 'something went wrong' })).toBe(false)
+    })
+
+    it('returns false when error lacks code', () => {
+      expect(isDeezerErrorBody({ error: { message: 'No data' } })).toBe(false)
+    })
+
+    it('returns false when error is null', () => {
+      expect(isDeezerErrorBody({ error: null })).toBe(false)
+    })
+
+    it('returns false when there is no error key', () => {
+      expect(isDeezerErrorBody({ data: [] })).toBe(false)
     })
   })
 })

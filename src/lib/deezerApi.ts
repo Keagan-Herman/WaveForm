@@ -71,6 +71,20 @@ export interface TrackSearchResult {
 
 // ─── Request helper ───────────────────────────────────────────────────────
 
+export function isDeezerErrorBody(
+  obj: unknown
+): obj is { error: { code: number; message: string } } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'error' in obj &&
+    typeof (obj as Record<string, unknown>).error === 'object' &&
+    (obj as Record<string, unknown>).error !== null &&
+    'code' in ((obj as Record<string, unknown>).error as object) &&
+    'message' in ((obj as Record<string, unknown>).error as object)
+  )
+}
+
 async function deezerFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(`${BASE}${path}`, window.location.origin)
   if (params) {
@@ -83,8 +97,10 @@ async function deezerFetch<T>(path: string, params?: Record<string, string>): Pr
   const data = await res.json()
 
   // Deezer returns errors inside the response body
-  if (data.error) {
+  if (isDeezerErrorBody(data)) {
     throw new Error(`Deezer error ${data.error.code}: ${data.error.message}`)
+  } else if (data.error) {
+    throw new Error(`Deezer error: ${String(data.error)}`)
   }
 
   return data as T
