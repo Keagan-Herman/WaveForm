@@ -198,6 +198,11 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const isRecording = useVisualiserStore(state => state.isRecording)
   const setIsRecording = useVisualiserStore(state => state.setIsRecording)
 
+  const showNowPlaying = useVisualiserStore(state => state.showNowPlaying)
+  const toggleNowPlaying = useVisualiserStore(state => state.toggleNowPlaying)
+  const showShortcutsLegend = useVisualiserStore(state => state.showShortcutsLegend)
+  const toggleShortcutsLegend = useVisualiserStore(state => state.toggleShortcutsLegend)
+
   const currentTrack = usePlayerStore(state => state.currentTrack)
   const quality = useVisualiserStore(state => state.quality)
   const [showQualityNotice, setShowQualityNotice] = React.useState(false)
@@ -232,10 +237,14 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
       if (!isFullscreen) return
       if (e.key.toLowerCase() === 's') setShowSettings(!useVisualiserStore.getState().showSettings)
       if (e.key.toLowerCase() === 'r') toggleRecording()
+      if (e.key === 'Escape' && useVisualiserStore.getState().showShortcutsLegend) {
+        e.stopPropagation()
+        toggleShortcutsLegend()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isFullscreen, setShowSettings, toggleRecording])
+  }, [isFullscreen, setShowSettings, toggleRecording, toggleShortcutsLegend])
 
   // AnimatePresence must wrap the conditional — early return here would
   // prevent the exit animation from firing when isFullscreen goes false.
@@ -398,59 +407,198 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               </div>
             )}
 
-            {currentTrack && (
-              <motion.div
-                initial={{ opacity: 0, x: -60, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 30,
-                  delay: 0.1,
-                }}
-                style={{ ...styles.nowPlaying, borderColor: `${accent.hex}33` }}
-              >
-                <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
-                  <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
-                  {isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 2,
-                        right: 2,
-                        width: 12,
-                        height: 12,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        background: 'rgba(0,0,0,0.6)',
-                        color: accent.hex,
-                        borderColor: `${accent.hex}66`,
-                        zIndex: 1,
-                      }}
-                      aria-label="Explicit content"
-                      title="Explicit content"
-                    >
-                      E
+            <AnimatePresence>
+              {currentTrack && showNowPlaying && (
+                <motion.div
+                  key="now-playing-card"
+                  initial={{ opacity: 0, x: -60, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, x: 20, filter: 'blur(8px)' }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ ...styles.nowPlaying, borderColor: `${accent.hex}33` }}
+                >
+                  <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+                    <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
+                    {isDeezerTrack(currentTrack) && currentTrack.explicit_lyrics && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          right: 2,
+                          width: 12,
+                          height: 12,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          background: 'rgba(0,0,0,0.6)',
+                          color: accent.hex,
+                          borderColor: `${accent.hex}66`,
+                          zIndex: 1,
+                        }}
+                        aria-label="Explicit content"
+                        title="Explicit content"
+                      >
+                        E
+                      </div>
+                    )}
+                  </div>
+                  <div style={styles.nowPlayingInfo}>
+                    <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
+                    <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
+                      {getTrackArtist(currentTrack)}
                     </div>
-                  )}
-                </div>
-                <div style={styles.nowPlayingInfo}>
-                  <div style={styles.nowPlayingTitle}>{currentTrack.title}</div>
-                  <div style={{ ...styles.nowPlayingArtist, color: accent.hex }}>
-                    {getTrackArtist(currentTrack)}
+                    <div style={styles.hudMeta}>
+                      <BeatIndicator accent={accent.hex} />
+                      <span style={{ opacity: 0.4 }}>LIVE_FEED</span>
+                    </div>
                   </div>
-                  <div style={styles.hudMeta}>
-                    <BeatIndicator accent={accent.hex} />
-                    <span style={{ opacity: 0.4 }}>LIVE_FEED</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {currentTrack && !showNowPlaying && (
+                <motion.button
+                  key="now-playing-tab"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.4 }}
+                  exit={{ opacity: 0 }}
+                  onClick={toggleNowPlaying}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    writingMode: 'vertical-rl',
+                    fontSize: '0.55rem',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    padding: '0.75rem 0.35rem',
+                    border: '1px solid var(--border-color)',
+                    borderLeft: 'none',
+                    borderRadius: '0 2px 2px 0',
+                    background: 'rgba(255,255,255,0.03)',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                    fontFamily: 'monospace',
+                    color: '#fff',
+                  }}
+                >
+                  Now Playing
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showShortcutsLegend && (
+                <motion.div
+                  key="shortcuts-legend"
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'rgba(13,13,13,0.96)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    padding: '2rem',
+                    zIndex: 500,
+                    minWidth: '280px',
+                    pointerEvents: 'auto',
+                    fontFamily: 'monospace',
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.6rem',
+                      letterSpacing: '0.25em',
+                      textTransform: 'uppercase',
+                      fontWeight: 700,
+                      opacity: 0.45,
+                      marginBottom: '1.5rem',
+                    }}
+                  >
+                    Keyboard Shortcuts
                   </div>
-                </div>
-              </motion.div>
-            )}
+                  {(
+                    [
+                      ['Space', 'Play / Pause'],
+                      ['← →', 'Prev / Next track'],
+                      ['F', 'Enter / Exit fullscreen'],
+                      ['V', 'Cycle visual layer'],
+                      ['N', 'Toggle Now Playing'],
+                      ['S', 'FX Settings'],
+                      ['R', 'Start / Stop capture'],
+                      ['?', 'Show / Hide this legend'],
+                    ] as [string, string][]
+                  ).map(([key, action]) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '3rem',
+                        marginBottom: '0.75rem',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.65rem',
+                          background: 'rgba(255,255,255,0.06)',
+                          padding: '0.1rem 0.5rem',
+                          borderRadius: '2px',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {key}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.6rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          opacity: 0.55,
+                        }}
+                      >
+                        {action}
+                      </span>
+                    </div>
+                  ))}
+                  <button
+                    onClick={toggleShortcutsLegend}
+                    style={{
+                      marginTop: '1rem',
+                      width: '100%',
+                      padding: '0.4rem',
+                      fontSize: '0.6rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '2px',
+                      background: 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer',
+                      opacity: 0.55,
+                      fontFamily: 'monospace',
+                      color: '#fff',
+                    }}
+                  >
+                    Close [Esc]
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div style={styles.controls}>
               <div style={{ display: 'flex', gap: '0.75rem' }}>

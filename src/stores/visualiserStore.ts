@@ -43,6 +43,12 @@ interface VisualiserStore {
   dofEnabled: boolean
   multisamplingEnabled: boolean
 
+  // Fullscreen UI toggles
+  showNowPlaying: boolean
+  toggleNowPlaying: () => void
+  showShortcutsLegend: boolean
+  toggleShortcutsLegend: () => void
+
   // Actions
   setBeat: (beat: boolean) => void
   setBassPower: (power: number) => void
@@ -113,6 +119,11 @@ export const useVisualiserStore = create<VisualiserStore>()(
         filmGrainEnabled: true,
         dofEnabled: false,
         multisamplingEnabled: false,
+
+        showNowPlaying: true,
+        toggleNowPlaying: () => set(s => ({ showNowPlaying: !s.showNowPlaying })),
+        showShortcutsLegend: false,
+        toggleShortcutsLegend: () => set(s => ({ showShortcutsLegend: !s.showShortcutsLegend })),
 
         setBeat: beat => set({ beat }),
         setBassPower: bassPower => set({ bassPower }),

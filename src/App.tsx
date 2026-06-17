@@ -51,6 +51,9 @@ function KeyboardShortcuts() {
 
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const cycleVisualLayer = useVisualiserStore(state => state.cycleVisualLayer)
+  const isFullscreen = useVisualiserStore(state => state.isFullscreen)
+  const toggleNowPlaying = useVisualiserStore(state => state.toggleNowPlaying)
+  const toggleShortcutsLegend = useVisualiserStore(state => state.toggleShortcutsLegend)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,6 +83,16 @@ function KeyboardShortcuts() {
           e.preventDefault()
           cycleVisualLayer()
           break
+        case 'n':
+          if (isFullscreen) {
+            e.preventDefault()
+            toggleNowPlaying()
+          }
+          break
+        case '?':
+          e.preventDefault()
+          toggleShortcutsLegend()
+          break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -93,6 +106,9 @@ function KeyboardShortcuts() {
     prevTrack,
     toggleFullscreen,
     cycleVisualLayer,
+    isFullscreen,
+    toggleNowPlaying,
+    toggleShortcutsLegend,
   ])
   return null
 }
