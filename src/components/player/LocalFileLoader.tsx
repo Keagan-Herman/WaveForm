@@ -131,7 +131,48 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
   const localTrackCount = queue.filter(t => t.source === 'local').length
 
   return (
-    <>
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+    >
+      {/* Full-screen drop overlay */}
+      <AnimatePresence>
+        {isDragOver && (
+          <motion.div
+            key="drop-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              border: `1px solid ${accent.hex}`,
+              backgroundColor: `${accent.hex}08`,
+              pointerEvents: 'none',
+              zIndex: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.65rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                color: accent.hex,
+                fontWeight: 700,
+                fontFamily: 'monospace',
+              }}
+            >
+              Drop audio files
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hidden file input */}
       <input
         id={inputId}
@@ -147,9 +188,6 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
       {/* Upload button */}
       <motion.button
         onClick={() => inputRef.current?.click()}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
         aria-label="Upload local audio files"
         title="Upload local audio (drag & drop or click)"
         whileHover={{ scale: 1.05 }}
@@ -298,6 +336,6 @@ export function LocalFileLoader({ accent }: { accent: AlbumColour }) {
           )}
         </AnimatePresence>
       </motion.button>
-    </>
+    </div>
   )
 }
