@@ -17,7 +17,7 @@ const CONFIG = {
   VISUALS: {
     SIZE: 15.0, // Base size in shader
     OPACITY_MULT: 0.6,
-  }
+  },
 }
 
 const vertexShader = `
@@ -97,7 +97,7 @@ interface ParticleFieldProps {
 export function ParticleField({ color = '#ffffff', accent, secondary }: ParticleFieldProps) {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const { quality } = useVisualiserStore.getState()
+  const quality = useVisualiserStore(state => state.quality)
 
   const actualCount = useMemo(() => {
     return CONFIG.COUNTS[quality as keyof typeof CONFIG.COUNTS] || CONFIG.COUNTS.Medium
@@ -142,15 +142,18 @@ export function ParticleField({ color = '#ffffff', accent, secondary }: Particle
     return [pos, vel, col]
   }, [actualCount, color, accent, secondary])
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uBass: { value: 0 },
-    uOpacity: { value: CONFIG.VISUALS.OPACITY_MULT },
-    uSize: { value: CONFIG.VISUALS.SIZE },
-    uPixelRatio: { value: typeof window !== 'undefined' ? window.devicePixelRatio : 1 },
-  }), [])
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uOpacity: { value: CONFIG.VISUALS.OPACITY_MULT },
+      uSize: { value: CONFIG.VISUALS.SIZE },
+      uPixelRatio: { value: typeof window !== 'undefined' ? window.devicePixelRatio : 1 },
+    }),
+    []
+  )
 
-  useFrame((state) => {
+  useFrame(state => {
     const { bassPower, particlesOpacity } = useVisualiserStore.getState()
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime
