@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useSceneManager } from '@/hooks/useSceneManager'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
+import { useWindowWidth } from '@/hooks/useWindowWidth'
 import { VisualSettings } from './VisualSettings'
 import { CanvasRecorder } from '@/lib/CanvasRecorder'
 import { FluidBackground } from './FluidBackground'
@@ -193,6 +194,9 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const setVisualLayer = useVisualiserStore(state => state.setVisualLayer)
+  const cycleVisualLayer = useVisualiserStore(state => state.cycleVisualLayer)
+  const windowWidth = useWindowWidth()
+  const isMobile = windowWidth < 900
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
   const [butterchurnCanvas, setButterchurnCanvas] = React.useState<HTMLCanvasElement | null>(null)
   const setShowSettings = useVisualiserStore(state => state.setShowSettings)
@@ -201,7 +205,6 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
   const showNowPlaying = useVisualiserStore(state => state.showNowPlaying)
   const toggleNowPlaying = useVisualiserStore(state => state.toggleNowPlaying)
-  const showShortcutsLegend = useVisualiserStore(state => state.showShortcutsLegend)
   const toggleShortcutsLegend = useVisualiserStore(state => state.toggleShortcutsLegend)
 
   const currentTrack = usePlayerStore(state => state.currentTrack)
@@ -350,35 +353,37 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               )}
             </AnimatePresence>
 
-            {/* Cinematic HUD Elements */}
-            <motion.div
-              variants={hudContainerVariants}
-              initial="hidden"
-              animate="visible"
-              style={styles.hudRight}
-            >
+            {/* Cinematic HUD Elements — hidden on mobile (too small to read) */}
+            {!isMobile && (
               <motion.div
-                variants={hudItemVariants}
-                animate={beat ? { scale: 1.02, x: -2 } : { scale: 1, x: 0 }}
-                transition={{ duration: 0.1 }}
+                variants={hudContainerVariants}
+                initial="hidden"
+                animate="visible"
+                style={styles.hudRight}
               >
-                <EnergyFlux accent={accent.hex} />
+                <motion.div
+                  variants={hudItemVariants}
+                  animate={beat ? { scale: 1.02, x: -2 } : { scale: 1, x: 0 }}
+                  transition={{ duration: 0.1 }}
+                >
+                  <EnergyFlux accent={accent.hex} />
+                </motion.div>
+                <motion.div
+                  variants={hudItemVariants}
+                  animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
+                  transition={{ duration: 0.12 }}
+                >
+                  <FrequencyScrutinizer accent={accent.hex} />
+                </motion.div>
+                <motion.div
+                  variants={hudItemVariants}
+                  animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
+                  transition={{ duration: 0.14 }}
+                >
+                  <WaveformScrutinizer accent={accent.hex} />
+                </motion.div>
               </motion.div>
-              <motion.div
-                variants={hudItemVariants}
-                animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
-                transition={{ duration: 0.12 }}
-              >
-                <FrequencyScrutinizer accent={accent.hex} />
-              </motion.div>
-              <motion.div
-                variants={hudItemVariants}
-                animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
-                transition={{ duration: 0.14 }}
-              >
-                <WaveformScrutinizer accent={accent.hex} />
-              </motion.div>
-            </motion.div>
+            )}
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -426,7 +431,13 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
                   exit={{ opacity: 0, x: 20, filter: 'blur(8px)' }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ ...styles.nowPlaying, borderColor: `${accent.hex}33` }}
+                  style={{
+                    ...styles.nowPlaying,
+                    borderColor: `${accent.hex}33`,
+                    ...(isMobile
+                      ? { left: '1rem', right: '1rem', top: '1rem', gap: '0.75rem' }
+                      : {}),
+                  }}
                 >
                   <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
                     <img src={getTrackCover(currentTrack)} style={styles.nowPlayingArt} alt="" />
@@ -485,10 +496,11 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     writingMode: 'vertical-rl',
-                    fontSize: '0.55rem',
+                    fontSize: '0.65rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    padding: '0.75rem 0.35rem',
+                    padding: '0.75rem 0.5rem',
+                    minWidth: '44px',
                     border: '1px solid var(--border-color)',
                     borderLeft: 'none',
                     borderRadius: '0 2px 2px 0',
@@ -504,147 +516,83 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               )}
             </AnimatePresence>
 
-            <AnimatePresence>
-              {showShortcutsLegend && (
-                <motion.div
-                  key="shortcuts-legend"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'rgba(13,13,13,0.96)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    padding: '2rem',
-                    zIndex: 500,
-                    minWidth: '280px',
-                    pointerEvents: 'auto',
-                    fontFamily: 'monospace',
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div
-                    style={{
-                      fontSize: '0.6rem',
-                      letterSpacing: '0.25em',
-                      textTransform: 'uppercase',
-                      fontWeight: 700,
-                      opacity: 0.45,
-                      marginBottom: '1.5rem',
-                    }}
-                  >
-                    Keyboard Shortcuts
-                  </div>
-                  {(
-                    [
-                      ['Space', 'Play / Pause'],
-                      ['← →', 'Prev / Next track'],
-                      ['F', 'Enter / Exit fullscreen'],
-                      ['V', 'Cycle visual layer'],
-                      ['N', 'Toggle Now Playing'],
-                      ['S', 'FX Settings'],
-                      ['R', 'Start / Stop capture'],
-                      ['?', 'Show / Hide this legend'],
-                    ] as [string, string][]
-                  ).map(([key, action]) => (
-                    <div
-                      key={key}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: '3rem',
-                        marginBottom: '0.75rem',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: 'monospace',
-                          fontSize: '0.65rem',
-                          background: 'rgba(255,255,255,0.06)',
-                          padding: '0.1rem 0.5rem',
-                          borderRadius: '2px',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {key}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.6rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
-                          opacity: 0.55,
-                        }}
-                      >
-                        {action}
-                      </span>
-                    </div>
-                  ))}
-                  <button
-                    onClick={toggleShortcutsLegend}
-                    style={{
-                      marginTop: '1rem',
-                      width: '100%',
-                      padding: '0.4rem',
-                      fontSize: '0.6rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: '2px',
-                      background: 'rgba(255,255,255,0.03)',
-                      cursor: 'pointer',
-                      opacity: 0.55,
-                      fontFamily: 'monospace',
-                      color: '#fff',
-                    }}
-                  >
-                    Close [Esc]
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div style={styles.controls}>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div
+              style={{
+                ...styles.controls,
+                ...(isMobile
+                  ? {
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: '0.5rem',
+                      bottom: '1.25rem',
+                      left: '1rem',
+                      right: '1rem',
+                    }
+                  : {}),
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: isMobile ? '0.4rem' : '0.75rem',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <HUDButton
                   onClick={toggleFullscreen}
-                  label="EXIT_FULLSCREEN"
+                  label={isMobile ? 'EXIT' : 'EXIT_FULLSCREEN'}
                   shortcut="F"
                   accent={accent.hex}
+                  hideShorcut={isMobile}
                 />
                 <HUDButton
                   onClick={() => setShowSettings(!useVisualiserStore.getState().showSettings)}
-                  label="FX_SETTINGS"
+                  label={isMobile ? 'FX' : 'FX_SETTINGS'}
                   shortcut="S"
                   accent={accent.hex}
+                  hideShorcut={isMobile}
                 />
-                <HUDButton
-                  onClick={toggleRecording}
-                  label={isRecording ? 'STOP_RECORDING' : 'START_CAPTURE'}
-                  shortcut="R"
-                  accent={isRecording ? '#ff4444' : accent.hex}
-                  isActive={isRecording}
-                  showRecordingDot={isRecording}
-                />
+                {!isMobile && (
+                  <HUDButton
+                    onClick={toggleRecording}
+                    label={isRecording ? 'STOP_RECORDING' : 'START_CAPTURE'}
+                    shortcut="R"
+                    accent={isRecording ? '#ff4444' : accent.hex}
+                    isActive={isRecording}
+                    showRecordingDot={isRecording}
+                  />
+                )}
                 <HUDButton
                   onClick={handleShare}
                   label={copied ? 'COPIED' : 'SHARE'}
                   shortcut="—"
-                  accent={copied ? accent.hex : accent.hex}
+                  accent={accent.hex}
                   isActive={copied}
+                  hideShorcut={isMobile}
                 />
               </div>
               <div style={styles.info}>
-                <div style={{ ...styles.layerLabel, borderColor: `${accent.hex}22` }}>
-                  CYCLE_LAYERS <span style={{ opacity: 0.5, marginLeft: '0.5rem' }}>[V]</span>
-                </div>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={cycleVisualLayer}
+                  style={{
+                    ...styles.layerLabel,
+                    borderColor: `${accent.hex}33`,
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                    color: accent.hex,
+                    background: `${accent.hex}10`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                  title="Cycle visual mode"
+                >
+                  CYCLE_LAYERS
+                  <span style={{ opacity: 0.5, fontSize: isMobile ? '1rem' : '0.65rem' }}>
+                    {isMobile ? '↻' : '[V]'}
+                  </span>
+                </motion.button>
               </div>
             </div>
           </div>
@@ -879,6 +827,7 @@ function HUDButton({
   accent,
   isActive,
   showRecordingDot,
+  hideShorcut,
 }: {
   onClick: () => void
   label: string
@@ -886,6 +835,7 @@ function HUDButton({
   accent: string
   isActive?: boolean
   showRecordingDot?: boolean
+  hideShorcut?: boolean
 }) {
   return (
     <motion.button
@@ -916,7 +866,7 @@ function HUDButton({
         />
       )}
       <span style={styles.buttonLabel}>{label}</span>
-      <span style={styles.buttonShortcut}>[{shortcut}]</span>
+      {!hideShorcut && <span style={styles.buttonShortcut}>[{shortcut}]</span>}
     </motion.button>
   )
 }
@@ -959,12 +909,11 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     gap: '0.2rem',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
   },
   indicatorLabel: {
     fontSize: '0.6rem',
     letterSpacing: '0.3em',
-    opacity: 0.3,
+    opacity: 0.4,
     fontWeight: 600,
   },
   indicatorValue: {
@@ -998,7 +947,6 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: 'blur(32px)',
     WebkitBackdropFilter: 'blur(32px)',
     border: '1px solid',
-    boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
   },
   nowPlayingArt: {
     width: 56,
@@ -1060,7 +1008,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
   },
   buttonShortcut: {
-    opacity: 0.3,
+    opacity: 0.45,
     fontSize: '0.65rem',
   },
   info: {
@@ -1094,9 +1042,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.5rem',
   },
   hudLabel: {
-    fontSize: '0.55rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.2em',
-    opacity: 0.4,
+    opacity: 0.55,
     fontWeight: 600,
   },
   fluxTrack: {
@@ -1138,6 +1086,5 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.15em',
     fontWeight: 700,
     zIndex: 10,
-    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
   },
 }

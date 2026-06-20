@@ -370,9 +370,9 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '0.5rem',
   },
   timeLabel: {
-    fontSize: '0.55rem',
+    fontSize: '0.65rem',
     fontFamily: 'var(--font-mono)',
-    opacity: 0.45,
+    opacity: 0.55,
     letterSpacing: '0.1em',
   },
   empty: {
@@ -382,10 +382,10 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     height: '100%',
     gap: '0.5rem',
-    opacity: 0.4,
   },
   emptyIcon: {
     fontSize: '1.5rem',
+    opacity: 0.4,
   },
   emptyText: {
     fontSize: '0.7rem',

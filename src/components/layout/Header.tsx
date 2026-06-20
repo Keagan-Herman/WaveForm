@@ -1,7 +1,10 @@
 import React from 'react'
 import { motion, type Variants } from 'framer-motion'
-import { useVisualiserStore } from '@/stores/visualiserStore'
+import { useVisualiserStore, type VisualLayer } from '@/stores/visualiserStore'
+import { useWindowWidth } from '@/hooks/useWindowWidth'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
+
+const VISUAL_LAYERS: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
 
 interface HeaderProps {
   accent: AlbumColour
@@ -21,6 +24,12 @@ export function Header({
   const toggleFullscreen = useVisualiserStore(state => state.toggleFullscreen)
   const isLowQuality = useVisualiserStore(state => state.isLowQuality)
   const setQuality = useVisualiserStore(state => state.setQuality)
+  const cycleVisualLayer = useVisualiserStore(state => state.cycleVisualLayer)
+  const setVisualLayer = useVisualiserStore(state => state.setVisualLayer)
+  const toggleShortcutsLegend = useVisualiserStore(state => state.toggleShortcutsLegend)
+
+  const windowWidth = useWindowWidth()
+  const isMobile = windowWidth < 900
 
   const logoVariants: Variants = {
     hidden: { opacity: 0, x: -10 },
@@ -44,6 +53,26 @@ export function Header({
         </motion.h1>
       </div>
 
+      {/* 4-tab mode selector — desktop only */}
+      {!isMobile && (
+        <div style={styles.modeTabs}>
+          {VISUAL_LAYERS.map(layer => (
+            <button
+              key={layer}
+              onClick={() => setVisualLayer(layer)}
+              style={{
+                ...styles.modeTab,
+                color: visualLayer === layer ? accent.hex : 'inherit',
+                borderBottomColor: visualLayer === layer ? accent.hex : 'transparent',
+                opacity: visualLayer === layer ? 1 : 0.45,
+              }}
+            >
+              {layer}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={styles.right}>
         <div style={styles.controls}>
           {filteredTrackIds && (
@@ -56,18 +85,53 @@ export function Header({
                 color: accent.hex,
               }}
             >
-              Reset Filter
+              {isMobile ? '✕ Filter' : 'Reset Filter'}
+            </button>
+          )}
+
+          {/* Quality toggle: desktop only — accessible via FX settings panel on mobile */}
+          {!isMobile && (
+            <button
+              onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
+              style={{
+                ...styles.functionalBtn,
+                color: isLowQuality ? '#ff4444' : 'inherit',
+              }}
+            >
+              {isLowQuality ? 'Low Quality' : 'High Quality'}
+            </button>
+          )}
+
+          {/* Cycle visual mode — mobile only (desktop uses 4-tab selector above) */}
+          {isMobile && (
+            <button
+              onClick={cycleVisualLayer}
+              title="Cycle visual mode"
+              style={{
+                ...styles.functionalBtn,
+                color: accent.hex,
+                borderColor: `${accent.hex}40`,
+                background: `${accent.hex}10`,
+                minWidth: 0,
+                padding: '0.35rem 0.6rem',
+              }}
+            >
+              <span style={{ letterSpacing: '0.05em' }}>{visualLayer}</span>
+              <span style={{ opacity: 0.5, marginLeft: '0.3rem', fontSize: '0.7rem' }}>↻</span>
             </button>
           )}
 
           <button
-            onClick={() => setQuality(isLowQuality ? 'Medium' : 'Low')}
+            onClick={toggleShortcutsLegend}
+            title="Keyboard shortcuts [?]"
             style={{
               ...styles.functionalBtn,
-              color: isLowQuality ? '#ff4444' : 'inherit',
+              padding: '0.35rem 0.6rem',
+              minWidth: 0,
+              opacity: 0.55,
             }}
           >
-            {isLowQuality ? 'Low Quality' : 'High Quality'}
+            ?
           </button>
 
           <button
@@ -79,7 +143,7 @@ export function Header({
               fontWeight: 700,
             }}
           >
-            Enter {visualLayer}
+            {isMobile ? 'Enter' : `Enter ${visualLayer}`}
           </button>
         </div>
       </div>
@@ -118,7 +182,7 @@ const styles: Record<string, React.CSSProperties> = {
   controls: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
+    gap: '0.5rem',
   },
   functionalBtn: {
     fontSize: '0.65rem',
@@ -129,5 +193,25 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '2px',
     backgroundColor: 'rgba(255,255,255,0.03)',
     transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease',
+    whiteSpace: 'nowrap',
+  },
+  modeTabs: {
+    display: 'flex',
+    alignItems: 'stretch',
+    height: '100%',
+    gap: '0',
+  },
+  modeTab: {
+    fontSize: '0.6rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.12em',
+    padding: '0 0.9rem',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    transition: 'color 0.2s ease, opacity 0.2s ease, border-bottom-color 0.2s ease',
+    whiteSpace: 'nowrap',
   },
 }

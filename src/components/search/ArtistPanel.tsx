@@ -275,7 +275,6 @@ const styles: Record<string, CSSProperties> = {
     height: 120,
     borderRadius: '50%',
     objectFit: 'cover',
-    boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
     border: '2px solid rgba(255,255,255,0.1)',
   },
   artistName: {

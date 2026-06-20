@@ -97,7 +97,7 @@ export function GenrePanel({ tracks, width, onFilteredTracksChange, accent }: Ge
             fontWeight: 700,
           }}
         >
-          Topology unavailable
+          Genre Map unavailable
         </div>
         <div
           style={{

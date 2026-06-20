@@ -1,11 +1,14 @@
 import React from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { useVisualiserStore, type QualityLevel } from '@/stores/visualiserStore'
+import { useWindowWidth } from '@/hooks/useWindowWidth'
 import { PresetManager } from './PresetManager'
 
 export function VisualSettings() {
   const showSettings = useVisualiserStore(state => state.showSettings)
   const setShowSettings = useVisualiserStore(state => state.setShowSettings)
+  const windowWidth = useWindowWidth()
+  const isMobile = windowWidth < 900
 
   const {
     quality,
@@ -29,11 +32,37 @@ export function VisualSettings() {
     <AnimatePresence>
       {showSettings && (
         <motion.div
-          initial={{ opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          style={styles.panel}
+          initial={
+            isMobile
+              ? { opacity: 0, y: 40 }
+              : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
+          }
+          animate={
+            isMobile ? { opacity: 1, y: 0 } : { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }
+          }
+          exit={
+            isMobile
+              ? { opacity: 0, y: 40 }
+              : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
+          }
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            ...styles.panel,
+            ...(isMobile
+              ? {
+                  position: 'fixed',
+                  right: 0,
+                  left: 0,
+                  bottom: 0,
+                  top: 'auto',
+                  width: 'auto',
+                  maxHeight: '75vh',
+                  overflowY: 'auto',
+                  borderRadius: '8px 8px 0 0',
+                  padding: '1.25rem 1rem 2rem',
+                }
+              : {}),
+          }}
         >
           <div style={styles.header}>
             <h3 style={styles.title}>Visual Settings</h3>
@@ -181,7 +210,7 @@ export function VisualSettings() {
                   <span style={{ ...styles.fxLabel, opacity: multisamplingEnabled ? 1 : 0.5 }}>
                     MSAA
                   </span>
-                  <span style={{ fontSize: '0.5rem', opacity: 0.35, letterSpacing: '0.08em' }}>
+                  <span style={{ fontSize: '0.65rem', opacity: 0.5, letterSpacing: '0.08em' }}>
                     Epic only · GPU intensive
                   </span>
                 </div>
@@ -263,7 +292,7 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: 'blur(64px) saturate(2)',
     WebkitBackdropFilter: 'blur(64px) saturate(2)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 40px 80px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
     borderRadius: '4px',
     padding: '2rem',
     zIndex: 100,
@@ -375,7 +404,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',
-    opacity: 0.4,
+    opacity: 0.55,
     marginBottom: '0.25rem',
   },
   rangeHeader: {

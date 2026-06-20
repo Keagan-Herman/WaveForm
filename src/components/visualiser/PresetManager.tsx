@@ -142,10 +142,10 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'inherit',
   },
   empty: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
-    opacity: 0.3,
+    opacity: 0.5,
     textAlign: 'center',
     padding: '0.75rem 0',
   },

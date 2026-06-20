@@ -55,7 +55,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     letterSpacing: '0.22em',
     textTransform: 'uppercase',
-    opacity: 0.4,
+    opacity: 0.55,
     padding: '0.5rem 1rem 0.25rem',
     flexShrink: 0,
     fontFamily: 'monospace',
@@ -78,10 +78,10 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-color)',
   },
   canvasLabel: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',
-    opacity: 0.45,
+    opacity: 0.55,
     fontFamily: 'monospace',
   },
   idleOverlay: {

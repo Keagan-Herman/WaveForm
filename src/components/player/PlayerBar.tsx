@@ -6,6 +6,7 @@ import { WaveformLine } from '../visualiser/WaveformLine'
 import { LocalFileLoader } from './LocalFileLoader'
 import { ColorHistoryStrip } from './ColorHistoryStrip'
 import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track'
+import { useWindowWidth } from '../../hooks/useWindowWidth'
 import type { DeezerTrack } from '../../types/track'
 import type { AlbumColour } from '../../hooks/useAlbumColour'
 
@@ -89,15 +90,15 @@ function PhysicalBtn({
 
 // ─── PlaybackProgress ─────────────────────────────────────────────────────────
 
-function PlaybackProgress() {
+function PlaybackProgress({ compact = false }: { compact?: boolean }) {
   const currentTime = usePlayerStore(s => s.currentTime)
   const duration = usePlayerStore(s => s.currentTrack?.duration ?? 0)
 
   return (
-    <div style={styles.progressContainer}>
+    <div style={{ ...styles.progressContainer, gap: compact ? '0.75rem' : '1.5rem' }}>
       <span style={styles.timeLabel}>{formatTime(currentTime)}</span>
-      <div style={styles.waveformWrap}>
-        <WaveformLine height={32} />
+      <div style={{ ...styles.waveformWrap, height: compact ? 24 : 32 }}>
+        <WaveformLine height={compact ? 24 : 32} />
       </div>
       <span style={styles.timeLabel}>{duration > 0 ? formatTime(duration) : '00:00'}</span>
     </div>
@@ -113,9 +114,98 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
   const nextTrack = usePlayerStore(s => s.nextTrack)
   const prevTrack = usePlayerStore(s => s.prevTrack)
 
+  const windowWidth = useWindowWidth()
+  const isMobile = windowWidth < 900
+
   const trackCover = currentTrack ? getTrackCover(currentTrack) : ''
   const trackArtist = currentTrack ? getTrackArtist(currentTrack) : ''
   const isArtistClickable = !!(currentTrack && isDeezerTrack(currentTrack))
+
+  const playBtn = (size: number) => (
+    <motion.button
+      whileHover={{ scale: 1.04, boxShadow: `0 0 20px ${accent.hex}44` }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+      onClick={togglePlay}
+      aria-label={isPlaying ? 'Pause' : 'Play'}
+      style={{
+        ...styles.playBtn,
+        width: size,
+        height: size,
+        backgroundColor: isPlaying ? accent.hex : 'rgba(255,255,255,0.05)',
+        color: isPlaying ? '#000' : '#fff',
+        borderColor: isPlaying ? accent.hex : 'var(--border-color)',
+      }}
+    >
+      {isPlaying ? <IconPause /> : <IconPlay />}
+    </motion.button>
+  )
+
+  if (isMobile) {
+    return (
+      <motion.footer
+        initial={{ y: 80 }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 30 }}
+        style={{
+          ...styles.footer,
+          height: 80,
+          flexDirection: 'column',
+          padding: '5px 12px 4px',
+          gap: 0,
+          backgroundColor: 'var(--bg-color)',
+          borderTop: '1px solid var(--border-color)',
+        }}
+      >
+        {/* Row 1: Art + Meta + Transport */}
+        <div style={styles.mobileRow1}>
+          <div style={styles.mobileArtFrame}>
+            {trackCover && <img src={trackCover} alt="" style={styles.art} />}
+          </div>
+          <div style={styles.mobileMeta}>
+            <div style={styles.mobileTitle}>{currentTrack?.title || 'System Standby'}</div>
+            <button
+              style={{
+                ...styles.mobileArtist,
+                cursor: isArtistClickable ? 'pointer' : 'default',
+                opacity: isArtistClickable ? 0.55 : 0.4,
+              }}
+              onClick={() => {
+                if (isArtistClickable) {
+                  useUIStore.getState().setSelectedArtistId((currentTrack as DeezerTrack).artist.id)
+                }
+              }}
+              aria-label={
+                isArtistClickable && trackArtist ? `View artist: ${trackArtist}` : undefined
+              }
+              disabled={!isArtistClickable}
+            >
+              {trackArtist || 'Ready'}
+            </button>
+          </div>
+          <div style={styles.mobileTransport}>
+            <PhysicalBtn onClick={prevTrack} label="Prev" accentColor={accent.hex}>
+              <IconPrev />
+            </PhysicalBtn>
+            {playBtn(44)}
+            <PhysicalBtn onClick={nextTrack} label="Next" accentColor={accent.hex}>
+              <IconNext />
+            </PhysicalBtn>
+          </div>
+        </div>
+
+        {/* Row 2: Progress + Utility */}
+        <div style={styles.mobileRow2}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <PlaybackProgress compact />
+          </div>
+          <LocalFileLoader accent={accent} />
+        </div>
+
+        <ColorHistoryStrip />
+      </motion.footer>
+    )
+  }
 
   return (
     <motion.footer
@@ -139,7 +229,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
             style={{
               ...styles.artist,
               cursor: isArtistClickable ? 'pointer' : 'default',
-              opacity: isArtistClickable ? 0.5 : 0.3,
+              opacity: isArtistClickable ? 0.55 : 0.4,
             }}
             onClick={() => {
               if (isArtistClickable) {
@@ -161,21 +251,7 @@ export function PlayerBar({ accent }: { accent: AlbumColour }) {
         <PhysicalBtn onClick={prevTrack} label="Prev" accentColor={accent.hex}>
           <IconPrev />
         </PhysicalBtn>
-        <motion.button
-          whileHover={{ scale: 1.04, boxShadow: `0 0 20px ${accent.hex}44` }}
-          whileTap={{ scale: 0.94 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-          onClick={togglePlay}
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-          style={{
-            ...styles.playBtn,
-            backgroundColor: isPlaying ? accent.hex : 'rgba(255,255,255,0.05)',
-            color: isPlaying ? '#000' : '#fff',
-            borderColor: isPlaying ? accent.hex : 'var(--border-color)',
-          }}
-        >
-          {isPlaying ? <IconPause /> : <IconPlay />}
-        </motion.button>
+        {playBtn(44)}
         <PhysicalBtn onClick={nextTrack} label="Next" accentColor={accent.hex}>
           <IconNext />
         </PhysicalBtn>
@@ -209,6 +285,8 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 200,
     gap: '3rem',
   },
+
+  // ─── Desktop ──────────────────────────────────────────────────────────────
   infoSection: {
     display: 'flex',
     alignItems: 'center',
@@ -263,8 +341,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.75rem',
   },
   physicalBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -273,8 +351,6 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease',
   },
   playBtn: {
-    width: 44,
-    height: 44,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -297,17 +373,79 @@ const styles: Record<string, React.CSSProperties> = {
   timeLabel: {
     fontSize: '0.65rem',
     fontFamily: 'monospace',
-    opacity: 0.45,
+    opacity: 0.55,
     width: '40px',
+    flexShrink: 0,
   },
   waveformWrap: {
     flex: 1,
-    height: 32,
     opacity: 0.5,
   },
   utilitySection: {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
+  },
+
+  // ─── Mobile ───────────────────────────────────────────────────────────────
+  mobileRow1: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    height: 44,
+    width: '100%',
+  },
+  mobileRow2: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+    height: 24,
+  },
+  mobileArtFrame: {
+    width: 36,
+    height: 36,
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid var(--border-color)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  mobileMeta: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1px',
+    overflow: 'hidden',
+    flex: 1,
+    minWidth: 0,
+  },
+  mobileTitle: {
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    letterSpacing: '-0.01em',
+  },
+  mobileArtist: {
+    fontSize: '0.6rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    color: 'inherit',
+    fontFamily: 'inherit',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  mobileTransport: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    flexShrink: 0,
   },
 }

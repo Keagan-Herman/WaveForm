@@ -377,7 +377,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
   },
   statusText: {
-    fontSize: '0.55rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.2em',
     opacity: 0.55,
     fontWeight: 700,
@@ -423,9 +423,9 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.6,
   },
   hintDesc: {
-    fontSize: '0.5rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.1em',
-    opacity: 0.45,
+    opacity: 0.5,
     fontWeight: 600,
   },
   errorState: {
