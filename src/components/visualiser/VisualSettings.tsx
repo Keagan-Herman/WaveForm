@@ -297,7 +297,7 @@ const styles: Record<string, React.CSSProperties> = {
     right: '2.5rem',
     top: '2.5rem',
     width: '320px',
-    background: 'rgba(5, 5, 5, 0.4)',
+    background: 'var(--surface-overlay)',
     backdropFilter: 'blur(32px) saturate(1.6)',
     WebkitBackdropFilter: 'blur(32px) saturate(1.6)',
     border: '1px solid rgba(255, 255, 255, 0.08)',

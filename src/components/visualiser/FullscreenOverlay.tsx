@@ -960,7 +960,7 @@ const styles: Record<string, React.CSSProperties> = {
   layerIndicator: {
     position: 'absolute',
     top: '4rem',
-    background: 'rgba(5, 5, 5, 0.4)',
+    background: 'var(--surface-overlay)',
     padding: '0.6rem 2rem',
     borderRadius: '4px',
     backdropFilter: 'blur(32px)',
@@ -1002,7 +1002,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '1.5rem',
-    background: 'rgba(5, 5, 5, 0.4)',
+    background: 'var(--surface-overlay)',
     padding: '1.25rem',
     borderRadius: '4px',
     backdropFilter: 'blur(32px)',
@@ -1079,7 +1079,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
   },
   layerLabel: {
-    background: 'rgba(5, 5, 5, 0.4)',
+    background: 'var(--surface-overlay)',
     padding: '0.6rem 1.25rem',
     borderRadius: '4px',
     backdropFilter: 'blur(32px)',

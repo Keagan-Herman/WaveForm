@@ -33,6 +33,9 @@
   --radius-sm: 2px;
   --radius-md: 4px;
 
+  /* Surface tokens — glass panel base used across overlays */
+  --surface-overlay: rgba(5, 5, 5, 0.4);
+
   /* Z-index scale */
   --z-ui: 100;
   --z-player: 200;

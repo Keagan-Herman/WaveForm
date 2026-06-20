@@ -315,7 +315,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     border: '1px solid var(--border-color)',
     padding: '0.65rem 0.85rem',
-    backgroundColor: 'rgba(5, 5, 5, 0.4)',
+    backgroundColor: 'var(--surface-overlay)',
     transition:
       'border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     borderRadius: '2px',

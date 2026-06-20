@@ -279,7 +279,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 140,
     border: '1px solid var(--border-color)',
     padding: '8px',
-    backgroundColor: 'rgba(5, 5, 5, 0.4)',
+    backgroundColor: 'var(--surface-overlay)',
     position: 'relative',
     flexShrink: 0,
   },
