@@ -45,15 +45,16 @@ function useAppAccent(): AlbumColour {
 function ShortcutsLegend() {
   const showShortcutsLegend = useVisualiserStore(state => state.showShortcutsLegend)
   const toggleShortcutsLegend = useVisualiserStore(state => state.toggleShortcutsLegend)
+  const prefersReducedMotion = useReducedMotion()
 
   return (
     <AnimatePresence>
       {showShortcutsLegend && (
         <motion.div
           key="shortcuts-legend"
-          initial={{ opacity: 0, scale: 0.97 }}
+          initial={{ opacity: 0, ...(prefersReducedMotion ? {} : { scale: 0.97 }) }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.97 }}
+          exit={{ opacity: 0, ...(prefersReducedMotion ? {} : { scale: 0.97 }) }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           style={legendStyles.backdrop}
           onClick={toggleShortcutsLegend}
@@ -104,10 +105,10 @@ const legendStyles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     padding: '2rem',
     minWidth: '280px',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--font-mono)',
   },
   heading: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.25em',
     textTransform: 'uppercase',
     fontWeight: 700,
@@ -131,7 +132,7 @@ const legendStyles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap' as const,
   },
   action: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
     opacity: 0.55,
@@ -140,7 +141,7 @@ const legendStyles: Record<string, React.CSSProperties> = {
     marginTop: '1rem',
     width: '100%',
     padding: '0.4rem',
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
     border: '1px solid rgba(255,255,255,0.12)',
@@ -148,7 +149,7 @@ const legendStyles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.03)',
     cursor: 'pointer',
     opacity: 0.55,
-    fontFamily: 'monospace',
+    fontFamily: 'var(--font-mono)',
     color: '#fff',
   },
 }

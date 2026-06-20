@@ -329,7 +329,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   readoutLabel: {
-    fontSize: '0.6rem',
+    fontSize: '0.65rem',
     textTransform: 'uppercase',
     letterSpacing: '0.15em',
     opacity: 0.45,

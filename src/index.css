@@ -36,6 +36,12 @@
   /* Surface tokens — glass panel base used across overlays */
   --surface-overlay: rgba(5, 5, 5, 0.4);
 
+  /* Dynamic palette defaults — overwritten by useAlbumColour on first paint */
+  --accent-color: #7082a0;
+  --text-color: #e0e0e0;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --reactive-border: rgba(255, 255, 255, 0.08);
+
   /* Z-index scale */
   --z-ui: 100;
   --z-player: 200;
