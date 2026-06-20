@@ -150,6 +150,7 @@ export function Spectrogram({
     >
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         width={effectiveWidth}
         height={effectiveHeight}
         style={{

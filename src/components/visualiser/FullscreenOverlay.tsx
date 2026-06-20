@@ -11,7 +11,7 @@ import {
   GodRays,
 } from '@react-three/postprocessing'
 import { Environment } from '@react-three/drei'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useSceneManager } from '@/hooks/useSceneManager'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
@@ -276,13 +276,18 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const EXPO_OUT = [0.16, 1, 0.3, 1] as [number, number, number, number]
 
   const beat = useVisualiserStore(state => state.beat)
+  const prefersReducedMotion = useReducedMotion()
 
   const hudItemVariants = {
-    hidden: { opacity: 0, x: 20, filter: 'blur(10px)' },
+    hidden: {
+      opacity: 0,
+      x: prefersReducedMotion ? 8 : 20,
+      ...(prefersReducedMotion ? {} : { filter: 'blur(10px)' }),
+    },
     visible: {
       opacity: 1,
       x: 0,
-      filter: 'blur(0px)',
+      ...(prefersReducedMotion ? {} : { filter: 'blur(0px)' }),
       transition: { duration: 0.8, ease: EXPO_OUT },
     },
   }
@@ -292,10 +297,18 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
       {isFullscreen && (
         <motion.div
           key="fullscreen"
-          initial={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, scale: 0.95, filter: 'blur(20px)' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          initial={
+            prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 1.1, filter: 'blur(20px)' }
+          }
+          animate={
+            prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+          }
+          exit={
+            prefersReducedMotion
+              ? { opacity: 0 }
+              : { opacity: 0, scale: 0.95, filter: 'blur(20px)' }
+          }
+          transition={{ duration: prefersReducedMotion ? 0.15 : 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={styles.overlay}
         >
           <div style={styles.canvasWrap}>
@@ -314,7 +327,7 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               />
             </div>
 
-            <div style={{ position: 'absolute', inset: 0 }}>
+            <div style={{ position: 'absolute', inset: 0 }} aria-hidden="true">
               <Canvas
                 camera={{ position: [0, 0, 8], fov: 60 }}
                 gl={{
@@ -388,11 +401,23 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={visualLayer}
-                initial={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, scale: 1.2, filter: 'blur(20px)' }}
+                initial={
+                  prefersReducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.8, filter: 'blur(20px)' }
+                }
+                animate={
+                  prefersReducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+                }
+                exit={
+                  prefersReducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 1.2, filter: 'blur(20px)' }
+                }
                 transition={{
-                  duration: 0.8,
+                  duration: prefersReducedMotion ? 0.15 : 0.8,
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 style={{ ...styles.layerIndicator, borderColor: `${accent.hex}33` }}
@@ -402,11 +427,19 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                   {Array.from(visualLayer.toUpperCase()).map((char, i) => (
                     <motion.span
                       key={i}
-                      initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      initial={
+                        prefersReducedMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, y: 20, filter: 'blur(8px)' }
+                      }
+                      animate={
+                        prefersReducedMotion
+                          ? { opacity: 1 }
+                          : { opacity: 1, y: 0, filter: 'blur(0px)' }
+                      }
                       transition={{
-                        delay: i * 0.04 + 0.1,
-                        duration: 0.6,
+                        delay: prefersReducedMotion ? 0 : i * 0.04 + 0.1,
+                        duration: prefersReducedMotion ? 0.15 : 0.6,
                         ease: [0.16, 1, 0.3, 1],
                       }}
                     >
@@ -427,10 +460,25 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               {currentTrack && showNowPlaying && (
                 <motion.div
                   key="now-playing-card"
-                  initial={{ opacity: 0, x: -60, filter: 'blur(10px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: 20, filter: 'blur(8px)' }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  initial={
+                    prefersReducedMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, x: -60, filter: 'blur(10px)' }
+                  }
+                  animate={
+                    prefersReducedMotion
+                      ? { opacity: 1 }
+                      : { opacity: 1, x: 0, filter: 'blur(0px)' }
+                  }
+                  exit={
+                    prefersReducedMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, x: 20, filter: 'blur(8px)' }
+                  }
+                  transition={{
+                    duration: prefersReducedMotion ? 0.15 : 0.3,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   style={{
                     ...styles.nowPlaying,
                     borderColor: `${accent.hex}33`,
@@ -659,6 +707,7 @@ function EnergyFlux({ accent }: { accent: string }) {
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem' }}>
         <canvas
           ref={canvasRef}
+          aria-hidden="true"
           width={80}
           height={40}
           style={{ opacity: 0.4, marginBottom: '2px' }}
@@ -744,7 +793,13 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
   return (
     <div style={styles.scrutinizer}>
       <div style={styles.hudLabel}>WAVE_SCRUTINIZER</div>
-      <canvas ref={canvasRef} width={140} height={40} style={styles.scrutinizerCanvas} />
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        width={140}
+        height={40}
+        style={styles.scrutinizerCanvas}
+      />
     </div>
   )
 }
@@ -797,7 +852,13 @@ function FrequencyScrutinizer({ accent }: { accent: string }) {
   return (
     <div style={styles.scrutinizer}>
       <div style={styles.hudLabel}>FREQ_SCRUTINIZER</div>
-      <canvas ref={canvasRef} width={140} height={40} style={styles.scrutinizerCanvas} />
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        width={140}
+        height={40}
+        style={styles.scrutinizerCanvas}
+      />
     </div>
   )
 }

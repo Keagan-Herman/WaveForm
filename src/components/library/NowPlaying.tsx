@@ -154,7 +154,7 @@ export function NowPlaying({ accent: accentColour }: NowPlayingProps) {
     <motion.div
       key={currentTrack.id}
       initial={prefersReducedMotion ? false : { opacity: 0, x: 20, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      animate={{ opacity: 1, x: 0, ...(prefersReducedMotion ? {} : { filter: 'blur(0px)' }) }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       style={styles.wrap}
     >

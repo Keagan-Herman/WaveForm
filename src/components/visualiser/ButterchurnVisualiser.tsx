@@ -11,7 +11,11 @@ interface ButterchurnVisualiserProps {
   opacity?: number
 }
 
-export function ButterchurnVisualiser({ onFailure, onCanvasReady, opacity = 1 }: ButterchurnVisualiserProps) {
+export function ButterchurnVisualiser({
+  onFailure,
+  onCanvasReady,
+  opacity = 1,
+}: ButterchurnVisualiserProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const visualizerRef = useRef<{
@@ -122,6 +126,7 @@ export function ButterchurnVisualiser({ onFailure, onCanvasReady, opacity = 1 }:
     <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         width={width || 800}
         height={height || 600}
         style={{ display: 'block', width: '100%', height: '100%' }}

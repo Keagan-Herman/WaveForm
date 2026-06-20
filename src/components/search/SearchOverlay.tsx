@@ -125,12 +125,16 @@ export function SearchOverlay({
   }
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, x: -8, filter: 'blur(4px)' },
+    hidden: {
+      opacity: 0,
+      x: -8,
+      ...(prefersReducedMotion ? {} : { filter: 'blur(4px)' }),
+    },
     visible: {
       opacity: 1,
       x: 0,
-      filter: 'blur(0px)',
-      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+      ...(prefersReducedMotion ? {} : { filter: 'blur(0px)' }),
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] },
     },
   }
 

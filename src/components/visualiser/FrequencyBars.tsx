@@ -136,8 +136,14 @@ export function FrequencyBars({
         // and scaling it to the target bar height.
         ctx.drawImage(
           palette,
-          value, 0, 1, 100, // source: x=value, y=0, w=1, h=100
-          x, baseline - barHeight, barWidth, barHeight // dest
+          value,
+          0,
+          1,
+          100, // source: x=value, y=0, w=1, h=100
+          x,
+          baseline - barHeight,
+          barWidth,
+          barHeight // dest
         )
 
         // Glow cap (High-performance replacement for shadowBlur)
@@ -175,6 +181,7 @@ export function FrequencyBars({
     <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         width={effectiveWidth}
         height={effectiveHeight}
         className={className}

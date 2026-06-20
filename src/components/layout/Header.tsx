@@ -55,10 +55,12 @@ export function Header({
 
       {/* 4-tab mode selector — desktop only */}
       {!isMobile && (
-        <div style={styles.modeTabs}>
+        <div style={styles.modeTabs} role="tablist" aria-label="Visual mode">
           {VISUAL_LAYERS.map(layer => (
             <button
               key={layer}
+              role="tab"
+              aria-selected={visualLayer === layer}
               onClick={() => setVisualLayer(layer)}
               style={{
                 ...styles.modeTab,

@@ -106,6 +106,7 @@ export function RadialVisualiser({
     <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         width={effectiveWidth}
         height={effectiveHeight}
         style={{ display: 'block', width: '100%', height: '100%' }}

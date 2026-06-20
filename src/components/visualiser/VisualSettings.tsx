@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion'
 import { useVisualiserStore, type QualityLevel } from '@/stores/visualiserStore'
 import { useWindowWidth } from '@/hooks/useWindowWidth'
 import { PresetManager } from './PresetManager'
@@ -9,6 +9,7 @@ export function VisualSettings() {
   const setShowSettings = useVisualiserStore(state => state.setShowSettings)
   const windowWidth = useWindowWidth()
   const isMobile = windowWidth < 900
+  const prefersReducedMotion = useReducedMotion()
 
   const {
     quality,
@@ -35,15 +36,23 @@ export function VisualSettings() {
           initial={
             isMobile
               ? { opacity: 0, y: 40 }
-              : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
+              : prefersReducedMotion
+                ? { opacity: 0, x: 20 }
+                : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
           }
           animate={
-            isMobile ? { opacity: 1, y: 0 } : { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }
+            isMobile
+              ? { opacity: 1, y: 0 }
+              : prefersReducedMotion
+                ? { opacity: 1, x: 0 }
+                : { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }
           }
           exit={
             isMobile
               ? { opacity: 0, y: 40 }
-              : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
+              : prefersReducedMotion
+                ? { opacity: 0, x: 20 }
+                : { opacity: 0, x: 40, scale: 0.95, filter: 'blur(10px)' }
           }
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           style={{
@@ -295,6 +304,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
     borderRadius: '4px',
     padding: '2rem',
+    maxWidth: 'calc(100vw - 2rem)',
     zIndex: 100,
     color: '#fff',
     pointerEvents: 'auto',
