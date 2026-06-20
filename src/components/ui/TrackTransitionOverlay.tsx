@@ -53,7 +53,7 @@ const styles: Record<string, React.CSSProperties> = {
     inset: 0,
     zIndex: 2000,
     backgroundColor: 'rgba(0,0,0,0.9)',
-    backdropFilter: 'blur(40px)',
+    backdropFilter: 'none',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',

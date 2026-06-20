@@ -233,8 +233,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.9))',
-    backdropFilter: 'blur(50px) saturate(2)',
-    WebkitBackdropFilter: 'blur(50px) saturate(2)',
+    backdropFilter: 'blur(32px) saturate(1.5)',
+    WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
   },
   content: {
     position: 'relative',
