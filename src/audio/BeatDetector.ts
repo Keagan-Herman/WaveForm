@@ -25,7 +25,7 @@ export class BeatDetector {
 
   /**
    * Pass the current frequency data array on every animation frame.
-   * Returns an object with { beat: boolean, confidence: number, bassEnergy: number, bpm: number }.
+   * Returns an object with { beat, confidence, bassEnergy, bpm, spectralFlux }.
    */
   detect(frequencyData: Uint8Array): {
     beat: boolean
