@@ -18,7 +18,7 @@ const CONFIG = {
     BASE_ROT_Z: 0.002,
     BASS_ROT_Y_MULT: 0.008,
     BASS_ROT_Z_MULT: 0.006,
-  }
+  },
 }
 
 const coreVertexShader = `
@@ -28,6 +28,7 @@ const coreVertexShader = `
   varying float vNoise;
   uniform float uTime;
   uniform float uBass;
+  uniform float uTreble;
   uniform int uQuality;
 
   ${SIMPLEX_NOISE_3D}
@@ -39,13 +40,13 @@ const coreVertexShader = `
 
     float noise = 0.0;
     if (uQuality > 0) {
-      // Multi-octave displacement for Medium/Epic
       noise = snoise(position * 2.0 + uTime * 0.5) * 0.5;
       if (uQuality > 1) {
         noise += snoise(position * 4.0 - uTime * 0.8) * 0.25;
       }
+      // Treble adds fine-grain surface detail (skipped on Low quality)
+      noise += snoise(position * 12.0 + uTime * 1.2) * uTreble * 0.08;
     } else {
-      // Simple displacement for Low
       noise = sin(position.y * 5.0 + uTime * 2.0) * 0.2;
     }
 
@@ -63,41 +64,51 @@ const coreFragmentShader = `
   varying float vNoise;
   uniform float uTime;
   uniform float uBass;
+  uniform float uMid;
+  uniform float uTreble;
+  uniform float uSpectralFlux;
   uniform vec3 uColor;
   uniform vec3 uAccent;
   uniform float uOpacity;
   uniform int uQuality;
 
+  ${SIMPLEX_NOISE_3D}
+
   void main() {
-    // Solar flare base color - multi-layered for filament effect
     float intensity = vNoise * 0.5 + 0.5;
 
-    // Filament noise
     float filaments = snoise(vPosition * 8.0 + uTime * 0.4) * 0.5 + 0.5;
     filaments *= snoise(vPosition * 16.0 - uTime * 0.6) * 0.5 + 0.5;
 
-    vec3 color = mix(uColor * 0.4, uAccent, intensity + uBass * 0.4);
+    // Mid-frequency warms the color mix (voice = warmer orb)
+    float mixFactor = clamp(intensity + uBass * 0.4 + uMid * 0.15, 0.0, 1.0);
+    vec3 color = mix(uColor * 0.4, uAccent, mixFactor);
     color = mix(color, uAccent * 1.5, filaments * intensity * (0.2 + uBass * 0.8));
 
-    // Rim lighting
+    // Rim lighting — spectralFlux keeps glow alive between beats
     float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
     float rimPower = uQuality > 1 ? 6.0 : 4.0;
-    color += uAccent * pow(rim, rimPower) * (1.5 + uBass * 3.0);
+    color += uAccent * pow(rim, rimPower) * (1.5 + uBass * 3.0 + uSpectralFlux * 0.4);
 
-    // Advanced flare patterns for higher quality
+    // Flare patterns
     if (uQuality > 0) {
       float flares = sin(vPosition.x * 20.0 + uTime) * cos(vPosition.y * 15.0 - uTime);
       if (uQuality > 1) {
         flares *= sin(vPosition.z * 10.0 + uTime * 0.5);
       }
       color += uAccent * max(0.0, flares) * 0.4 * (1.0 + uBass);
+
+      // Treble sparkle: scattered bright flecks on cymbal hits
+      float sparkleNoise = snoise(vPosition * 12.0 + uTime * 1.5) * 0.5 + 0.5;
+      float sparkleMask = step(1.0 - uTreble * 0.2, sparkleNoise);
+      color += uAccent * sparkleMask * uTreble * 1.5;
     }
 
-    // Interior glow (Fresnel-based for better symmetry)
+    // Interior glow
     float interior = max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
     color += uColor * pow(interior, 2.5) * 0.5;
 
-    // Organic pulse glow
+    // Organic pulse
     float pulse = sin(uTime * 2.0) * 0.5 + 0.5;
     color += uAccent * pulse * 0.1 * (1.0 + uBass);
 
@@ -111,15 +122,18 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   const coreMaterialRef = useRef<THREE.ShaderMaterial>(null)
   const pointsMatRef = useRef<THREE.PointsMaterial>(null)
 
-  const combinedRef = useCallback((node: THREE.Mesh | null) => {
-    if (coreRef.current !== node) {
-      (coreRef as React.MutableRefObject<THREE.Mesh | null>).current = node;
-    }
-    if (ref) {
-      if (typeof ref === 'function') ref(node);
-      else (ref as React.MutableRefObject<THREE.Mesh | null>).current = node;
-    }
-  }, [ref]);
+  const combinedRef = useCallback(
+    (node: THREE.Mesh | null) => {
+      if (coreRef.current !== node) {
+        ;(coreRef as React.MutableRefObject<THREE.Mesh | null>).current = node
+      }
+      if (ref) {
+        if (typeof ref === 'function') ref(node)
+        else (ref as React.MutableRefObject<THREE.Mesh | null>).current = node
+      }
+    },
+    [ref]
+  )
 
   const orbOpacity = useVisualiserStore(state => state.orbOpacity)
   const quality = useVisualiserStore(state => state.quality)
@@ -134,14 +148,20 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
   const smoothedRotation = useRef({ y: 0, z: 0 })
   const colorRef = useRef(new THREE.Color())
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uBass: { value: 0 },
-    uColor: { value: new THREE.Color(accent.palette.primary) },
-    uAccent: { value: new THREE.Color(accent.palette.accent) },
-    uOpacity: { value: 1.0 },
-    uQuality: { value: qualityInt }
-  }), [accent.palette.primary, accent.palette.accent, qualityInt])
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uMid: { value: 0 },
+      uTreble: { value: 0 },
+      uSpectralFlux: { value: 0 },
+      uColor: { value: new THREE.Color(accent.palette.primary) },
+      uAccent: { value: new THREE.Color(accent.palette.accent) },
+      uOpacity: { value: 1.0 },
+      uQuality: { value: qualityInt },
+    }),
+    [accent.palette.primary, accent.palette.accent, qualityInt]
+  )
 
   useEffect(() => {
     if (coreMaterialRef.current) {
@@ -151,35 +171,33 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     }
   }, [accent.palette.primary, accent.palette.accent, qualityInt])
 
-  useFrame((state) => {
-    const { bassPower, bpm } = useVisualiserStore.getState()
+  useFrame(state => {
+    const { bassPower, bpm, beat, beatConfidence, midPower, treblePower, spectralFlux } =
+      useVisualiserStore.getState()
     const time = state.clock.elapsedTime
 
-    // Inertia for bass reactivity
     smoothedBass.current += (bassPower - smoothedBass.current) * CONFIG.ANIMATION.BASS_SMOOTHING
 
     if (meshRef.current) {
-      // Rotation with inertia
-      const targetRotY = CONFIG.ANIMATION.BASE_ROT_Y + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Y_MULT
-      const targetRotZ = CONFIG.ANIMATION.BASE_ROT_Z + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Z_MULT
+      const targetRotY =
+        CONFIG.ANIMATION.BASE_ROT_Y + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Y_MULT
+      const targetRotZ =
+        CONFIG.ANIMATION.BASE_ROT_Z + smoothedBass.current * CONFIG.ANIMATION.BASS_ROT_Z_MULT
 
-      smoothedRotation.current.y += (targetRotY - smoothedRotation.current.y) * CONFIG.ANIMATION.ROTATION_SMOOTHING
-      smoothedRotation.current.z += (targetRotZ - smoothedRotation.current.z) * CONFIG.ANIMATION.ROTATION_SMOOTHING
+      smoothedRotation.current.y +=
+        (targetRotY - smoothedRotation.current.y) * CONFIG.ANIMATION.ROTATION_SMOOTHING
+      smoothedRotation.current.z +=
+        (targetRotZ - smoothedRotation.current.z) * CONFIG.ANIMATION.ROTATION_SMOOTHING
 
       meshRef.current.rotation.y += smoothedRotation.current.y
       meshRef.current.rotation.z += smoothedRotation.current.z
     }
 
     if (coreRef.current) {
-      const { beat, beatConfidence } = useVisualiserStore.getState()
-
-      // Organic breathing independent of beat
-      const breathing = Math.sin(time * (bpm > 0 ? (bpm / 60) * Math.PI : 2)) * 0.05
-
-      const baseScale = 1.0 + (smoothedBass.current * 0.4) + breathing
+      // BPM-synced breathing: Math.PI * 2 gives one breath per beat (was Math.PI = two beats)
+      const breathing = Math.sin(time * (bpm > 0 ? (bpm / 60) * Math.PI * 2 : 2)) * 0.05
+      const baseScale = 1.0 + smoothedBass.current * 0.4 + breathing
       const targetScale = baseScale + (beat ? beatConfidence * 0.3 : 0)
-
-      // Lerp scale for "breathing" effect
       const currentScale = coreRef.current.scale.x
       const nextScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.15)
       coreRef.current.scale.set(nextScale, nextScale, nextScale)
@@ -188,6 +206,9 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
     if (coreMaterialRef.current) {
       coreMaterialRef.current.uniforms.uTime.value = time
       coreMaterialRef.current.uniforms.uBass.value = smoothedBass.current
+      coreMaterialRef.current.uniforms.uMid.value = midPower
+      coreMaterialRef.current.uniforms.uTreble.value = treblePower
+      coreMaterialRef.current.uniforms.uSpectralFlux.value = spectralFlux
       coreMaterialRef.current.uniforms.uOpacity.value = orbOpacity * 0.8
     }
 
@@ -200,10 +221,7 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
       // Subtle color shift on bass
       colorRef.current.set(accent.palette.secondary)
-      pointsMatRef.current.color.lerp(
-        colorRef.current,
-        smoothedBass.current * 0.2
-      )
+      pointsMatRef.current.color.lerp(colorRef.current, smoothedBass.current * 0.2)
     }
   })
 
@@ -237,7 +255,13 @@ export const AudioOrb = forwardRef<THREE.Mesh, { accent: AlbumColour }>(({ accen
 
       {/* Outer Glow */}
       <mesh scale={[1.1, 1.1, 1.1]}>
-        <sphereGeometry args={[CONFIG.GEOMETRY.CORE_RADIUS, quality === 'Low' ? 16 : 32, quality === 'Low' ? 16 : 32]} />
+        <sphereGeometry
+          args={[
+            CONFIG.GEOMETRY.CORE_RADIUS,
+            quality === 'Low' ? 16 : 32,
+            quality === 'Low' ? 16 : 32,
+          ]}
+        />
         <meshBasicMaterial
           color={accent.palette.accent}
           transparent
