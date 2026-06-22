@@ -34,13 +34,26 @@ function tick() {
   // escape hatch for imperative / non-React contexts
   const { setAudioData } = useVisualiserStore.getState()
 
-  const { beat, confidence, bassEnergy, bpm } = beatDetector.detect(freqData)
+  const { beat, confidence, bassEnergy, bpm, spectralFlux } = beatDetector.detect(freqData)
+
+  // Mid band: bins 20–59 (~400–2400 Hz)
+  let midTotal = 0
+  for (let i = 20; i < 60; i++) midTotal += freqData[i]
+  const midPower = midTotal / (40 * 255)
+
+  // Treble band: bins 70–109 (~2800–8500 Hz)
+  let trebleTotal = 0
+  for (let i = 70; i < 110; i++) trebleTotal += freqData[i]
+  const treblePower = trebleTotal / (40 * 255)
 
   setAudioData({
     beat,
     beatConfidence: confidence,
     bassPower: bassEnergy,
     bpm,
+    midPower,
+    treblePower,
+    spectralFlux,
   })
 
   subscribers.forEach(cb => cb(freqData, waveData))

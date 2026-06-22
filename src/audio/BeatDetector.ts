@@ -32,6 +32,7 @@ export class BeatDetector {
     confidence: number
     bassEnergy: number
     bpm: number
+    spectralFlux: number
   } {
     // 1. Bass Energy Detection (Current approach)
     // PERFORMANCE: Avoid .slice() and .reduce() in hot path to reduce GC pressure
@@ -71,7 +72,13 @@ export class BeatDetector {
 
     // Need at least half a window
     if (this.energyHistory.length < this.windowSize / 2) {
-      return { beat: false, confidence: 0, bassEnergy: bassEnergy / 255, bpm: 0 }
+      return {
+        beat: false,
+        confidence: 0,
+        bassEnergy: bassEnergy / 255,
+        bpm: 0,
+        spectralFlux: Math.min(1, flux / 5000),
+      }
     }
 
     // Energy stats — manual loops to avoid reduce() closure allocation at 60fps
@@ -130,7 +137,13 @@ export class BeatDetector {
         ? this.bpmHistory.reduce((a, b) => a + b, 0) / this.bpmHistory.length
         : 0
 
-    return { beat: isBeat, confidence, bassEnergy: bassEnergy / 255, bpm }
+    return {
+      beat: isBeat,
+      confidence,
+      bassEnergy: bassEnergy / 255,
+      bpm,
+      spectralFlux: Math.min(1, flux / 5000),
+    }
   }
 
   reset(): void {

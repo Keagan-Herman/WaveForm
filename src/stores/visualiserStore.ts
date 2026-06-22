@@ -38,6 +38,9 @@ interface VisualiserStore {
   bassPower: number
   beatConfidence: number
   bpm: number
+  midPower: number
+  treblePower: number
+  spectralFlux: number
 
   // UI / Mode state
   visualLayer: VisualLayer
@@ -86,6 +89,9 @@ interface VisualiserStore {
     bassPower: number
     beatConfidence: number
     bpm: number
+    midPower: number
+    treblePower: number
+    spectralFlux: number
   }) => void
   setVisualLayer: (layer: VisualLayer) => void
   cycleVisualLayer: () => void
@@ -123,6 +129,9 @@ export const useVisualiserStore = create<VisualiserStore>()(
         bassPower: 0,
         beatConfidence: 0,
         bpm: 0,
+        midPower: 0,
+        treblePower: 0,
+        spectralFlux: 0,
 
         visualLayer: 'Ambient',
         isFullscreen: false,

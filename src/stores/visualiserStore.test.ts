@@ -8,6 +8,9 @@ describe('visualiserStore', () => {
       bassPower: 0,
       beatConfidence: 0,
       bpm: 0,
+      midPower: 0,
+      treblePower: 0,
+      spectralFlux: 0,
       visualLayer: 'Ambient',
       isFullscreen: false,
       isLowQuality: false,
@@ -36,12 +39,31 @@ describe('visualiserStore', () => {
     expect(state.beat).toBe(false)
   })
 
+  it('should accept and store midPower, treblePower, and spectralFlux from setAudioData', () => {
+    useVisualiserStore.getState().setAudioData({
+      beat: false,
+      bassPower: 0.3,
+      beatConfidence: 0.1,
+      bpm: 120,
+      midPower: 0.6,
+      treblePower: 0.4,
+      spectralFlux: 0.2,
+    })
+    const s = useVisualiserStore.getState()
+    expect(s.midPower).toBe(0.6)
+    expect(s.treblePower).toBe(0.4)
+    expect(s.spectralFlux).toBe(0.2)
+  })
+
   it('should update audio data', () => {
     useVisualiserStore.getState().setAudioData({
       beat: true,
       bassPower: 0.8,
       beatConfidence: 0.9,
       bpm: 128,
+      midPower: 0,
+      treblePower: 0,
+      spectralFlux: 0,
     })
 
     const state = useVisualiserStore.getState()

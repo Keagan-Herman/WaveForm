@@ -83,4 +83,20 @@ describe('BeatDetector', () => {
     expect(silentResult.beat).toBe(false)
     expect(silentResult.bpm).toBe(0)
   })
+
+  it('should expose spectralFlux as a 0–1 normalized value', () => {
+    const data = new Uint8Array(128).fill(0)
+    const result = detector.detect(data)
+    expect(result.spectralFlux).toBeGreaterThanOrEqual(0)
+    expect(result.spectralFlux).toBeLessThanOrEqual(1)
+  })
+
+  it('should return higher spectralFlux on large spectral change', () => {
+    const silence = new Uint8Array(128).fill(0)
+    detector.detect(silence)
+    // Sudden full-spectrum burst
+    const loud = new Uint8Array(128).fill(200)
+    const result = detector.detect(loud)
+    expect(result.spectralFlux).toBeGreaterThan(0.1)
+  })
 })
