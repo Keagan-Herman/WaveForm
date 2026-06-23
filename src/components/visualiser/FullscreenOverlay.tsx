@@ -24,6 +24,7 @@ import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
+import { ParticleCrown } from './ParticleCrown'
 import { SceneController } from './SceneController'
 import { ButterchurnVisualiser } from './ButterchurnVisualiser'
 import { ButterchurnTexture } from './ButterchurnTexture'
@@ -120,6 +121,7 @@ function FullscreenScene({
       )}
 
       {orbOpacity > 0 && <AudioOrb ref={setOrb} accent={accent} />}
+      {particlesOpacity > 0 && <ParticleCrown accent={accent} />}
       {terrainOpacity > 0 && <AudioTerrain accent={accent} />}
 
       {albumGravityOpacity > 0 &&
