@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
   Bloom,
@@ -73,8 +73,20 @@ function FullscreenScene({
   const dofEnabled = useVisualiserStore(state => state.dofEnabled)
   const multisamplingEnabled = useVisualiserStore(state => state.multisamplingEnabled)
 
-  const bassPower = useVisualiserStore(state => state.bassPower)
   const chromaOffset = useRef(new THREE.Vector2())
+
+  const bloomRef = useRef<{ intensity: number } | null>(null)
+  const chromaRef = useRef<{ offset: THREE.Vector2 } | null>(null)
+
+  useFrame(() => {
+    const { bassPower, bloomIntensity: liveBloomIntensity } = useVisualiserStore.getState()
+    if (bloomRef.current) {
+      bloomRef.current.intensity = liveBloomIntensity * (1 + bassPower * 0.5)
+    }
+    if (chromaRef.current) {
+      chromaRef.current.offset.set(0.002 * bassPower, 0.002 * bassPower)
+    }
+  })
 
   const albumLayout = useMemo(() => {
     const seen = new Set<number>()
@@ -140,11 +152,15 @@ function FullscreenScene({
           {([] as React.ReactElement[]).concat(
             bloomEnabled
               ? [
-                  <Bloom
-                    key="bloom"
-                    luminanceThreshold={0.1}
-                    intensity={bloomIntensity * (1 + bassPower * 0.5)}
-                  />,
+                  (
+                    <Bloom
+                      // @ts-expect-error @react-three/postprocessing types ref typing mismatch
+                      ref={bloomRef}
+                      key="bloom"
+                      luminanceThreshold={0.1}
+                      intensity={bloomIntensity}
+                    />
+                  ) as React.ReactElement,
                 ]
               : [],
             godRaysEnabled && orb
@@ -163,14 +179,16 @@ function FullscreenScene({
               : [],
             chromaticAberrationEnabled
               ? [
-                  <ChromaticAberration
-                    key="chroma"
-                    /* eslint-disable react-hooks/refs */
-                    offset={chromaOffset.current.set(0.002 * bassPower, 0.002 * bassPower)}
-                    /* eslint-enable react-hooks/refs */
-                    radialModulation={false}
-                    modulationOffset={0}
-                  />,
+                  (
+                    <ChromaticAberration
+                      // @ts-expect-error @react-three/postprocessing types ref typing mismatch
+                      ref={chromaRef}
+                      key="chroma"
+                      offset={chromaOffset.current}
+                      radialModulation={false}
+                      modulationOffset={0}
+                    />
+                  ) as React.ReactElement,
                 ]
               : [],
             vignetteEnabled
