@@ -52,6 +52,7 @@ function FullscreenScene({
   butterchurnCanvas: HTMLCanvasElement | null
 }) {
   const quality = useVisualiserStore(state => state.quality)
+  const visualLayer = useVisualiserStore(state => state.visualLayer)
   const [orb, setOrb] = React.useState<THREE.Mesh | null>(null)
 
   // Layer Opacities
@@ -105,7 +106,7 @@ function FullscreenScene({
     <>
       <SceneController />
       <color attach="background" args={[accent.palette.background]} />
-      <FluidBackground accent={accent} />
+      {visualLayer !== 'Ember' && <FluidBackground accent={accent} />}
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} intensity={1} />
 
