@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualiserStore } from '@/stores/visualiserStore'
@@ -11,6 +11,12 @@ interface WaveformTunnelProps {
 
 export function WaveformTunnel({ accent }: WaveformTunnelProps) {
   const groupRef = useRef<THREE.Group>(null)
+  const accentColorRef = useRef(new THREE.Color(accent.hex))
+
+  useEffect(() => {
+    accentColorRef.current.set(accent.hex)
+  }, [accent.hex])
+
   const ringCount = 40
   const segmentCount = 64
   const tunnelRadius = 5
@@ -49,7 +55,7 @@ export function WaveformTunnel({ accent }: WaveformTunnelProps) {
       const scale = 1 + intensity * 0.5 * (1 + bassPower)
       ring.scale.set(scale, scale, 1)
 
-      material.color.set(accent.hex)
+      material.color.copy(accentColorRef.current)
       material.opacity = Math.max(0.1, intensity * 0.8)
 
       // Twist
