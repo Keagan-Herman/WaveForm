@@ -53,6 +53,16 @@ export function ParticleCrown({ accent }: { accent: AlbumColour }) {
   )
 
   const lastBeat = useRef(false)
+  const freeList = useRef<Int32Array | null>(null)
+  const freeHead = useRef(-1)
+
+  // Initialize free list once on first render
+  useMemo(() => {
+    const list = new Int32Array(POOL_SIZE)
+    for (let i = 0; i < POOL_SIZE; i++) list[i] = POOL_SIZE - 1 - i
+    freeList.current = list
+    freeHead.current = POOL_SIZE - 1
+  }, [])
 
   useFrame((_, delta) => {
     const mesh = meshRef.current
@@ -71,14 +81,8 @@ export function ParticleCrown({ accent }: { accent: AlbumColour }) {
 
       for (let b = 0; b < count; b++) {
         // Find an inactive slot
-        let slot = -1
-        for (let k = 0; k < poolSize; k++) {
-          if (!active.current[k]) {
-            slot = k
-            break
-          }
-        }
-        if (slot === -1) break
+        if (freeHead.current < 0) break
+        const slot = freeList.current![freeHead.current--]
 
         // Random point on unit sphere (surface of orb)
         const theta = Math.random() * Math.PI * 2
@@ -106,14 +110,8 @@ export function ParticleCrown({ accent }: { accent: AlbumColour }) {
     if (quality !== 'Low') {
       const trickleCount = 2 + Math.floor(Math.random() * 3)
       for (let t = 0; t < trickleCount; t++) {
-        let slot = -1
-        for (let k = 0; k < poolSize; k++) {
-          if (!active.current[k]) {
-            slot = k
-            break
-          }
-        }
-        if (slot === -1) break
+        if (freeHead.current < 0) break
+        const slot = freeList.current![freeHead.current--]
 
         const pole = Math.random() > 0.5 ? 1 : -1
         const jx = (Math.random() - 0.5) * 0.4
@@ -171,6 +169,7 @@ export function ParticleCrown({ accent }: { accent: AlbumColour }) {
       life.current[i] -= dt
       if (life.current[i] <= 0) {
         active.current[i] = 0
+        freeList.current![++freeHead.current] = i
         tempMatrix.current.makeScale(0, 0, 0)
         mesh.setMatrixAt(i, tempMatrix.current)
         continue
