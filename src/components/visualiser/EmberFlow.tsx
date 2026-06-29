@@ -81,11 +81,11 @@ const vertexShader = `
     // gives each strand its own turbulence orientation rather than all
     // strands sharing one global field and moving in lockstep.
     vec3 rayDir = aSeed;
-    vec3 sample = rayDir * 1.4 + vec3(0.0, 0.0, t * 0.5);
+    vec3 curlSample = rayDir * 1.4 + vec3(0.0, 0.0, t * 0.5);
 
     vec3 flow = vec3(0.0);
-    flow += curl(sample) * 1.0;
-    flow += curl(sample * 2.1 + 10.0) * 0.5;
+    flow += curl(curlSample) * 1.0;
+    flow += curl(curlSample * 2.1 + 10.0) * 0.5;
 
     float growth = uGrowth;
 
@@ -103,7 +103,7 @@ const vertexShader = `
     vec3 pos = corePos + flow * bendStrength;
 
     // Treble jitter: independent of main flow so it reads as energy, not displacement
-    pos += curl(sample * 4.0 + 50.0) * uTreble * 0.8;
+    pos += curl(curlSample * 4.0 + 50.0) * uTreble * 0.8;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
 
