@@ -11,7 +11,7 @@ import {
   GodRays,
 } from '@react-three/postprocessing'
 import { Environment } from '@react-three/drei'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion, useAnimate } from 'framer-motion'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useSceneManager } from '@/hooks/useSceneManager'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
@@ -302,7 +302,6 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
 
   const EXPO_OUT = [0.16, 1, 0.3, 1] as [number, number, number, number]
 
-  const beat = useVisualiserStore(state => state.beat)
   const prefersReducedMotion = useReducedMotion()
 
   const hudItemVariants = {
@@ -403,26 +402,20 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 animate="visible"
                 style={styles.hudRight}
               >
-                <motion.div
-                  variants={hudItemVariants}
-                  animate={beat ? { scale: 1.02, x: -2 } : { scale: 1, x: 0 }}
-                  transition={{ duration: 0.1 }}
-                >
-                  <EnergyFlux accent={accent.hex} />
+                <motion.div variants={hudItemVariants}>
+                  <HUDBeatPulse scale={1.02} x={-2} duration={0.1}>
+                    <EnergyFlux accent={accent.hex} />
+                  </HUDBeatPulse>
                 </motion.div>
-                <motion.div
-                  variants={hudItemVariants}
-                  animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
-                  transition={{ duration: 0.12 }}
-                >
-                  <FrequencyScrutinizer accent={accent.hex} />
+                <motion.div variants={hudItemVariants}>
+                  <HUDBeatPulse scale={1.01} x={-1} duration={0.12}>
+                    <FrequencyScrutinizer accent={accent.hex} />
+                  </HUDBeatPulse>
                 </motion.div>
-                <motion.div
-                  variants={hudItemVariants}
-                  animate={beat ? { scale: 1.01, x: -1 } : { scale: 1, x: 0 }}
-                  transition={{ duration: 0.14 }}
-                >
-                  <WaveformScrutinizer accent={accent.hex} />
+                <motion.div variants={hudItemVariants}>
+                  <HUDBeatPulse scale={1.01} x={-1} duration={0.14}>
+                    <WaveformScrutinizer accent={accent.hex} />
+                  </HUDBeatPulse>
                 </motion.div>
               </motion.div>
             )}
@@ -916,6 +909,31 @@ function BeatIndicator({ accent }: { accent: string }) {
       <span style={{ fontSize: '0.6rem', letterSpacing: '0.1em', opacity: 0.5 }}>BEAT</span>
     </div>
   )
+}
+
+function HUDBeatPulse({
+  children,
+  scale,
+  x,
+  duration,
+}: {
+  children: React.ReactNode
+  scale: number
+  x: number
+  duration: number
+}) {
+  const [scope, animate] = useAnimate()
+
+  useEffect(() => {
+    return useVisualiserStore.subscribe(
+      state => state.beat,
+      beat => {
+        void animate(scope.current, beat ? { scale, x } : { scale: 1, x: 0 }, { duration })
+      }
+    )
+  }, [animate, scope, scale, x, duration])
+
+  return <div ref={scope}>{children}</div>
 }
 
 function HUDButton({
