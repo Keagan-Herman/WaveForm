@@ -37,24 +37,22 @@ function createTrailBuffer(capacity: number): TrailBuffer {
   return { data: new Float32Array(capacity * 2), head: 0, count: 0, capacity }
 }
 
-function writePoints(buf: TrailBuffer, points: Array<[number, number]>): void {
-  for (const [x, y] of points) {
-    buf.data[buf.head * 2] = x
-    buf.data[buf.head * 2 + 1] = y
-    buf.head = (buf.head + 1) % buf.capacity
-    if (buf.count < buf.capacity) buf.count++
-  }
+function writePointDirect(buf: TrailBuffer, x: number, y: number): void {
+  buf.data[buf.head * 2] = x
+  buf.data[buf.head * 2 + 1] = y
+  buf.head = (buf.head + 1) % buf.capacity
+  if (buf.count < buf.capacity) buf.count++
 }
 
-// Returns points in order from oldest to newest
-function readPoints(buf: TrailBuffer): Array<[number, number]> {
-  const result: Array<[number, number]> = new Array(buf.count)
+function iteratePoints(
+  buf: TrailBuffer,
+  cb: (x: number, y: number, i: number, total: number) => void
+): void {
   const start = buf.count < buf.capacity ? 0 : buf.head
   for (let i = 0; i < buf.count; i++) {
     const idx = (start + i) % buf.capacity
-    result[i] = [buf.data[idx * 2], buf.data[idx * 2 + 1]]
+    cb(buf.data[idx * 2], buf.data[idx * 2 + 1], i, buf.count)
   }
-  return result
 }
 
 interface LissajousVisualiserProps {
@@ -123,8 +121,7 @@ export function LissajousVisualiser({
     const len = data.length
     const phaseOffset = Math.floor(len * 0.25) // 90 degree offset
 
-    // Build point trail (keeping persistence feature as requested)
-    const newPoints: Array<[number, number]> = []
+    // Write points directly — zero allocation
     const step = 2
     const rotation = bassPower * 0.3
     const cosR = Math.cos(rotation)
@@ -134,17 +131,10 @@ export function LissajousVisualiser({
     for (let i = 0; i < len - phaseOffset; i += step) {
       const xVal = data[i] / 128 - 1
       const yVal = data[i + phaseOffset] / 128 - 1
-
       const rx = xVal * cosR - yVal * sinR
       const ry = xVal * sinR + yVal * cosR
-
-      const px = cx + rx * scale
-      const py = cy + ry * scale
-      newPoints.push([px, py])
+      writePointDirect(trailBufRef.current, cx + rx * scale, cy + ry * scale)
     }
-
-    writePoints(trailBufRef.current, newPoints)
-    const trail = readPoints(trailBufRef.current)
 
     ctx.clearRect(0, 0, w, h)
 
@@ -165,39 +155,48 @@ export function LissajousVisualiser({
     ctx.lineWidth = 1
     ctx.stroke()
 
-    if (trail.length < 2) return
-
+    // Draw via callback — zero allocation
     const hueMap = hueMapRef.current
     const glowMap = glowMapRef.current
     const glowThresholdSq = (w * 0.42 * 0.7) ** 2
 
-    for (let i = 1; i < trail.length; i++) {
-      const progressIdx = Math.floor((i / trail.length) * 255)
+    if (trailBufRef.current.count < 2) return
+
+    let prevX = 0
+    let prevY = 0
+    iteratePoints(trailBufRef.current, (x, y, i, total) => {
+      if (i === 0) {
+        prevX = x
+        prevY = y
+        return
+      }
+
+      const progressIdx = Math.floor((i / total) * 255)
 
       ctx.beginPath()
-      ctx.moveTo(trail[i - 1][0], trail[i - 1][1])
-      ctx.lineTo(trail[i][0], trail[i][1])
+      ctx.moveTo(prevX, prevY)
+      ctx.lineTo(x, y)
       ctx.strokeStyle = hueMap[progressIdx]
       ctx.lineWidth = 1 + bassPower * 1.5
       ctx.lineCap = 'round'
       ctx.stroke()
 
-      // Glow on high-energy points (using squared distance to avoid Math.sqrt)
-      const px = trail[i][0]
-      const py = trail[i][1]
-      const dx = px - cx
-      const dy = py - cy
+      const dx = x - cx
+      const dy = y - cy
       const distSq = dx * dx + dy * dy
 
       if (distSq > glowThresholdSq) {
         const energy = Math.min(1, Math.sqrt(distSq) / scale)
         const energyIdx = Math.floor(energy * 255)
         ctx.beginPath()
-        ctx.arc(px, py, 1.5 + energy * 2, 0, Math.PI * 2)
+        ctx.arc(x, y, 1.5 + energy * 2, 0, Math.PI * 2)
         ctx.fillStyle = glowMap[energyIdx]
         ctx.fill()
       }
-    }
+
+      prevX = x
+      prevY = y
+    })
 
     // Frozen indicator
     if (frozenRef.current) {
