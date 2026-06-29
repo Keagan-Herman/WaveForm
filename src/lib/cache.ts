@@ -36,7 +36,7 @@ export class RequestCache {
   }
 
   set<T>(key: string, data: T, ttlMs = 5 * 60 * 1000): void {
-    if (this.store.size >= this.maxSize) {
+    if (!this.store.has(key) && this.store.size >= this.maxSize) {
       const oldestKey = this.store.keys().next().value
       if (oldestKey !== undefined) this.store.delete(oldestKey)
     }
