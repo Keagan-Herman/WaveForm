@@ -782,7 +782,6 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
         smoothedData.current[i] += (data[i] - smoothedData.current[i]) * 0.35
       }
 
-      ctx.beginPath()
       const gradient = ctx.createLinearGradient(0, 0, w, 0)
       gradient.addColorStop(0, 'rgba(255,255,255,0)')
       gradient.addColorStop(0.2, accent)
@@ -790,25 +789,36 @@ function WaveformScrutinizer({ accent }: { accent: string }) {
       gradient.addColorStop(0.8, accent)
       gradient.addColorStop(1, 'rgba(255,255,255,0)')
 
+      const sliceWidth = w / data.length
+
+      // Build path once, draw twice (glow pass + main pass) — no shadowBlur
+      const buildPath = () => {
+        ctx.beginPath()
+        let x = 0
+        for (let i = 0; i < data.length; i++) {
+          const v = smoothedData.current![i] / 128.0
+          const y = (v / 2) * h
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+          x += sliceWidth
+        }
+      }
+
+      // Pass 1: glow (wide, transparent)
+      buildPath()
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = 6
+      ctx.lineJoin = 'round'
+      ctx.globalAlpha = 0.18
+      ctx.stroke()
+
+      // Pass 2: main line
+      buildPath()
       ctx.strokeStyle = gradient
       ctx.lineWidth = 1.5
       ctx.lineJoin = 'round'
-      ctx.shadowBlur = 8
-      ctx.shadowColor = accent
-
-      const sliceWidth = w / data.length
-      let x = 0
-
-      for (let i = 0; i < data.length; i++) {
-        const v = smoothedData.current[i] / 128.0
-        const y = (v / 2) * h
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-        x += sliceWidth
-      }
-
+      ctx.globalAlpha = 1.0
       ctx.stroke()
-      ctx.shadowBlur = 0 // Reset for performance
     },
     [accent]
   )
