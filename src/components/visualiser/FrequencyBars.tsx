@@ -1,13 +1,3 @@
-/**
- * FrequencyBars.tsx — v5 (Optimized)
- *
- * High-performance optimizations:
- * 1. Pre-renders gradients into an offscreen 'palette' canvas to avoid per-frame allocations.
- * 2. Samples gradients via ctx.drawImage (scaling) instead of createLinearGradient.
- * 3. Caches HSL strings for glow effects in refs to eliminate GC churn.
- * 4. Maintains zero-allocation hot path for 60fps locked performance.
- */
-
 import { useRef, useEffect, useCallback } from 'react'
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser'
 import { useResize } from '@/hooks/useResize'
@@ -46,51 +36,55 @@ export function FrequencyBars({
   useEffect(() => {
     accentRef.current = accent
 
-    // Initialize or update the offscreen palette
     if (!paletteCanvasRef.current) {
       paletteCanvasRef.current = document.createElement('canvas')
     }
 
     const pCanvas = paletteCanvasRef.current
-    pCanvas.width = 256
+    // 128 columns (one per frequency bin), 100 rows (amplitude gradient)
+    pCanvas.width = 128
     pCanvas.height = 100
     const pCtx = pCanvas.getContext('2d')
     if (!pCtx) return
 
-    const { h: hue, s: sat, l: lit } = accent
+    const { s: sat, l: lit } = accent
     const isLight = lit > 62
 
-    // Pre-calculate all 256 possible gradient columns and decorative strings
     const capStrings: string[] = []
     const glowStrings: string[] = []
     const tipStrings: string[] = []
 
-    for (let v = 0; v < 256; v++) {
-      const ratio = v / 255
-      const barHue = (hue + ratio * 50) % 360
-
-      // 1. Draw gradient column to palette
-      const grad = pCtx.createLinearGradient(v, 100, v, 0)
-      if (isLight) {
-        const baseLit = 35 + ratio * 15
-        const tipLit = 70 + ratio * 20
-        grad.addColorStop(0, `hsla(${barHue}, ${sat}%, ${baseLit}%, 0.7)`)
-        grad.addColorStop(0.6, `hsla(${barHue}, ${Math.min(100, sat * 1.2)}%, ${tipLit}%, 1)`)
-        grad.addColorStop(1, `hsla(${barHue}, 100%, 90%, 1)`)
+    for (let b = 0; b < 128; b++) {
+      // Zone-based hue: warm bass → green mid → cool treble, 5-bin soft crossfades
+      let binHue: number
+      if (b < 6) {
+        binHue = 25
+      } else if (b < 11) {
+        binHue = 25 + ((b - 6) / 5) * 95 // 25° → 120°
+      } else if (b < 65) {
+        binHue = 120
+      } else if (b < 70) {
+        binHue = 120 + ((b - 65) / 5) * 100 // 120° → 220°
       } else {
-        const baseLit = 28 + ratio * 12
-        const tipLit = 48 + ratio * 20
-        grad.addColorStop(0, `hsla(${barHue}, ${sat}%, ${baseLit * 0.6}%, 0.8)`)
-        grad.addColorStop(0.7, `hsla(${barHue}, ${sat}%, ${tipLit}%, 1)`)
-        grad.addColorStop(1, `hsla(${barHue}, 100%, 80%, 1)`)
+        binHue = 220
+      }
+
+      const grad = pCtx.createLinearGradient(b, 100, b, 0)
+      if (isLight) {
+        grad.addColorStop(0, `hsla(${binHue}, ${sat}%, 35%, 0.7)`)
+        grad.addColorStop(0.6, `hsla(${binHue}, ${Math.min(100, sat * 1.2)}%, 70%, 1)`)
+        grad.addColorStop(1, `hsla(${binHue}, 100%, 90%, 1)`)
+      } else {
+        grad.addColorStop(0, `hsla(${binHue}, ${sat}%, 18%, 0.8)`)
+        grad.addColorStop(0.7, `hsla(${binHue}, ${sat}%, 48%, 1)`)
+        grad.addColorStop(1, `hsla(${binHue}, 100%, 80%, 1)`)
       }
       pCtx.fillStyle = grad
-      pCtx.fillRect(v, 0, 1, 100)
+      pCtx.fillRect(b, 0, 1, 100)
 
-      // 2. Cache strings
-      capStrings[v] = `hsla(${barHue}, 100%, 85%, 0.8)`
-      glowStrings[v] = `hsla(${barHue}, 100%, 70%, 0.3)`
-      tipStrings[v] = `hsla(${barHue}, 100%, 92%, 0.8)`
+      capStrings[b] = `hsla(${binHue}, 100%, 85%, 0.8)`
+      glowStrings[b] = `hsla(${binHue}, 100%, 70%, 0.3)`
+      tipStrings[b] = `hsla(${binHue}, 100%, 92%, 0.8)`
     }
 
     capStringsRef.current = capStrings
@@ -132,29 +126,17 @@ export function FrequencyBars({
         const barHeight = ratio * baseline
         const x = i * (barWidth + barSpacing)
 
-        // Draw the pre-rendered gradient by sampling a 1px column from the palette
-        // and scaling it to the target bar height.
-        ctx.drawImage(
-          palette,
-          value,
-          0,
-          1,
-          100, // source: x=value, y=0, w=1, h=100
-          x,
-          baseline - barHeight,
-          barWidth,
-          barHeight // dest
-        )
+        // Sample palette by bin position (x=dataIdx) for zone color, full gradient height
+        ctx.drawImage(palette, dataIdx, 0, 1, 100, x, baseline - barHeight, barWidth, barHeight)
 
-        // Glow cap (High-performance replacement for shadowBlur)
         if (barHeight > 6) {
-          ctx.fillStyle = caps[value]
+          ctx.fillStyle = caps[dataIdx]
           ctx.fillRect(x, baseline - barHeight, barWidth, 2)
 
           if (ratio > 0.7) {
-            ctx.fillStyle = glows[value]
+            ctx.fillStyle = glows[dataIdx]
             ctx.fillRect(x - 2, baseline - barHeight - 2, barWidth + 4, 4)
-            ctx.fillStyle = tips[value]
+            ctx.fillStyle = tips[dataIdx]
             ctx.fillRect(x, baseline - barHeight - 1, barWidth, 2)
           }
         }

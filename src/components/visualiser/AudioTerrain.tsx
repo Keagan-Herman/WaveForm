@@ -18,7 +18,7 @@ const CONFIG = {
   },
   COLOR: {
     MIX_MULT: 0.2,
-  }
+  },
 }
 
 const vertexShader = `
@@ -86,6 +86,7 @@ const fragmentShader = `
   uniform vec3 uColor;
   uniform vec3 uAccent;
   uniform float uOpacity;
+  uniform float uMid;
   uniform int uQuality;
 
   void main() {
@@ -112,6 +113,9 @@ const fragmentShader = `
     vec3 normal = normalize(vec3(-dx, -dy, 1.0));
     float rim = 1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);
     color += uAccent * pow(rim, 3.0) * 0.6;
+
+    // Mid frequencies (voice) warm the terrain with an amber cast
+    color += vec3(uMid * 0.08, uMid * 0.04, 0.0);
 
     gl_FragColor = vec4(color, uOpacity);
   }
@@ -142,13 +146,14 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
     () => ({
       uTime: { value: 0 },
       uBass: { value: 0 },
+      uMid: { value: 0 },
       uBeat: { value: 0 },
       uBeatTime: { value: 0 },
       uFreq: { value: freqTextureRef.current! },
       uColor: { value: new THREE.Color(accent.hex) },
       uAccent: { value: new THREE.Color(accent.palette.accent) },
       uOpacity: { value: 1.0 },
-      uQuality: { value: qualityInt }
+      uQuality: { value: qualityInt },
     }),
     [accent.hex, accent.palette.accent, qualityInt]
   )
@@ -172,7 +177,7 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
     const { clock } = state
     const data = audioEngine.getFrequencyData()
     const visualState = useVisualiserStore.getState()
-    const { bassPower, beat, beatConfidence } = visualState
+    const { bassPower, beat, beatConfidence, midPower } = visualState
 
     if (beat) {
       lastBeatTime.current = clock.elapsedTime
@@ -184,7 +189,10 @@ export function AudioTerrain({ accent }: { accent: AlbumColour }) {
 
       materialRef.current.uniforms.uTime.value = clock.elapsedTime
       materialRef.current.uniforms.uBass.value = bassPower
-      materialRef.current.uniforms.uBeat.value = beat ? beatConfidence : materialRef.current.uniforms.uBeat.value * 0.95
+      materialRef.current.uniforms.uMid.value = midPower
+      materialRef.current.uniforms.uBeat.value = beat
+        ? beatConfidence
+        : materialRef.current.uniforms.uBeat.value * 0.95
       materialRef.current.uniforms.uBeatTime.value = lastBeatTime.current
       materialRef.current.uniforms.uOpacity.value = terrainOpacity
     }
