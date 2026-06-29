@@ -48,7 +48,7 @@ export function useSceneManager() {
   const autoCycle = useVisualiserStore(state => state.autoCycle)
   const visualLayer = useVisualiserStore(state => state.visualLayer)
   const cycleVisualLayer = useVisualiserStore(state => state.cycleVisualLayer)
-  const setLayerOpacity = useVisualiserStore(state => state.setLayerOpacity)
+  const setAllLayerOpacities = useVisualiserStore(state => state.setAllLayerOpacities)
 
   const targetOpacities = useRef<Record<string, number>>(SCENE_CONFIGS[visualLayer])
   const currentOpacities = useRef<Record<string, number>>({ ...SCENE_CONFIGS[visualLayer] })
@@ -91,12 +91,13 @@ export function useSceneManager() {
       })
 
       if (hasChanges) {
-        // Single Zustand update for all opacity changes this frame
-        Object.entries(updates).forEach(([key, val]) =>
-          setLayerOpacity(
-            key as 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow',
-            val
-          )
+        setAllLayerOpacities(
+          updates as Partial<
+            Record<
+              'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow',
+              number
+            >
+          >
         )
       }
 
@@ -105,5 +106,5 @@ export function useSceneManager() {
 
     update()
     return () => cancelAnimationFrame(frameId)
-  }, [setLayerOpacity])
+  }, [setAllLayerOpacities])
 }

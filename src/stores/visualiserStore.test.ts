@@ -109,4 +109,20 @@ describe('visualiserStore', () => {
     const parsed = JSON.parse(stored!)
     expect(parsed.state.godRaysEnabled).toBe(true)
   })
+
+  it('should update all layer opacities in a single call', () => {
+    useVisualiserStore.getState().setAllLayerOpacities({
+      orb: 0.5,
+      terrain: 0.25,
+      particles: 0.75,
+    })
+    const state = useVisualiserStore.getState()
+    expect(state.orbOpacity).toBe(0.5)
+    expect(state.terrainOpacity).toBe(0.25)
+    expect(state.particlesOpacity).toBe(0.75)
+    // Untouched keys unchanged
+    expect(state.albumGravityOpacity).toBe(1)
+    expect(state.presetsOpacity).toBe(0)
+    expect(state.emberFlowOpacity).toBe(0)
+  })
 })

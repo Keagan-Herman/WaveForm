@@ -109,6 +109,11 @@ interface VisualiserStore {
     layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow',
     opacity: number
   ) => void
+  setAllLayerOpacities: (
+    opacities: Partial<
+      Record<'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow', number>
+    >
+  ) => void
 
   // FX controls
   setFxEnabled: (
@@ -251,6 +256,18 @@ export const useVisualiserStore = create<VisualiserStore>()(
               set({ emberFlowOpacity: opacity })
               break
           }
+        },
+
+        setAllLayerOpacities: opacities => {
+          const patch: Partial<VisualiserStore> = {}
+          if (opacities.orb !== undefined) patch.orbOpacity = opacities.orb
+          if (opacities.terrain !== undefined) patch.terrainOpacity = opacities.terrain
+          if (opacities.particles !== undefined) patch.particlesOpacity = opacities.particles
+          if (opacities.presets !== undefined) patch.presetsOpacity = opacities.presets
+          if (opacities.albumGravity !== undefined)
+            patch.albumGravityOpacity = opacities.albumGravity
+          if (opacities.emberFlow !== undefined) patch.emberFlowOpacity = opacities.emberFlow
+          set(patch)
         },
 
         setFxEnabled: (fx, enabled) => {
