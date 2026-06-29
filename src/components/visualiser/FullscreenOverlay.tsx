@@ -26,7 +26,8 @@ import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
 import { ParticleCrown } from './ParticleCrown'
 import { SceneController } from './SceneController'
-import { ButterchurnVisualiser } from './ButterchurnVisualiser'
+import { ButterchurnVisualiser, type ButterchurnHandle } from './ButterchurnVisualiser'
+import { PresetInfoStrip } from './PresetInfoStrip'
 import { ButterchurnTexture } from './ButterchurnTexture'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useShareableURL } from '@/hooks/useShareableURL'
@@ -201,6 +202,8 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const isMobile = windowWidth < 900
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
   const [butterchurnCanvas, setButterchurnCanvas] = React.useState<HTMLCanvasElement | null>(null)
+  const butterchurnRef = React.useRef<ButterchurnHandle>(null)
+  const [currentPresetName, setCurrentPresetName] = React.useState('')
   const setShowSettings = useVisualiserStore(state => state.setShowSettings)
   const isRecording = useVisualiserStore(state => state.isRecording)
   const setIsRecording = useVisualiserStore(state => state.setIsRecording)
@@ -323,8 +326,10 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
               }}
             >
               <ButterchurnVisualiser
+                ref={butterchurnRef}
                 onFailure={() => setVisualLayer('Minimal')}
                 onCanvasReady={setButterchurnCanvas}
+                onPresetChange={setCurrentPresetName}
                 opacity={presetsOpacity}
               />
             </div>
@@ -645,6 +650,14 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 </motion.button>
               </div>
             </div>
+
+            {visualLayer === 'Presets' && currentPresetName && (
+              <PresetInfoStrip
+                presetName={currentPresetName}
+                butterchurnRef={butterchurnRef}
+                accentHex={accent.hex}
+              />
+            )}
           </div>
         </motion.div>
       )}
