@@ -17,8 +17,8 @@ const CONFIG = {
     STREAK_LENGTH: 2.2,
   },
   GROWTH: {
-    BASE: 0.35,
-    BASS_MULT: 1.8,
+    BASE: 0.12,
+    BASS_MULT: 2.4,
     LERP_SPEED: 4.0,
   },
 }
@@ -29,6 +29,8 @@ const CONFIG = {
 const vertexShader = `
   uniform float uTime;
   uniform float uGrowth;
+  uniform float uGrowthMin;
+  uniform float uGrowthRange;
   uniform float uMid;
   uniform float uTreble;
   uniform float uSize;
@@ -85,7 +87,13 @@ const vertexShader = `
 
     vOpacity = clamp(1.0 / -mvPosition.z * 6.0, 0.0, 1.0);
 
-    vHeat = clamp(length(flow) * (0.5 + uGrowth * 0.5) + uTreble * 0.6, 0.0, 1.0);
+    // Heat driven by audio scalars, not flow magnitude — curl() returns unit
+    // vectors so length(flow) sits in a narrow ~0.5-1.5 band regardless of
+    // audio and was saturating the ramp even at rest. growthNorm maps the
+    // bass-driven range (BASE..BASE+BASS_MULT) to 0..1 via uniforms so
+    // CONFIG changes can't silently drift out of sync with this formula.
+    float growthNorm = clamp((uGrowth - uGrowthMin) / uGrowthRange, 0.0, 1.0);
+    vHeat = clamp(growthNorm * 0.75 + uTreble * 0.5, 0.0, 1.0);
     vVelocityDir = normalize(flow.xy + 1e-4);
 
     gl_Position = projectionMatrix * mvPosition;
@@ -128,8 +136,13 @@ const fragmentShader = `
     float dist = length(stretched);
     if (dist > 0.5) discard;
 
-    float alpha = smoothstep(0.5, 0.05, dist) * vOpacity * uOpacity;
     vec3 color = heatRamp(vHeat);
+
+    // Alpha scales with heat — without this, cold particles render at full
+    // strength in a dark color, reading as a uniformly dim field rather than
+    // particles that genuinely emerge and fade with the music.
+    float heatAlpha = smoothstep(0.05, 0.4, vHeat);
+    float alpha = smoothstep(0.5, 0.05, dist) * vOpacity * uOpacity * heatAlpha;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -170,6 +183,8 @@ export function EmberFlow() {
     () => ({
       uTime: { value: 0 },
       uGrowth: { value: CONFIG.GROWTH.BASE },
+      uGrowthMin: { value: CONFIG.GROWTH.BASE },
+      uGrowthRange: { value: CONFIG.GROWTH.BASS_MULT },
       uMid: { value: 0 },
       uTreble: { value: 0 },
       uOpacity: { value: CONFIG.VISUALS.OPACITY_MULT },
