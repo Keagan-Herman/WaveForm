@@ -23,6 +23,7 @@ describe('visualiserStore', () => {
       particlesOpacity: 1,
       presetsOpacity: 0,
       albumGravityOpacity: 1,
+      emberFlowOpacity: 0,
       bloomEnabled: true,
       bloomIntensity: 1.5,
       godRaysEnabled: false,
@@ -82,6 +83,8 @@ describe('visualiserStore', () => {
     expect(useVisualiserStore.getState().visualLayer).toBe('Minimal')
     store.cycleVisualLayer()
     expect(useVisualiserStore.getState().visualLayer).toBe('Presets')
+    store.cycleVisualLayer()
+    expect(useVisualiserStore.getState().visualLayer).toBe('Ember')
     store.cycleVisualLayer()
     expect(useVisualiserStore.getState().visualLayer).toBe('Ambient')
   })

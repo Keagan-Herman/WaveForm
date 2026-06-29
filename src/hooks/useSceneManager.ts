@@ -8,6 +8,7 @@ const SCENE_CONFIGS: Record<VisualLayer, Record<string, number>> = {
     particles: 0.5,
     presets: 0,
     albumGravity: 1,
+    emberFlow: 0,
   },
   Energy: {
     orb: 1,
@@ -15,6 +16,7 @@ const SCENE_CONFIGS: Record<VisualLayer, Record<string, number>> = {
     particles: 1,
     presets: 0,
     albumGravity: 0,
+    emberFlow: 0,
   },
   Minimal: {
     orb: 0,
@@ -22,6 +24,7 @@ const SCENE_CONFIGS: Record<VisualLayer, Record<string, number>> = {
     particles: 0.2,
     presets: 0,
     albumGravity: 0,
+    emberFlow: 0,
   },
   Presets: {
     orb: 0,
@@ -29,6 +32,15 @@ const SCENE_CONFIGS: Record<VisualLayer, Record<string, number>> = {
     particles: 0,
     presets: 1,
     albumGravity: 0,
+    emberFlow: 0,
+  },
+  Ember: {
+    orb: 0,
+    terrain: 0,
+    particles: 0,
+    presets: 0,
+    albumGravity: 0,
+    emberFlow: 1,
   },
 }
 
@@ -81,7 +93,10 @@ export function useSceneManager() {
       if (hasChanges) {
         // Single Zustand update for all opacity changes this frame
         Object.entries(updates).forEach(([key, val]) =>
-          setLayerOpacity(key as 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity', val)
+          setLayerOpacity(
+            key as 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow',
+            val
+          )
         )
       }
 

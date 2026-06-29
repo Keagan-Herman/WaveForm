@@ -22,6 +22,7 @@ import { FluidBackground } from './FluidBackground'
 import { RadialVisualiser } from './RadialVisualiser'
 import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
+import { EmberFlow } from './EmberFlow'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
 import { ParticleCrown } from './ParticleCrown'
@@ -51,6 +52,7 @@ function FullscreenScene({
   butterchurnCanvas: HTMLCanvasElement | null
 }) {
   const quality = useVisualiserStore(state => state.quality)
+  const visualLayer = useVisualiserStore(state => state.visualLayer)
   const [orb, setOrb] = React.useState<THREE.Mesh | null>(null)
 
   // Layer Opacities
@@ -59,6 +61,7 @@ function FullscreenScene({
   const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
   const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
+  const emberFlowOpacity = useVisualiserStore(state => state.emberFlowOpacity)
 
   // FX state
   const bloomEnabled = useVisualiserStore(state => state.bloomEnabled)
@@ -103,7 +106,8 @@ function FullscreenScene({
     <>
       <SceneController />
       <color attach="background" args={[accent.palette.background]} />
-      <FluidBackground accent={accent} />
+      {visualLayer !== 'Ember' && <FluidBackground accent={accent} />}
+      {emberFlowOpacity > 0 && <EmberFlow accent={accent} />}
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} intensity={1} />
 

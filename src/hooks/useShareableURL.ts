@@ -4,7 +4,7 @@ import { useVisualiserStore } from '@/stores/visualiserStore'
 import type { VisualLayer, QualityLevel } from '@/stores/visualiserStore'
 
 const VALID_QUALITIES: QualityLevel[] = ['Low', 'Medium', 'Epic']
-const VALID_LAYERS: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
+const VALID_LAYERS: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets', 'Ember']
 
 interface ShareParams {
   visualLayer: string
