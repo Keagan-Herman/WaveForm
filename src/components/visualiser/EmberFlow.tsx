@@ -17,7 +17,11 @@ const CONFIG = {
     ASYMMETRY_BIAS: [1.0, 0.4, 0.3] as [number, number, number],
   },
   VISUALS: {
-    SIZE: 18.0,
+    // gl_PointSize = SIZE * sizeBoost * (1/cameraDistance). Camera sits ~16
+    // units out and particles collapse toward origin at rest, so they're
+    // always at worst-case distance. 90 keeps resting particles visible
+    // (~5px) and full-bass particles prominent (~14px) at that distance.
+    SIZE: 90.0,
     OPACITY_MULT: 0.85,
     STREAK_LENGTH: 2.2,
   },
