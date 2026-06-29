@@ -4,7 +4,7 @@ import { useVisualiserStore, type VisualLayer } from '@/stores/visualiserStore'
 import { useWindowWidth } from '@/hooks/useWindowWidth'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
-const VISUAL_LAYERS: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
+const VISUAL_LAYERS: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets', 'Ember']
 
 interface HeaderProps {
   accent: AlbumColour

@@ -22,6 +22,7 @@ import { FluidBackground } from './FluidBackground'
 import { RadialVisualiser } from './RadialVisualiser'
 import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
+import { EmberFlow } from './EmberFlow'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
 import { ParticleCrown } from './ParticleCrown'
@@ -59,6 +60,7 @@ function FullscreenScene({
   const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
   const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
+  const emberFlowOpacity = useVisualiserStore(state => state.emberFlowOpacity)
 
   // FX state
   const bloomEnabled = useVisualiserStore(state => state.bloomEnabled)
@@ -120,6 +122,8 @@ function FullscreenScene({
           secondary={accent.palette.secondary}
         />
       )}
+
+      {emberFlowOpacity > 0 && <EmberFlow />}
 
       {orbOpacity > 0 && <AudioOrb ref={setOrb} accent={accent} />}
       {particlesOpacity > 0 && <ParticleCrown accent={accent} />}
