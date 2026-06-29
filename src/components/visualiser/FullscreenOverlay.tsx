@@ -22,7 +22,6 @@ import { FluidBackground } from './FluidBackground'
 import { RadialVisualiser } from './RadialVisualiser'
 import { AlbumMesh } from '../library/AlbumMesh'
 import { ParticleField } from '../library/ParticleField'
-import { EmberFlow } from './EmberFlow'
 import { AudioOrb } from './AudioOrb'
 import { AudioTerrain } from './AudioTerrain'
 import { ParticleCrown } from './ParticleCrown'
@@ -52,7 +51,6 @@ function FullscreenScene({
   butterchurnCanvas: HTMLCanvasElement | null
 }) {
   const quality = useVisualiserStore(state => state.quality)
-  const visualLayer = useVisualiserStore(state => state.visualLayer)
   const [orb, setOrb] = React.useState<THREE.Mesh | null>(null)
 
   // Layer Opacities
@@ -61,7 +59,6 @@ function FullscreenScene({
   const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
   const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
-  const emberFlowOpacity = useVisualiserStore(state => state.emberFlowOpacity)
 
   // FX state
   const bloomEnabled = useVisualiserStore(state => state.bloomEnabled)
@@ -106,7 +103,7 @@ function FullscreenScene({
     <>
       <SceneController />
       <color attach="background" args={[accent.palette.background]} />
-      {visualLayer !== 'Ember' && <FluidBackground accent={accent} />}
+      <FluidBackground accent={accent} />
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} intensity={1} />
 
@@ -123,8 +120,6 @@ function FullscreenScene({
           secondary={accent.palette.secondary}
         />
       )}
-
-      {emberFlowOpacity > 0 && <EmberFlow />}
 
       {orbOpacity > 0 && <AudioOrb ref={setOrb} accent={accent} />}
       {particlesOpacity > 0 && <ParticleCrown accent={accent} />}
@@ -206,12 +201,6 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const windowWidth = useWindowWidth()
   const isMobile = windowWidth < 900
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
-  // TEMP DEBUG reads — for the on-screen readout below, remove together
-  const emberFlowOpacity = useVisualiserStore(state => state.emberFlowOpacity)
-  const terrainOpacity = useVisualiserStore(state => state.terrainOpacity)
-  const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
-  const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
-  const orbOpacity = useVisualiserStore(state => state.orbOpacity)
   const [butterchurnCanvas, setButterchurnCanvas] = React.useState<HTMLCanvasElement | null>(null)
   const butterchurnRef = React.useRef<ButterchurnHandle>(null)
   const [currentPresetName, setCurrentPresetName] = React.useState('')
@@ -467,29 +456,6 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 </div>
               </motion.div>
             </AnimatePresence>
-
-            {/* TEMP DEBUG — remove once Ember visibility issue is confirmed
-                fixed. Shows live opacity state to settle whether the issue
-                is the scene-manager crossfade vs. EmberFlow's own rendering. */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '4rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.85)',
-                color: '#0f0',
-                fontFamily: 'monospace',
-                fontSize: '11px',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                whiteSpace: 'pre',
-                zIndex: 999,
-                pointerEvents: 'none',
-              }}
-            >
-              {`layer=${visualLayer}\nember=${emberFlowOpacity.toFixed(2)} terrain=${terrainOpacity.toFixed(2)} particles=${particlesOpacity.toFixed(2)} albumGrav=${albumGravityOpacity.toFixed(2)} orb=${orbOpacity.toFixed(2)}`}
-            </div>
 
             {visualLayer === 'Minimal' && (
               <div style={styles.radialWrap}>

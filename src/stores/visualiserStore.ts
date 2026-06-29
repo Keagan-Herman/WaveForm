@@ -8,7 +8,7 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
 
-export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets' | 'Ember'
+export type VisualLayer = 'Ambient' | 'Energy' | 'Minimal' | 'Presets'
 export type QualityLevel = 'Low' | 'Medium' | 'Epic'
 
 export interface ScenePresetSettings {
@@ -56,7 +56,6 @@ interface VisualiserStore {
   particlesOpacity: number
   presetsOpacity: number
   albumGravityOpacity: number
-  emberFlowOpacity: number
 
   // Post-Processing
   bloomEnabled: boolean
@@ -106,7 +105,7 @@ interface VisualiserStore {
 
   // Layer controls
   setLayerOpacity: (
-    layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity' | 'emberFlow',
+    layer: 'orb' | 'terrain' | 'particles' | 'presets' | 'albumGravity',
     opacity: number
   ) => void
 
@@ -147,7 +146,6 @@ export const useVisualiserStore = create<VisualiserStore>()(
         particlesOpacity: 1,
         presetsOpacity: 0,
         albumGravityOpacity: 1,
-        emberFlowOpacity: 0,
 
         bloomEnabled: true,
         bloomIntensity: 1.5,
@@ -211,7 +209,7 @@ export const useVisualiserStore = create<VisualiserStore>()(
           set({ visualLayer })
         },
         cycleVisualLayer: () => {
-          const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets', 'Ember']
+          const layers: VisualLayer[] = ['Ambient', 'Energy', 'Minimal', 'Presets']
           const current = get().visualLayer
           const nextIndex = (layers.indexOf(current) + 1) % layers.length
           set({ visualLayer: layers[nextIndex] })
@@ -246,9 +244,6 @@ export const useVisualiserStore = create<VisualiserStore>()(
               break
             case 'albumGravity':
               set({ albumGravityOpacity: opacity })
-              break
-            case 'emberFlow':
-              set({ emberFlowOpacity: opacity })
               break
           }
         },
