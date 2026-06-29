@@ -10,7 +10,12 @@ const CONFIG = {
     Medium: 12000,
     Epic: 35000,
   },
-  BOUNDS: 14,
+  // Particles sit along rays from the origin, biased toward one side
+  // to match the reference's lopsided eruption rather than a symmetric starburst.
+  RAY: {
+    MAX_REACH: 16,
+    ASYMMETRY_BIAS: [1.0, 0.4, 0.3] as [number, number, number],
+  },
   VISUALS: {
     SIZE: 18.0,
     OPACITY_MULT: 0.85,
@@ -35,9 +40,11 @@ const vertexShader = `
   uniform float uTreble;
   uniform float uSize;
   uniform float uPixelRatio;
+  uniform float uMaxReach;
 
   attribute vec3 aSeed;
   attribute float aPhase;
+  attribute float aDistance;
 
   varying float vHeat;
   varying float vOpacity;
@@ -66,23 +73,37 @@ const vertexShader = `
     float turbSpeed = 0.06 + uMid * 0.35;
     float t = uTime * turbSpeed + aPhase;
 
-    // Stateless advection: sample the time-evolving field offset rather
-    // than tracking a persistent position, so no per-frame CPU writes.
-    vec3 p = aSeed * 0.18;
-    vec3 sample = p + vec3(0.0, 0.0, t * 0.5);
+    // aSeed is a unit ray direction. Sampling the curl field along the ray
+    // gives each strand its own turbulence orientation rather than all
+    // strands sharing one global field and moving in lockstep.
+    vec3 rayDir = aSeed;
+    vec3 sample = rayDir * 1.4 + vec3(0.0, 0.0, t * 0.5);
 
     vec3 flow = vec3(0.0);
     flow += curl(sample) * 1.0;
     flow += curl(sample * 2.1 + 10.0) * 0.5;
 
-    vec3 pos = aSeed + flow * uGrowth * 6.0;
+    float growth = uGrowth;
+
+    // Core position: particles travel outward along the ray by aDistance
+    // (0..1) scaled to world units. At low growth everything collapses
+    // toward the origin; at high growth particles reach further out —
+    // that's what reads as strands "growing" on a bass hit.
+    float reach = aDistance * uMaxReach;
+    vec3 corePos = rayDir * reach * growth;
+
+    // Curl bends the ray as a perpendicular-ish offset, scaled by how far
+    // out the particle already is, so bending is subtle at the core and
+    // pronounced at the tips — matching the reference's tapered, forking ends.
+    float bendStrength = reach * growth * 0.35;
+    vec3 pos = corePos + flow * bendStrength;
 
     // Treble jitter: independent of main flow so it reads as energy, not displacement
     pos += curl(sample * 4.0 + 50.0) * uTreble * 0.8;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
 
-    float sizeBoost = 1.0 + uGrowth * 0.6 + uTreble * 0.8;
+    float sizeBoost = 1.0 + growth * 0.6 + uTreble * 0.8;
     gl_PointSize = uSize * uPixelRatio * sizeBoost * (1.0 / -mvPosition.z);
 
     vOpacity = clamp(1.0 / -mvPosition.z * 6.0, 0.0, 1.0);
@@ -92,8 +113,12 @@ const vertexShader = `
     // audio and was saturating the ramp even at rest. growthNorm maps the
     // bass-driven range (BASE..BASE+BASS_MULT) to 0..1 via uniforms so
     // CONFIG changes can't silently drift out of sync with this formula.
-    float growthNorm = clamp((uGrowth - uGrowthMin) / uGrowthRange, 0.0, 1.0);
-    vHeat = clamp(growthNorm * 0.75 + uTreble * 0.5, 0.0, 1.0);
+    float growthNorm = clamp((growth - uGrowthMin) / uGrowthRange, 0.0, 1.0);
+    // coreBoost: particles near the origin (low aDistance) run hotter,
+    // giving the reference's concentrated white-hot center rather than
+    // uniform brightness across the whole spread.
+    float coreBoost = (1.0 - aDistance) * 0.25;
+    vHeat = clamp(growthNorm * 0.75 + uTreble * 0.5 + coreBoost, 0.0, 1.0);
     vVelocityDir = normalize(flow.xy + 1e-4);
 
     gl_Position = projectionMatrix * mvPosition;
@@ -159,9 +184,15 @@ export function EmberFlow() {
     [quality]
   )
 
-  const [seeds, phases] = useMemo(() => {
+  const [seeds, phases, distances, initialPositions] = useMemo(() => {
     const seed = new Float32Array(actualCount * 3)
     const phase = new Float32Array(actualCount)
+    const distance = new Float32Array(actualCount)
+    // initialPos gives Three.js a bounding sphere that reflects the real
+    // spatial extent (~MAX_REACH) so frustum culling works correctly.
+    // Using the unit-direction seeds for attributes-position would produce
+    // a bounding sphere of radius ~1 while particles render out to 16.
+    const initialPos = new Float32Array(actualCount * 3)
 
     // Deterministic PRNG — avoids non-deterministic Math.random() in useMemo
     const prng = (i: number) => {
@@ -170,13 +201,38 @@ export function EmberFlow() {
       return (s - 1) / 2147483646
     }
 
+    const [bx, by, bz] = CONFIG.RAY.ASYMMETRY_BIAS
+
     for (let i = 0; i < actualCount; i++) {
-      seed[i * 3] = (prng(i * 5) - 0.5) * CONFIG.BOUNDS * 2
-      seed[i * 3 + 1] = (prng(i * 5 + 1) - 0.5) * CONFIG.BOUNDS * 2
-      seed[i * 3 + 2] = (prng(i * 5 + 2) - 0.5) * CONFIG.BOUNDS * 2
+      // Random direction on a unit sphere, stretched per-axis by the
+      // asymmetry bias so the structure fans more along x than y/z —
+      // matches the reference's lopsided, horizontally-dominant eruption.
+      const theta = prng(i * 5) * Math.PI * 2
+      const phi = Math.acos(2 * prng(i * 5 + 1) - 1)
+      let dx = Math.sin(phi) * Math.cos(theta) * bx
+      let dy = Math.sin(phi) * Math.sin(theta) * by
+      let dz = Math.cos(phi) * bz
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
+      dx /= len
+      dy /= len
+      dz /= len
+
+      seed[i * 3] = dx
+      seed[i * 3 + 1] = dy
+      seed[i * 3 + 2] = dz
+
+      // Bias distance toward the core (pow skews toward 0) so particles
+      // are denser near center and sparser toward tips, like real embers.
+      const dist = Math.pow(prng(i * 5 + 2), 1.8)
+      distance[i] = dist
+
+      initialPos[i * 3] = dx * dist * CONFIG.RAY.MAX_REACH
+      initialPos[i * 3 + 1] = dy * dist * CONFIG.RAY.MAX_REACH
+      initialPos[i * 3 + 2] = dz * dist * CONFIG.RAY.MAX_REACH
+
       phase[i] = prng(i * 5 + 3) * Math.PI * 2
     }
-    return [seed, phase]
+    return [seed, phase, distance, initialPos]
   }, [actualCount])
 
   const uniforms = useMemo(
@@ -185,6 +241,7 @@ export function EmberFlow() {
       uGrowth: { value: CONFIG.GROWTH.BASE },
       uGrowthMin: { value: CONFIG.GROWTH.BASE },
       uGrowthRange: { value: CONFIG.GROWTH.BASS_MULT },
+      uMaxReach: { value: CONFIG.RAY.MAX_REACH },
       uMid: { value: 0 },
       uTreble: { value: 0 },
       uOpacity: { value: CONFIG.VISUALS.OPACITY_MULT },
@@ -218,12 +275,12 @@ export function EmberFlow() {
   })
 
   return (
-    <points ref={pointsRef}>
+    <points ref={pointsRef} frustumCulled={false}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
           count={actualCount}
-          array={seeds}
+          array={initialPositions}
           itemSize={3}
         />
         <bufferAttribute attach="attributes-aSeed" count={actualCount} array={seeds} itemSize={3} />
@@ -231,6 +288,12 @@ export function EmberFlow() {
           attach="attributes-aPhase"
           count={actualCount}
           array={phases}
+          itemSize={1}
+        />
+        <bufferAttribute
+          attach="attributes-aDistance"
+          count={actualCount}
+          array={distances}
           itemSize={1}
         />
       </bufferGeometry>
