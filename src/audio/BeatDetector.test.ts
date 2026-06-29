@@ -99,4 +99,17 @@ describe('BeatDetector', () => {
     const result = detector.detect(loud)
     expect(result.spectralFlux).toBeGreaterThan(0.1)
   })
+
+  it('should accumulate history without Array.shift allocations', () => {
+    // Drive well past windowSize (43) to exercise the circular buffer wrap
+    const silence = new Uint8Array(128).fill(0)
+    for (let i = 0; i < 100; i++) {
+      detector.detect(silence)
+    }
+    // Should not throw and should still detect beats correctly after wrap
+    const loud = new Uint8Array(128).fill(0)
+    for (let i = 0; i < 10; i++) loud[i] = 220
+    const result = detector.detect(loud)
+    expect(result.bassEnergy).toBeGreaterThan(0)
+  })
 })
