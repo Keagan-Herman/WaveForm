@@ -14,8 +14,13 @@ interface CacheEntry<T> {
   expiresAt: number
 }
 
-class RequestCache {
+export class RequestCache {
   private store = new Map<string, CacheEntry<unknown>>()
+  private readonly maxSize: number
+
+  constructor(maxSize = 50) {
+    this.maxSize = maxSize
+  }
 
   get<T>(key: string): T | null {
     const entry = this.store.get(key)
@@ -24,10 +29,17 @@ class RequestCache {
       this.store.delete(key)
       return null
     }
+    // LRU: re-insert to move to end of Map iteration order
+    this.store.delete(key)
+    this.store.set(key, entry)
     return entry.data as T
   }
 
   set<T>(key: string, data: T, ttlMs = 5 * 60 * 1000): void {
+    if (this.store.size >= this.maxSize) {
+      const oldestKey = this.store.keys().next().value
+      if (oldestKey !== undefined) this.store.delete(oldestKey)
+    }
     this.store.set(key, { data, expiresAt: Date.now() + ttlMs })
   }
 

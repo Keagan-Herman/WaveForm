@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { cache, fetchWithCache } from './cache'
+import { cache, fetchWithCache, RequestCache } from './cache'
 
 describe('cache', () => {
   beforeEach(() => {
@@ -50,5 +50,18 @@ describe('cache', () => {
       expect(result2).toBe('fresh data')
       expect(fetcher).toHaveBeenCalledTimes(1)
     })
+  })
+
+  it('should evict the oldest entry when maxSize is reached', () => {
+    const smallCache = new RequestCache(3)
+    smallCache.set('a', 1)
+    smallCache.set('b', 2)
+    smallCache.set('c', 3)
+    smallCache.set('d', 4) // should evict 'a'
+
+    expect(smallCache.get('a')).toBeNull()
+    expect(smallCache.get('b')).toBe(2)
+    expect(smallCache.get('c')).toBe(3)
+    expect(smallCache.get('d')).toBe(4)
   })
 })
