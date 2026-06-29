@@ -206,6 +206,12 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
   const windowWidth = useWindowWidth()
   const isMobile = windowWidth < 900
   const presetsOpacity = useVisualiserStore(state => state.presetsOpacity)
+  // TEMP DEBUG reads — for the on-screen readout below, remove together
+  const emberFlowOpacity = useVisualiserStore(state => state.emberFlowOpacity)
+  const terrainOpacity = useVisualiserStore(state => state.terrainOpacity)
+  const particlesOpacity = useVisualiserStore(state => state.particlesOpacity)
+  const albumGravityOpacity = useVisualiserStore(state => state.albumGravityOpacity)
+  const orbOpacity = useVisualiserStore(state => state.orbOpacity)
   const [butterchurnCanvas, setButterchurnCanvas] = React.useState<HTMLCanvasElement | null>(null)
   const butterchurnRef = React.useRef<ButterchurnHandle>(null)
   const [currentPresetName, setCurrentPresetName] = React.useState('')
@@ -461,6 +467,29 @@ export function FullscreenOverlay({ accent, tracks }: FullscreenOverlayProps) {
                 </div>
               </motion.div>
             </AnimatePresence>
+
+            {/* TEMP DEBUG — remove once Ember visibility issue is confirmed
+                fixed. Shows live opacity state to settle whether the issue
+                is the scene-manager crossfade vs. EmberFlow's own rendering. */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '4rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.85)',
+                color: '#0f0',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                whiteSpace: 'pre',
+                zIndex: 999,
+                pointerEvents: 'none',
+              }}
+            >
+              {`layer=${visualLayer}\nember=${emberFlowOpacity.toFixed(2)} terrain=${terrainOpacity.toFixed(2)} particles=${particlesOpacity.toFixed(2)} albumGrav=${albumGravityOpacity.toFixed(2)} orb=${orbOpacity.toFixed(2)}`}
+            </div>
 
             {visualLayer === 'Minimal' && (
               <div style={styles.radialWrap}>
