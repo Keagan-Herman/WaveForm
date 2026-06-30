@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TrackRow } from './TrackRow'
-import { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 
 const mockTrack: DeezerTrack = {
   id: 1,
@@ -17,31 +17,17 @@ const mockTrack: DeezerTrack = {
 
 describe('TrackRow', () => {
   it('renders track information correctly', () => {
-    render(
-      <TrackRow
-        track={mockTrack}
-        isActive={false}
-        index={0}
-        onSelect={() => {}}
-      />
-    )
+    render(<TrackRow track={mockTrack} isActive={false} index={0} onSelect={() => {}} />)
 
     expect(screen.getByText('Test Track')).toBeDefined()
     expect(screen.getByText('Test Artist')).toBeDefined()
     expect(screen.getByText('Test Album')).toBeDefined()
-    expect(screen.getByText('3:00')).toBeDefined() // 180 seconds
+    expect(screen.getByText('03:00')).toBeDefined() // 180 seconds
   })
 
   it('calls onSelect when clicked', () => {
     const onSelect = vi.fn()
-    render(
-      <TrackRow
-        track={mockTrack}
-        isActive={false}
-        index={5}
-        onSelect={onSelect}
-      />
-    )
+    render(<TrackRow track={mockTrack} isActive={false} index={5} onSelect={onSelect} />)
 
     fireEvent.click(screen.getByRole('button'))
     expect(onSelect).toHaveBeenCalledWith(mockTrack, 5)
@@ -49,13 +35,7 @@ describe('TrackRow', () => {
 
   it('shows playing indicator when active and playing', () => {
     render(
-      <TrackRow
-        track={mockTrack}
-        isActive={true}
-        isPlaying={true}
-        index={0}
-        onSelect={() => {}}
-      />
+      <TrackRow track={mockTrack} isActive={true} isPlaying={true} index={0} onSelect={() => {}} />
     )
 
     // PlayingBars is aria-hidden, so we check for its container if possible
@@ -65,14 +45,7 @@ describe('TrackRow', () => {
 
   it('shows explicit badge if track is explicit', () => {
     const explicitTrack = { ...mockTrack, explicit_lyrics: true }
-    render(
-      <TrackRow
-        track={explicitTrack}
-        isActive={false}
-        index={0}
-        onSelect={() => {}}
-      />
-    )
+    render(<TrackRow track={explicitTrack} isActive={false} index={0} onSelect={() => {}} />)
 
     expect(screen.getByLabelText('Explicit content')).toBeDefined()
   })

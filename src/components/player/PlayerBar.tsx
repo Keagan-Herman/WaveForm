@@ -6,6 +6,7 @@ import { WaveformLine } from '../visualiser/WaveformLine'
 import { LocalFileLoader } from './LocalFileLoader'
 import { ColorHistoryStrip } from './ColorHistoryStrip'
 import { getTrackCover, getTrackArtist, isDeezerTrack } from '../../types/track'
+import { formatDuration } from '../../lib/deezerApi'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
 import type { DeezerTrack } from '../../types/track'
 import type { AlbumColour } from '../../hooks/useAlbumColour'
@@ -45,13 +46,6 @@ function IconPause() {
       <rect x="10" y="4" width="2" height="10" fill="currentColor" />
     </svg>
   )
-}
-
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return '00:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 // ─── Physical Control Button ──────────────────────────────────────────────────
@@ -96,11 +90,11 @@ function PlaybackProgress({ compact = false }: { compact?: boolean }) {
 
   return (
     <div style={{ ...styles.progressContainer, gap: compact ? '0.75rem' : '1.5rem' }}>
-      <span style={styles.timeLabel}>{formatTime(currentTime)}</span>
+      <span style={styles.timeLabel}>{formatDuration(currentTime)}</span>
       <div style={{ ...styles.waveformWrap, height: compact ? 24 : 32 }}>
         <WaveformLine height={compact ? 24 : 32} />
       </div>
-      <span style={styles.timeLabel}>{duration > 0 ? formatTime(duration) : '00:00'}</span>
+      <span style={styles.timeLabel}>{duration > 0 ? formatDuration(duration) : '00:00'}</span>
     </div>
   )
 }

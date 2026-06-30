@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, type CSSProperties, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { getArtist, getArtistTopTracks, type DeezerArtist } from '@/lib/deezerApi'
+import { getArtist, getArtistTopTracks } from '@/lib/deezerApi'
+import type { DeezerArtist } from '@/types/track'
 import { TrackRow } from '@/components/library/TrackRow'
 import { usePlayerStore } from '@/stores/playerStore'
 import type { Track, DeezerTrack } from '@/types/track'

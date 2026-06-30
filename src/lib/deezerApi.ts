@@ -25,37 +25,12 @@ const BASE = '/deezer-api'
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export interface DeezerArtist {
-  id: number
-  name: string
-  picture_medium: string
-  picture_big: string
-  nb_fan?: number
-}
-
-export interface DeezerAlbum {
-  id: number
-  title: string
-  cover_medium: string
-  cover_big: string
-  release_date?: string
-}
+import type { DeezerArtist, DeezerAlbum, DeezerTrack } from '@/types/track'
+export type { DeezerArtist, DeezerAlbum, DeezerTrack }
 
 export interface DeezerGenre {
   id: number
   name: string
-}
-
-export interface DeezerTrack {
-  source: 'deezer'
-  id: number
-  title: string
-  duration: number // seconds
-  preview: string // 30s MP3 URL — always present
-  artist: DeezerArtist
-  album: DeezerAlbum
-  rank: number // popularity proxy (0–1,000,000)
-  explicit_lyrics: boolean
 }
 
 export interface DeezerFullTrack extends DeezerTrack {
@@ -191,30 +166,12 @@ export async function getAlbumGenres(albumId: number): Promise<DeezerGenre[]> {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
 /**
- * Get the best available album art URL.
- */
-export function getAlbumArt(
-  track: DeezerTrack,
-  size: 'small' | 'medium' | 'large' = 'medium'
-): string {
-  switch (size) {
-    case 'small':
-      return track.album.cover_medium // 250x250
-    case 'medium':
-      return track.album.cover_medium // 250x250
-    case 'large':
-      return track.album.cover_big // 500x500
-  }
-}
-
-/**
- * Format duration from seconds to m:ss string.
+ * Format duration from seconds to mm:ss string.
  */
 export function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
+  if (!isFinite(seconds) || seconds < 0) return '00:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }

@@ -13,7 +13,7 @@
  * LINKS: two genres are linked if they appear on the same album
  */
 
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 
 export interface GenreNode {
   id: string

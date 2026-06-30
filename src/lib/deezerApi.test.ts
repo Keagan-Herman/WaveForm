@@ -42,11 +42,16 @@ describe('deezerApi', () => {
   })
 
   describe('formatDuration', () => {
-    it('should format seconds into m:ss', () => {
-      expect(formatDuration(0)).toBe('0:00')
-      expect(formatDuration(60)).toBe('1:00')
-      expect(formatDuration(65)).toBe('1:05')
+    it('formats seconds into mm:ss with leading zeros', () => {
+      expect(formatDuration(0)).toBe('00:00')
+      expect(formatDuration(60)).toBe('01:00')
+      expect(formatDuration(65)).toBe('01:05')
       expect(formatDuration(3601)).toBe('60:01')
+    })
+
+    it('returns 00:00 for invalid input', () => {
+      expect(formatDuration(-1)).toBe('00:00')
+      expect(formatDuration(Infinity)).toBe('00:00')
     })
   })
 

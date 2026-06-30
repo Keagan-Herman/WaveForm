@@ -44,7 +44,7 @@ import { ParticleField } from './ParticleField'
 import { CoreOrb } from './CoreOrb'
 import { useVisualiserStore } from '@/stores/visualiserStore'
 import { useResize } from '@/hooks/useResize'
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface AlbumGravityFieldProps {
@@ -126,10 +126,7 @@ function Scene({ layout, accent }: { layout: AlbumLayout[]; accent?: AlbumColour
   )
 }
 
-export function AlbumGravityField({
-  tracks,
-  accent,
-}: AlbumGravityFieldProps) {
+export function AlbumGravityField({ tracks, accent }: AlbumGravityFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   useResize(containerRef)
   const isLowQuality = useVisualiserStore(state => state.isLowQuality)

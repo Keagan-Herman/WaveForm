@@ -25,7 +25,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { GenreForceGraph } from './GenreForceGraph'
 import { useGenreGraph } from '@/hooks/useGenreGraph'
 import { usePlayerStore } from '@/stores/playerStore'
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
 
 interface GenrePanelProps {

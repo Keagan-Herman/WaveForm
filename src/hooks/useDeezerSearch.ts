@@ -11,7 +11,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { searchTracks, type DeezerTrack } from '@/lib/deezerApi'
+import { searchTracks } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 import { fetchWithCache } from '@/lib/cache'
 
 interface SearchState {

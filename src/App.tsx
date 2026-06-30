@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion'
-import { AudioProvider } from '@/audio/AudioContext'
 import { PreviewPlayer } from '@/components/player/PreviewPlayer'
 import { PlayerBar } from '@/components/player/PlayerBar'
 import { BackgroundPulse } from '@/components/visualiser/BackgroundPulse'
@@ -511,11 +510,7 @@ function Waveform() {
 }
 
 export default function App() {
-  return (
-    <AudioProvider>
-      <Waveform />
-    </AudioProvider>
-  )
+  return <Waveform />
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────

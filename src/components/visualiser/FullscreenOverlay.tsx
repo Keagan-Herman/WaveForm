@@ -33,8 +33,8 @@ import { ButterchurnTexture } from './ButterchurnTexture'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useShareableURL } from '@/hooks/useShareableURL'
 import type { AlbumColour } from '@/hooks/useAlbumColour'
-import type { DeezerTrack } from '@/lib/deezerApi'
 import { getTrackCover, getTrackArtist, isDeezerTrack } from '@/types/track'
+import type { DeezerTrack } from '@/types/track'
 
 interface FullscreenOverlayProps {
   accent: AlbumColour

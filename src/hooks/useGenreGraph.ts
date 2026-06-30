@@ -20,7 +20,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getAlbumGenres } from '@/lib/deezerApi'
 import { buildGenreGraph, type GenreGraphData } from '@/lib/genreGraph'
 import { fetchWithCache } from '@/lib/cache'
-import type { DeezerTrack } from '@/lib/deezerApi'
+import type { DeezerTrack } from '@/types/track'
 
 const EMPTY_GRAPH: GenreGraphData = { nodes: [], links: [] }
 
